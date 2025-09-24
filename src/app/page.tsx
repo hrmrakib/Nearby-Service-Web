@@ -1,103 +1,489 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Calendar,
+  MapPin,
+  Star,
+  Heart,
+  MessageCircle,
+  Phone,
+} from "lucide-react";
+import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+const categories = [
+  { id: "all", label: "All", icon: "🌟" },
+  { id: "events", label: "Events", icon: "📅" },
+  { id: "deals", label: "Deals", icon: "🏷️" },
+  { id: "services", label: "Services", icon: "🔧" },
+  { id: "alerts", label: "Alerts", icon: "⚠️" },
+];
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+const contentItems = [
+  {
+    id: 1,
+    title: "Cozy Coffee Spot",
+    image: "/product/1.jpg",
+    rating: 4.9,
+    distance: "2.3 miles",
+    description:
+      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
+    type: "deal",
+  },
+  {
+    id: 2,
+    title: "Live Jazz Night",
+    image: "/product/2.jpg",
+    rating: 4.9,
+    distance: "2.3 miles",
+    description:
+      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
+    type: "event",
+  },
+];
+
+const contacts = [
+  {
+    id: 1,
+    name: "Kristin Watson",
+    avatar: "/placeholder-user.jpg",
+    status: "online",
+  },
+  {
+    id: 2,
+    name: "Dianne Russell",
+    avatar: "/placeholder-user.jpg",
+    status: "online",
+  },
+  {
+    id: 3,
+    name: "Cody Fisher",
+    avatar: "/placeholder-user.jpg",
+    status: "online",
+  },
+  {
+    id: 4,
+    name: "Floyd Miles",
+    avatar: "/placeholder-user.jpg",
+    status: "offline",
+  },
+  {
+    id: 5,
+    name: "Ralph Edwards",
+    avatar: "/placeholder-user.jpg",
+    status: "online",
+  },
+  {
+    id: 6,
+    name: "Jane Cooper",
+    avatar: "/placeholder-user.jpg",
+    status: "online",
+  },
+  {
+    id: 7,
+    name: "Ronald Richards",
+    avatar: "/placeholder-user.jpg",
+    status: "online",
+  },
+  {
+    id: 8,
+    name: "Esther Howard",
+    avatar: "/placeholder-user.jpg",
+    status: "online",
+  },
+  {
+    id: 9,
+    name: "Jacob Jones",
+    avatar: "/placeholder-user.jpg",
+    status: "online",
+  },
+  {
+    id: 10,
+    name: "Annette Black",
+    avatar: "/placeholder-user.jpg",
+    status: "offline",
+  },
+];
+
+export default function DashboardLayout() {
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [distanceRadius, setDistanceRadius] = useState([50]);
+  const [maxPrice, setMaxPrice] = useState([150]);
+  const [selectedStars, setSelectedStars] = useState<number[]>([]);
+  const [dateRange, setDateRange] = useState<{
+    startDate: Date | null;
+    endDate: Date | null;
+  }>({
+    startDate: new Date(2025, 8, 6), // September 6, 2025
+    endDate: new Date(2025, 8, 15), // September 15, 2025
+  });
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const handleStarToggle = (stars: number) => {
+    setSelectedStars((prev) =>
+      prev.includes(stars) ? prev.filter((s) => s !== stars) : [...prev, stars]
+    );
+  };
+
+  const handleDateRangeChange = (
+    startDate: Date | null,
+    endDate: Date | null
+  ) => {
+    setDateRange({ startDate, endDate });
+    setShowCalendar(false);
+  };
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`w-4 h-4 ${
+          i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+        }`}
+      />
+    ));
+  };
+
+  return (
+    <div className='flex h-[calc(100vh-80px)] bg-gray-50'>
+      {/* Left Column - Filters */}
+      <div className='w-80 bg-white border-r border-gray-200 hidden lg:block'>
+        <ScrollArea className='h-full'>
+          <div className='p-6 space-y-6'>
+            {/* Category Buttons */}
+            <div className='space-y-2'>
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={
+                    selectedCategory === category.id ? "default" : "outline"
+                  }
+                  className={`w-full justify-start text-left ${
+                    selectedCategory === category.id
+                      ? "bg-green-500 hover:bg-green-600 text-white"
+                      : "bg-white hover:bg-gray-50"
+                  }`}
+                  onClick={() => setSelectedCategory(category.id)}
+                >
+                  <span className='mr-2'>{category.icon}</span>
+                  {category.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Filters Section */}
+            <div className='space-y-6'>
+              <h3 className='text-lg font-semibold text-gray-900'>Filters</h3>
+
+              {/* City Filter */}
+              <div className='space-y-2'>
+                <Label className='text-sm font-medium text-gray-700'>
+                  City
+                </Label>
+                <Select defaultValue='new-york'>
+                  <SelectTrigger className='w-full'>
+                    <div className='flex items-center'>
+                      <MapPin className='w-4 h-4 mr-2 text-gray-500' />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='new-york'>New York</SelectItem>
+                    <SelectItem value='los-angeles'>Los Angeles</SelectItem>
+                    <SelectItem value='chicago'>Chicago</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className='space-y-3 relative'>
+                <Label className='text-sm font-medium text-gray-700'>
+                  Date
+                </Label>
+                <Button
+                  variant='outline'
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  className='w-full justify-start text-left'
+                >
+                  <Calendar className='w-4 h-4 mr-2 text-gray-500' />
+                  {dateRange.startDate && dateRange.endDate ? (
+                    <span>
+                      {dateRange.startDate.toLocaleDateString("en-US", {
+                        month: "short", // Use "short" for abbreviated month
+                        day: "numeric",
+                        year: "numeric",
+                      })}{" "}
+                      -{" "}
+                      {dateRange.endDate.toLocaleDateString("en-US", {
+                        month: "short", // Use "short" for abbreviated month
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                  ) : (
+                    <span className='text-gray-500'>Select date range</span>
+                  )}
+                </Button>
+
+                {/* Calendar Dropdown */}
+                {showCalendar && (
+                  <div className='absolute top-full left-0 z-50 mt-1'>
+                    {dateRange.startDate && dateRange.endDate && (
+                      <CalendarDatePicker
+                        startDate={dateRange.startDate}
+                        endDate={dateRange.endDate}
+                        onDateRangeChange={handleDateRangeChange}
+                        onClose={() => setShowCalendar(false)}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Distance Radius */}
+              <div className='space-y-3'>
+                <Label className='text-sm font-medium text-gray-700'>
+                  Distance Radius
+                </Label>
+                <div className='px-2'>
+                  <Slider
+                    value={distanceRadius}
+                    onValueChange={setDistanceRadius}
+                    max={100}
+                    step={5}
+                    className='w-full'
+                  />
+                  <div className='flex justify-between text-xs text-gray-500 mt-1'>
+                    <span>0 miles</span>
+                    <span>{distanceRadius[0]} miles</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Max Price */}
+              <div className='space-y-3'>
+                <Label className='text-sm font-medium text-gray-700'>
+                  Max Price
+                </Label>
+                <div className='px-2'>
+                  <Slider
+                    value={maxPrice}
+                    onValueChange={setMaxPrice}
+                    max={500}
+                    step={10}
+                    className='w-full'
+                  />
+                  <div className='flex justify-between text-xs text-gray-500 mt-1'>
+                    <span>$0</span>
+                    <span>${maxPrice[0]}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Min Star Rating */}
+              <div className='space-y-3'>
+                <Label className='text-sm font-medium text-gray-700'>
+                  Min. Star Rating
+                </Label>
+                <div className='space-y-2'>
+                  {[5, 4, 3, 2, 1].map((stars) => (
+                    <div key={stars} className='flex items-center space-x-2'>
+                      <Checkbox
+                        id={`stars-${stars}`}
+                        checked={selectedStars.includes(stars)}
+                        onCheckedChange={() => handleStarToggle(stars)}
+                      />
+                      <label
+                        htmlFor={`stars-${stars}`}
+                        className='flex items-center space-x-1 cursor-pointer'
+                      >
+                        <div className='flex'>
+                          {Array.from({ length: stars }, (_, i) => (
+                            <Star
+                              key={i}
+                              className='w-4 h-4 fill-green-500 text-green-500'
+                            />
+                          ))}
+                          {Array.from({ length: 5 - stars }, (_, i) => (
+                            <Star key={i} className='w-4 h-4 text-gray-300' />
+                          ))}
+                        </div>
+                        <span className='text-sm text-gray-600'>
+                          ({stars}+ Stars)
+                        </span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Middle Column - Content Feed */}
+      <div className='flex-1 bg-white'>
+        <ScrollArea className='h-full'>
+          <div className='p-6 space-y-6'>
+            {contentItems.map((item) => (
+              <Card key={item.id} className='overflow-hidden'>
+                <div className='aspect-video relative'>
+                  <Image
+                    width={600}
+                    height={600}
+                    src={`/.jpg?height=300&width=600&query=${item.title}`}
+                    alt={item.title}
+                    className='w-full h-full object-cover'
+                  />
+                </div>
+                <CardContent className='p-6'>
+                  <div className='space-y-4'>
+                    <div className='flex items-start justify-between'>
+                      <h3 className='text-xl font-semibold text-gray-900'>
+                        {item.title}
+                      </h3>
+                      <Button variant='ghost' size='sm'>
+                        <Heart className='w-4 h-4' />
+                      </Button>
+                    </div>
+
+                    <div className='flex items-center space-x-4'>
+                      <div className='flex items-center space-x-1'>
+                        {renderStars(Math.floor(item.rating))}
+                        <span className='text-sm font-medium text-gray-900 ml-1'>
+                          {item.rating}
+                        </span>
+                      </div>
+                      <div className='flex items-center space-x-1 text-sm text-gray-600'>
+                        <MapPin className='w-4 h-4' />
+                        <span>{item.distance}</span>
+                      </div>
+                    </div>
+
+                    <p className='text-gray-600 text-sm leading-relaxed'>
+                      {item.description}
+                    </p>
+
+                    <div className='flex space-x-3 pt-2'>
+                      <Button className='flex-1 bg-green-500 hover:bg-green-600'>
+                        Request Quote
+                      </Button>
+                      <Button variant='outline' className='px-6 bg-transparent'>
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Right Column - Map & Contacts */}
+      <div className='w-80 bg-white border-l border-gray-200 hidden xl:block'>
+        <ScrollArea className='h-full'>
+          <div className='p-6 space-y-6'>
+            {/* Map Section */}
+            <div className='space-y-3'>
+              <h3 className='text-lg font-semibold text-gray-900'>Map</h3>
+              <div className='aspect-square bg-gray-100 rounded-lg overflow-hidden'>
+                <Image
+                  width={600}
+                  height={600}
+                  src='/detailed-street-map.png'
+                  alt='Map'
+                  className='w-full h-full object-cover'
+                />
+              </div>
+            </div>
+
+            {/* Contacts Section */}
+            <div className='space-y-4'>
+              <h3 className='text-lg font-semibold text-gray-900'>Contacts</h3>
+              <div className='space-y-3'>
+                {contacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    className='flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer'
+                  >
+                    <div className='relative'>
+                      <Avatar className='w-10 h-10'>
+                        <AvatarImage
+                          src={contact.avatar || "/placeholder.svg"}
+                          alt={contact.name}
+                        />
+                        <AvatarFallback>
+                          {contact.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div
+                        className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
+                          contact.status === "online"
+                            ? "bg-green-500"
+                            : "bg-gray-400"
+                        }`}
+                      />
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <p className='text-sm font-medium text-gray-900 truncate'>
+                        {contact.name}
+                      </p>
+                    </div>
+                    <div className='flex space-x-1'>
+                      <Button variant='ghost' size='sm' className='p-1 h-8 w-8'>
+                        <MessageCircle className='w-4 h-4' />
+                      </Button>
+                      <Button variant='ghost' size='sm' className='p-1 h-8 w-8'>
+                        <Phone className='w-4 h-4' />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Mobile Navigation */}
+      <div className='lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4'>
+        <div className='flex justify-around'>
+          {categories.slice(0, 4).map((category) => (
+            <Button
+              key={category.id}
+              variant={selectedCategory === category.id ? "default" : "ghost"}
+              size='sm'
+              className={
+                selectedCategory === category.id
+                  ? "bg-green-500 hover:bg-green-600"
+                  : ""
+              }
+              onClick={() => setSelectedCategory(category.id)}
+            >
+              <span className='text-xs'>{category.icon}</span>
+            </Button>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }

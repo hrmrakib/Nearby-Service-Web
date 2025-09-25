@@ -13,7 +13,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className='bg-white border-b border-border px-4 py-3'>
+      <nav className='sticky top-0 z-[999] bg-white border-b border-border px-4 py-3'>
         <div className='flex items-center justify-between container mx-auto'>
           {/* Logo */}
           <div className='flex items-center gap-4'>
@@ -73,7 +73,7 @@ export default function Navbar() {
 
             {/* Profile */}
             <Avatar className='w-8 h-8'>
-              <AvatarImage src='https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-2VoKCmB8myDIP93N1AKJS2YVO5Dfvg.png' />
+              <AvatarImage src='/profile.png' />
               <AvatarFallback>U</AvatarFallback>
             </Avatar>
           </div>

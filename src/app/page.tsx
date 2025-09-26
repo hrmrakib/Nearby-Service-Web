@@ -211,7 +211,17 @@ export default function DashboardLayout() {
 
   return (
     <div className='min-h-[calc(100vh-60px)] bg-[#F3F4F6]'>
-      <div className='container flex gap-6 h-full mx-auto'>
+      <div className='container mx-auto py-4'>
+        <Image
+          src='/hero-bg.jpg'
+          alt='Hero'
+          width={1200}
+          height={400}
+          className='w-full h-auto rounded-lg shadow-md'
+        />
+      </div>
+      
+      <div className='container flex justify-between gap-6 h-full mx-auto border-2'>
         {/* Left Column - Filters */}
         <div className='sticky top-20 w-80 bg-transparent hidden lg:block h-[calc(100vh-80px)] overflow-y-auto'>
           <ScrollArea className='h-full'>

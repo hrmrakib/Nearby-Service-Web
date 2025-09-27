@@ -1,57 +1,71 @@
 "use client";
 
 import { useState } from "react";
-import { Search, MessageCircle, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CreatePostModal from "@/components/CreatePostModal";
 import Image from "next/image";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
+import Link from "next/link";
 export default function Navbar() {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
   return (
     <>
-      <nav className='sticky top-0 z-[999] bg-white border-b border-border px-4 py-3'>
+      <nav className='sticky top-0 z-[998] bg-white backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border px-4 py-3'>
         <div className='flex items-center justify-between container mx-auto'>
           {/* Logo */}
           <div className='flex items-center gap-4'>
-            <div>
+            <Link href='/' className='flex items-center'>
               <Image src='/logo.svg' alt='Logo' width={42} height={48} />
-            </div>
+            </Link>
 
             {/* Search Bar - Hidden on mobile */}
             <div className='hidden md:flex items-center relative'>
               <Search className='absolute left-3 w-4 h-4 text-muted-foreground' />
               <Input
                 placeholder='Search nearby...'
-                className='pl-10 w-64 bg-gray-50 border-0'
+                className='pl-10 w-64 bg-[#E5E7EB] border-0'
               />
             </div>
           </div>
 
           {/* Navigation Links */}
           <div className='hidden md:flex items-center gap-8'>
-            <Button
-              variant='ghost'
-              className='text-foreground hover:text-primary'
+            <Link
+              href='/'
+              className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
             >
               Home
-            </Button>
-            <Button
-              variant='ghost'
-              className='text-foreground hover:text-primary'
+            </Link>
+            <Link
+              href='/recommended'
+              className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
             >
               Recommended
-            </Button>
-            <Button
-              variant='ghost'
-              className='text-foreground hover:text-primary'
+            </Link>
+            <button
+              className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
               onClick={() => setIsCreatePostOpen(true)}
             >
               Add Post
-            </Button>
+            </button>
           </div>
 
           {/* Right Side Icons */}
@@ -62,38 +76,120 @@ export default function Navbar() {
             </Button>
 
             {/* Messages */}
-            <Button variant='ghost' size='icon'>
-              <MessageCircle className='w-5 h-5' />
-            </Button>
+            <Link href='/messages'>
+              <svg
+                width='48'
+                height='48'
+                viewBox='0 0 48 48'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+              >
+                <rect
+                  x='-0.00012207'
+                  width='48'
+                  height='48'
+                  rx='24'
+                  fill='#E5E7EB'
+                />
+                <path
+                  d='M18.9999 24L28.9999 24'
+                  stroke='#1F2937'
+                  stroke-width='1.5'
+                  stroke-linecap='round'
+                  stroke-linejoin='round'
+                />
+                <path
+                  d='M18.9999 20L24.9999 20'
+                  stroke='#1F2937'
+                  stroke-width='1.5'
+                  stroke-linecap='round'
+                  stroke-linejoin='round'
+                />
+                <path
+                  d='M14.9999 32.2895V17C14.9999 15.8954 15.8953 15 16.9999 15H30.9999C32.1044 15 32.9999 15.8954 32.9999 17V27C32.9999 28.1046 32.1044 29 30.9999 29H19.9611C19.3536 29 18.7789 29.2762 18.3994 29.7506L16.0684 32.6643C15.7141 33.1072 14.9999 32.8567 14.9999 32.2895Z'
+                  stroke='#1F2937'
+                  stroke-width='1.5'
+                />
+              </svg>
+            </Link>
 
             {/* Notifications */}
-            <Button variant='ghost' size='icon'>
-              <Bell className='w-5 h-5' />
-            </Button>
+            <Link href='/notifications'>
+              <svg
+                width='48'
+                height='48'
+                viewBox='0 0 48 48'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+              >
+                <rect
+                  x='-0.00012207'
+                  width='48'
+                  height='48'
+                  rx='24'
+                  fill='#E5E7EB'
+                />
+                <path
+                  d='M29.9999 20.4C29.9999 18.7026 29.3677 17.0747 28.2425 15.8745C27.1173 14.6743 25.5912 14 23.9999 14C22.4086 14 20.8825 14.6743 19.7572 15.8745C18.632 17.0747 17.9999 18.7026 17.9999 20.4C17.9999 27.8667 14.9999 30 14.9999 30H32.9999C32.9999 30 29.9999 27.8667 29.9999 20.4Z'
+                  stroke='#1F2937'
+                  stroke-width='1.5'
+                  stroke-linecap='round'
+                  stroke-linejoin='round'
+                />
+                <path
+                  d='M25.7299 33C25.5541 33.3031 25.3017 33.5547 24.9981 33.7295C24.6945 33.9044 24.3503 33.9965 23.9999 33.9965C23.6495 33.9965 23.3053 33.9044 23.0017 33.7295C22.6981 33.5547 22.4457 33.3031 22.2699 33'
+                  stroke='#1F2937'
+                  stroke-width='1.5'
+                  stroke-linecap='round'
+                  stroke-linejoin='round'
+                />
+              </svg>
+            </Link>
 
             {/* Profile */}
-            <Avatar className='w-8 h-8'>
-              <AvatarImage src='/profile.png' />
-              <AvatarFallback>U</AvatarFallback>
-            </Avatar>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className='relative w-12 h-12'>
+                  <AvatarImage src='/profile.png' />
+                  <AvatarFallback>U</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className='z-[999] w-40 border-none'
+                align='end'
+                forceMount
+              >
+                <div className='p-3 flex flex-col gap-2 rounded-md'>
+                  <Link href='/profile' className='hover:text-[#15B826]'>
+                    View Profile
+                  </Link>
+                  <button
+                    onClick={() => setIsDropdownOpen(true)}
+                    className='w-full text-left hover:text-red-500'
+                  >
+                    Logout
+                  </button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Mobile Navigation */}
         <div className='md:hidden mt-3 flex justify-center gap-6'>
-          <Button variant='ghost' className='text-sm'>
+          <Link href='/' className='text-sm'>
             Home
-          </Button>
-          <Button variant='ghost' className='text-sm'>
+          </Link>
+          <Link href='/recommended' className='text-sm'>
             Recommended
-          </Button>
-          <Button
-            variant='ghost'
+          </Link>
+          <Link
+            href='/create'
             className='text-sm'
             onClick={() => setIsCreatePostOpen(true)}
           >
             Add Post
-          </Button>
+          </Link>
         </div>
       </nav>
 
@@ -101,6 +197,33 @@ export default function Navbar() {
         isOpen={isCreatePostOpen}
         onClose={() => setIsCreatePostOpen(false)}
       />
+
+      <Dialog open={isDropdownOpen}>
+        <DialogTrigger asChild>
+          {/* <Button variant='outline'>Open Dialog</Button> */}
+        </DialogTrigger>
+        <DialogContent className='sm:max-w-[525px]'>
+          <DialogHeader>
+            <DialogDescription className='my-4 text-xl lg:text-[30px] font-semibold'>
+              Are you sure you want to log out?
+            </DialogDescription>
+          </DialogHeader>
+          <div className='w-full flex items-center justify-center gap-6'>
+            <Button className='bg-transparent w-40 h-11 !text-[#15B826] border !border-[#15B826] hover:bg-[#15b8251f] '>
+              Logout
+            </Button>
+            <DialogClose asChild>
+              <Button
+                variant='outline'
+                className='w-40 h-11 bg-[#15B826] text-white'
+                onClick={() => setIsDropdownOpen(false)}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

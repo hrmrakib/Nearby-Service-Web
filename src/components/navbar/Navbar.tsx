@@ -20,15 +20,42 @@ import {
   DialogHeader,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+
 export default function Navbar() {
+  const pathname = usePathname();
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
 
+  const handleLogout = () => {
+    // Handle logout logic here
+    router.push("/login");
+    setIsDropdownOpen(false);
+  };
+
+  if (
+    pathname === "/signup" ||
+    pathname === "/login" ||
+    pathname === "/forgot-password" ||
+    pathname === "/verify-password" ||
+    pathname === "/verify-otp" ||
+    pathname === "/otp-verify" ||
+    pathname === "/reset-password" ||
+    pathname.split("/")[1] === "dashboard" ||
+    pathname === "/signup/agent" ||
+    pathname === "/signup/artist" ||
+    pathname === "/signup/venue" ||
+    pathname === "/signup/buyer" ||
+    pathname === "/signup/organizer"
+  ) {
+    return null;
+  }
+
   return (
     <>
-      <nav className='sticky top-0 z-[998] bg-white backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border px-4 py-3'>
+      <nav className='sticky top-0 z-30 bg-white backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border px-4 py-3'>
         <div className='flex items-center justify-between container mx-auto'>
           {/* Logo */}
           <div className='flex items-center gap-4'>
@@ -209,7 +236,10 @@ export default function Navbar() {
             </DialogDescription>
           </DialogHeader>
           <div className='w-full flex items-center justify-center gap-6'>
-            <Button className='bg-transparent w-40 h-11 !text-[#15B826] border !border-[#15B826] hover:bg-[#15b8251f] '>
+            <Button
+              onClick={() => handleLogout()}
+              className='bg-transparent w-40 h-11 !text-[#15B826] border !border-[#15B826] hover:bg-[#15b8251f] '
+            >
               Logout
             </Button>
             <DialogClose asChild>

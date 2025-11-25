@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import Image from "next/image";
+import { HeroSection } from "@/components/home/HeroSection";
 
 const categories = [
   { id: "all", label: "All", icon: "🌟" },
@@ -32,6 +33,11 @@ const categories = [
   { id: "deals", label: "Deals", icon: "🏷️" },
   { id: "services", label: "Services", icon: "🔧" },
   { id: "alerts", label: "Alerts", icon: "⚠️" },
+  { id: "nearby", label: "Nearby", icon: "📍" },
+  { id: "videos", label: "Videos", icon: "📹" },
+  { id: "saved", label: "Saved", icon: "❤️" },
+  { id: "following", label: "Following", icon: "👥" },
+  { id: "attending", label: "Attending", icon: "🎉" },
 ];
 
 const contentItems = [
@@ -111,61 +117,61 @@ const contacts = [
   {
     id: 1,
     name: "Kristin Watson",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "online",
   },
   {
     id: 2,
     name: "Dianne Russell",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "online",
   },
   {
     id: 3,
     name: "Cody Fisher",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "online",
   },
   {
     id: 4,
     name: "Floyd Miles",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "offline",
   },
   {
     id: 5,
     name: "Ralph Edwards",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "online",
   },
   {
     id: 6,
     name: "Jane Cooper",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "online",
   },
   {
     id: 7,
     name: "Ronald Richards",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "online",
   },
   {
     id: 8,
     name: "Esther Howard",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "online",
   },
   {
     id: 9,
     name: "Jacob Jones",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "online",
   },
   {
     id: 10,
     name: "Annette Black",
-    avatar: "/placeholder-user.jpg",
+    avatar: "/profile.png",
     status: "offline",
   },
 ];
@@ -211,17 +217,9 @@ export default function DashboardLayout() {
 
   return (
     <div className='min-h-[calc(100vh-60px)] bg-[#F3F4F6]'>
-      <div className='container mx-auto py-4'>
-        <Image
-          src='/hero-bg.jpg'
-          alt='Hero'
-          width={1200}
-          height={400}
-          className='w-full h-auto rounded-lg shadow-md'
-        />
-      </div>
-      
-      <div className='container flex justify-between gap-6 h-full mx-auto border-2'>
+      <HeroSection />
+
+      <div className='container flex justify-between gap-6 h-full mx-auto mt-8'>
         {/* Left Column - Filters */}
         <div className='sticky top-20 w-80 bg-transparent hidden lg:block h-[calc(100vh-80px)] overflow-y-auto'>
           <ScrollArea className='h-full'>
@@ -231,13 +229,10 @@ export default function DashboardLayout() {
                 {categories.map((category) => (
                   <Button
                     key={category.id}
-                    variant={
-                      selectedCategory === category.id ? "default" : "outline"
-                    }
-                    className={`w-full justify-start text-left ${
+                    className={`w-full justify-start text-left text-[#4B5563] font-medium ${
                       selectedCategory === category.id
-                        ? "bg-[#15B826] hover:bg-green-600 text-white"
-                        : "bg-white hover:bg-gray-50"
+                        ? "bg-[#15B826] hover:bg-[#0bb61c] text-white"
+                        : "bg-transparent hover:bg-gray-50"
                     }`}
                     onClick={() => setSelectedCategory(category.id)}
                   >

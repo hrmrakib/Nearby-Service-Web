@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Lato } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar/Navbar";
+import Providers from "@/redux/features/Providers";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,8 +37,11 @@ export default function RootLayout({
         className={`${lato.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ fontFamily: lato.style.fontFamily }}
       >
-        <Navbar />
-        {children}
+        <Providers>
+          <Toaster />
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   );

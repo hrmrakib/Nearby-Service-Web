@@ -3,8 +3,12 @@
 "use client";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useResetPasswordMutation } from "@/redux/features/auth/authAPI";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function ResetPassword() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     password: "",
     confirmPassword: "",
@@ -14,6 +18,7 @@ export default function ResetPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState("");
+  const [resetPasswordMutation] = useResetPasswordMutation();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -58,21 +63,15 @@ export default function ResetPassword() {
     }
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await resetPasswordMutation({
+        newPassword: formData.password,
+        confirmPassword: formData.confirmPassword,
+      }).unwrap();
 
-      setSuccessMessage(
-        "Account created successfully! Redirecting to login..."
-      );
-      setFormData({
-        password: "",
-        confirmPassword: "",
-      });
-
-      // Simulate redirect after success
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 2000);
+      if (res?.success) {
+        toast.success(res?.message);
+        router.push("/login");
+      }
     } catch (error: any) {
       setErrors({
         submit: "An error occurred. Please try again.",

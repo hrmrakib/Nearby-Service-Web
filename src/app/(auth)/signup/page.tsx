@@ -1,4 +1,5 @@
 import SignupForm from "@/components/auth/SignupForm";
+import Link from "next/link";
 
 export const metadata = {
   title: "Sign Up - Jurnee",
@@ -35,12 +36,12 @@ export default function SignupPage() {
         {/* Sign In Link */}
         <p className='text-center mt-6 text-gray-600'>
           Already have an account?{" "}
-          <a
+          <Link
             href='/login'
             className='text-green-500 font-semibold hover:underline'
           >
             Sign in
-          </a>
+          </Link>
         </p>
       </div>
     </main>

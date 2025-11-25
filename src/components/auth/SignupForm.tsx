@@ -5,8 +5,13 @@ import type React from "react";
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useCreateAccountMutation } from "@/redux/features/auth/authAPI";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function SignupForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -21,6 +26,7 @@ export default function SignupForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [createAccountMutation] = useCreateAccountMutation();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -41,7 +47,7 @@ export default function SignupForm() {
 
     if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
+    } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 8 characters";
     }
 
@@ -85,29 +91,41 @@ export default function SignupForm() {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await createAccountMutation({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        address: formData.location,
+        location: {
+          type: "Point",
+          coordinates: [-90.4125, 23.8103], // long, latt
+        },
+      }).unwrap();
 
-      setSuccessMessage(
-        "Account created successfully! Redirecting to login..."
-      );
-      setFormData({
-        name: "",
-        location: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-      setTermsAccepted(false);
+      console.log(res);
 
-      // Simulate redirect after success
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 2000);
+      if (res?.success) {
+        toast.success(res?.message);
+        router.push("/verify-otp?email=" + formData.email + "&type=signup");
+
+        setSuccessMessage(
+          "Account created successfully! Redirecting to login..."
+        );
+
+        setFormData({
+          name: "",
+          location: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setTermsAccepted(false);
+      }
     } catch (error: any) {
       setErrors({
         submit: "An error occurred. Please try again.",
       });
+      toast.error(error?.data?.message);
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -286,23 +304,31 @@ export default function SignupForm() {
         />
         <label htmlFor='terms' className='text-sm text-gray-600'>
           I&apos;ve read and agree with the{" "}
-          <a href='#' className='text-green-500 font-semibold hover:underline'>
+          <Link
+            href='#'
+            className='text-green-500 font-semibold hover:underline'
+          >
             Terms and Conditions
-          </a>{" "}
+          </Link>{" "}
           and the{" "}
-          <a href='#' className='text-green-500 font-semibold hover:underline'>
+          <Link
+            href='#'
+            className='text-green-500 font-semibold hover:underline'
+          >
             Privacy Policy
-          </a>
+          </Link>
         </label>
       </div>
-      {errors.terms && <p className='text-red-500 text-sm'>{errors.terms}</p>}
+      {errors.terms && (
+        <p className='text-red-500 text-sm'>{errors.terms} up</p>
+      )}
 
       {/* Error Message */}
-      {errors.submit && (
+      {/* {errors.submit && (
         <div className='bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm'>
-          {errors.submit}
+          {errors.submit} down
         </div>
-      )}
+      )} */}
 
       {/* Success Message */}
       {successMessage && (

@@ -9,19 +9,22 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
+import { useLoginMutation } from "@/redux/features/auth/authAPI";
+import { useRouter } from "next/navigation";
+import { saveTokens } from "@/service/authService";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loginMutation] = useLoginMutation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Clear previous errors
     setError("");
 
     // Validation
@@ -37,19 +40,18 @@ export default function LoginForm() {
       setError("Password is required");
       return;
     }
-    if (!agreedToTerms) {
-      setError("You must agree to the Terms and Conditions");
-      return;
-    }
 
     setLoading(true);
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log("[v0] Login attempt with email:", email);
-      // Replace with actual authentication logic
-      alert(`Welcome! Logged in as ${email}`);
+      const res = await loginMutation({ email, password }).unwrap();
+      console.log(res);
+
+      if (res?.success) {
+        await saveTokens(res?.data?.accessToken);
+        localStorage.setItem("accessToken", res?.data?.accessToken);
+        router.push("/");
+      }
     } catch (err: any) {
       setError("Login failed. Please try again.");
       console.error(err);
@@ -163,37 +165,6 @@ export default function LoginForm() {
             >
               Forgot password?
             </Link>
-          </div>
-
-          {/* Terms Checkbox */}
-          <div className='flex items-start space-x-3'>
-            <input
-              id='terms'
-              type='checkbox'
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className='mt-1 w-4 h-4 border-gray-300 rounded text-[#15B826] focus:ring-green-500 cursor-pointer'
-              disabled={loading}
-            />
-            <label
-              htmlFor='terms'
-              className='text-sm text-gray-600 cursor-pointer'
-            >
-              I&apos;ve read and agree with the{" "}
-              <Link
-                href='#'
-                className='font-medium text-[#15B826] hover:text-[#15B826]'
-              >
-                Terms and Conditions
-              </Link>{" "}
-              and the{" "}
-              <Link
-                href='#'
-                className='font-medium text-[#15B826] hover:text-[#15B826]'
-              >
-                Privacy Policy
-              </Link>
-            </label>
           </div>
 
           {/* Login Button */}

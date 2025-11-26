@@ -1,7 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      // {
+      //   protocol: "https",
+      //   hostname: "images.pexels.com",
+      // },
+      {
+        protocol: "http",
+        hostname: "10.10.12.54",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -15,6 +15,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CloudUpload, MapPin, Star } from "lucide-react";
 import Image from "next/image";
+import {
+  useGetAttendingEventQuery,
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+} from "@/redux/features/profile/profileAPI";
+import { toast } from "sonner";
+import AttendingEvents from "@/components/profile/AttendingEvents";
+import SavedPost from "@/components/profile/SavedPost";
+import MyPost from "@/components/profile/MyPost";
 
 interface EventCard {
   id: string;
@@ -96,23 +105,62 @@ export default function ProfilePage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
-  const [image, setImage] = useState("/profile.png");
-  // Profile data state
-  const [profileData, setProfileData] = useState({
-    name: "Susan Flores",
-    location: "Los Angeles, CA",
-    bio: "Emma Lane is a versatile singer known for her soulful voice and emotional performances. Blending pop and R&B, she has captivated audiences worldwide. With a unique sound and heartfelt lyrics, Emma continues to evolve as an artist, inspiring listeners everywhere.",
+  const [image, setImage] = useState();
+  const [imagePreview, setImagePreview] = useState<string | null>();
+  const [user, setUser] = useState({
+    name: "",
+    location: "",
+    image: "",
+    bio: "",
+    paypalAccount: "",
   });
+  const { data: userProfile, refetch } = useGetProfileQuery(undefined);
+  const [updateProfileMutation] = useUpdateProfileMutation();
 
-  const [editData, setEditData] = useState(profileData);
+  const profile = userProfile?.data;
 
-  const handleSaveChanges = () => {
-    setProfileData(editData);
-    setIsEditMode(false);
+  useEffect(() => {
+    setUser({
+      name: profile?.name,
+      location: profile?.address,
+      image: profile?.image,
+      bio: profile?.bio,
+      paypalAccount: profile?.paypalAccount,
+    });
+  }, [profile]);
+
+  const handleSaveChanges = async () => {
+    try {
+      const formData = new FormData();
+      const data = {
+        name: user.name,
+        address: user.location,
+        bio: user.bio,
+        paypalAccount: user.paypalAccount,
+      };
+
+      formData.append("data", JSON.stringify(data));
+      if (image) {
+        formData.append("profile_pic", image);
+      }
+
+      const res = await updateProfileMutation(formData).unwrap();
+
+      console.log(res);
+
+      if (res?.success) {
+        toast.success(res?.message);
+        refetch();
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsEditMode(false);
+    }
   };
 
   const handleCancelEdit = () => {
-    setEditData(profileData);
+    // setEditData(profileData);
     setIsEditMode(false);
   };
 
@@ -122,10 +170,14 @@ export default function ProfilePage() {
 
   const handleImageUpload = (event: any) => {
     const file = event.target.files[0];
+
     if (file) {
-      setImage(URL.createObjectURL(file));
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
+
+  console.log(image);
 
   if (isEditMode) {
     return (
@@ -137,7 +189,7 @@ export default function ProfilePage() {
               <div className='w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-green-500 p-1'>
                 <div className='w-full h-full rounded-full overflow-hidden relative'>
                   <Image
-                    src={image}
+                    src={imagePreview ?? user?.image}
                     alt='Profile Image'
                     width={120}
                     height={120}
@@ -170,11 +222,24 @@ export default function ProfilePage() {
                   Name
                 </label>
                 <Input
-                  value={editData.name}
+                  value={user?.name}
+                  onChange={(e) => setUser({ ...user, name: e.target.value })}
+                  className='w-full h-12 bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-lg'
+                  placeholder='Enter your name'
+                />
+              </div>
+
+              <div>
+                <label className='block text-lg font-bold text-[#030712] mb-2'>
+                  Paypal Account (Email) <span className='text-red-500'>*</span>
+                </label>
+                <Input
+                  value={user?.paypalAccount}
                   onChange={(e) =>
-                    setEditData({ ...editData, name: e.target.value })
+                    setUser({ ...user, paypalAccount: e.target.value })
                   }
                   className='w-full h-12 bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-lg'
+                  placeholder='Enter your Paypal Account (Email)'
                 />
               </div>
 
@@ -183,9 +248,9 @@ export default function ProfilePage() {
                   Location
                 </label>
                 <Input
-                  value={editData.location}
+                  value={user?.location}
                   onChange={(e) =>
-                    setEditData({ ...editData, location: e.target.value })
+                    setUser({ ...user, location: e.target.value })
                   }
                   className='w-full h-12 bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-lg'
                 />
@@ -196,10 +261,8 @@ export default function ProfilePage() {
                   Bio
                 </label>
                 <Textarea
-                  value={editData.bio}
-                  onChange={(e) =>
-                    setEditData({ ...editData, bio: e.target.value })
-                  }
+                  value={user?.bio}
+                  onChange={(e) => setUser({ ...user, bio: e.target.value })}
                   placeholder='Add bio...'
                   className='w-full min-h-40 bg-white border-2 border-gray-300 resize-none !text-base'
                 />
@@ -237,8 +300,8 @@ export default function ProfilePage() {
             <div className='w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-green-500 p-1'>
               <div className='w-full h-full rounded-full overflow-hidden relative'>
                 <Image
-                  src='/profile.png'
-                  alt='Susan Flores'
+                  src={profile?.image || "/profile.png"}
+                  alt={profile?.name || "Profile Image"}
                   width={88}
                   height={88}
                   className='w-full h-full object-cover'
@@ -251,13 +314,15 @@ export default function ProfilePage() {
 
           {/* Name */}
           <h1 className='text-xl font-semibold text-[#1F2937] mb-2'>
-            {profileData.name}
+            {profile?.name || "No Name"}
           </h1>
 
           {/* Location */}
           <div className='flex items-center justify-center gap-1 text-[#4B5563] mb-6'>
             <MapPin className='w-4 h-4' />
-            <span className='text-sm'>{profileData.location}</span>
+            <span className='text-sm'>
+              {profile?.address || "No address provided"}
+            </span>
           </div>
         </div>
 
@@ -268,7 +333,7 @@ export default function ProfilePage() {
               Bio
             </h2>
             <p className='text-[#4B5563] text-lg leading-relaxed'>
-              {profileData.bio}
+              {profile?.bio || "No bio available."}
             </p>
           </div>
         </div>
@@ -278,7 +343,7 @@ export default function ProfilePage() {
           <div className='flex justify-between gap-5'>
             <div className='flex-1 text-center bg-white hover:bg-gray-50 rounded-lg p-2 transition-colors'>
               <div className='text-2xl lg:text-[30px] font-bold text-[#1F2937]'>
-                12
+                {profile?.post || 0}
               </div>
               <div className='text-base text-[#4B5563]'>Posts</div>
             </div>
@@ -286,14 +351,18 @@ export default function ProfilePage() {
               onClick={() => setShowFollowersModal(true)}
               className='flex-1 text-center bg-white hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer'
             >
-              <div className='text-2xl font-bold text-[#1F2937]'>102</div>
+              <div className='text-2xl font-bold text-[#1F2937]'>
+                {profile?.follower || 0}
+              </div>
               <div className='text-base text-[#4B5563]'>Followers</div>
             </button>
             <button
               onClick={() => setShowFollowingModal(true)}
               className='flex-1 text-center bg-white hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer'
             >
-              <div className='text-2xl font-bold text-[#1F2937]'>510</div>
+              <div className='text-2xl font-bold text-[#1F2937]'>
+                {profile?.following || 0}
+              </div>
               <div className='text-base text-[#4B5563]'>Following</div>
             </button>
           </div>
@@ -348,49 +417,11 @@ export default function ProfilePage() {
 
         {/* Content */}
         <div className='px-6 pb-6'>
-          {activeTab === "post" && (
-            <div className='space-y-8'>
-              {eventCards.map((event) => (
-                <Card key={event.id} className='overflow-hidden py-0'>
-                  <div className='relative h-48'>
-                    <Image
-                      src={event.image || "/placeholder.svg"}
-                      alt={event.title}
-                      fill
-                      className='object-cover'
-                    />
-                  </div>
-                  <CardContent className='p-4'>
-                    <div className='flex items-start justify-between mb-2'>
-                      <h3 className='font-semibold text-[#1F2937] text-2xl'>
-                        {event.title}
-                      </h3>
-                    </div>
-                    <div className='flex items-center gap-4 mb-3 text-sm text-[#4B5563]'>
-                      <MapPin className='w-4 h-4 text-[#15B826]' />
-                      <span>{event.distance}</span>
-                      <div className='flex items-center gap-1'>
-                        <Star className='w-4 h-4 fill-green-400 text-green-400' />
-                        <Star className='w-4 h-4 fill-green-400 text-green-400' />
-                        <Star className='w-4 h-4 fill-green-400 text-green-400' />
-                        <Star className='w-4 h-4 fill-green-400 text-green-400' />
-                        <span>{event.rating}</span>
-                      </div>
-                    </div>
-                    <p className='text-sm text-[#4B5563] leading-relaxed'>
-                      {event.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          {activeTab === "post" && <MyPost />}
 
-          {(activeTab === "attending" || activeTab === "saved") && (
-            <div className='text-center py-8'>
-              <p className='text-[#4B5563]'>No {activeTab} events to show</p>
-            </div>
-          )}
+          {activeTab === "attending" && <AttendingEvents />}
+
+          {activeTab === "saved" && <SavedPost />}
         </div>
 
         {/* Followers Modal */}

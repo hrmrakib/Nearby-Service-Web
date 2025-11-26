@@ -22,12 +22,15 @@ import {
 } from "@/components/ui/dialog";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
+import { Skeleton } from "../ui/skeleton";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const { data: profile } = useGetProfileQuery(undefined);
 
   const handleLogout = () => {
     // Handle logout logic here
@@ -121,21 +124,21 @@ export default function Navbar() {
                 <path
                   d='M18.9999 24L28.9999 24'
                   stroke='#1F2937'
-                  stroke-width='1.5'
-                  stroke-linecap='round'
-                  stroke-linejoin='round'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                 />
                 <path
                   d='M18.9999 20L24.9999 20'
                   stroke='#1F2937'
-                  stroke-width='1.5'
-                  stroke-linecap='round'
-                  stroke-linejoin='round'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                 />
                 <path
                   d='M14.9999 32.2895V17C14.9999 15.8954 15.8953 15 16.9999 15H30.9999C32.1044 15 32.9999 15.8954 32.9999 17V27C32.9999 28.1046 32.1044 29 30.9999 29H19.9611C19.3536 29 18.7789 29.2762 18.3994 29.7506L16.0684 32.6643C15.7141 33.1072 14.9999 32.8567 14.9999 32.2895Z'
                   stroke='#1F2937'
-                  stroke-width='1.5'
+                  strokeWidth='1.5'
                 />
               </svg>
             </Link>
@@ -159,16 +162,16 @@ export default function Navbar() {
                 <path
                   d='M29.9999 20.4C29.9999 18.7026 29.3677 17.0747 28.2425 15.8745C27.1173 14.6743 25.5912 14 23.9999 14C22.4086 14 20.8825 14.6743 19.7572 15.8745C18.632 17.0747 17.9999 18.7026 17.9999 20.4C17.9999 27.8667 14.9999 30 14.9999 30H32.9999C32.9999 30 29.9999 27.8667 29.9999 20.4Z'
                   stroke='#1F2937'
-                  stroke-width='1.5'
-                  stroke-linecap='round'
-                  stroke-linejoin='round'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                 />
                 <path
                   d='M25.7299 33C25.5541 33.3031 25.3017 33.5547 24.9981 33.7295C24.6945 33.9044 24.3503 33.9965 23.9999 33.9965C23.6495 33.9965 23.3053 33.9044 23.0017 33.7295C22.6981 33.5547 22.4457 33.3031 22.2699 33'
                   stroke='#1F2937'
-                  stroke-width='1.5'
-                  stroke-linecap='round'
-                  stroke-linejoin='round'
+                  strokeWidth='1.5'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                 />
               </svg>
             </Link>
@@ -176,10 +179,22 @@ export default function Navbar() {
             {/* Profile */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className='relative w-12 h-12'>
-                  <AvatarImage src='/profile.png' />
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
+                {!profile?.data?.image ? (
+                  <Skeleton className='h-12 w-12 rounded-full' />
+                ) : (
+                  <Avatar
+                    title={profile?.data?.name}
+                    className='relative w-12 h-12'
+                  >
+                    <AvatarImage src={`${profile?.data?.image}`} />
+                    <AvatarFallback>
+                      {profile?.data?.name
+                        ?.split(" ")
+                        .map((n: string) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className='z-[999] w-40 border-none'

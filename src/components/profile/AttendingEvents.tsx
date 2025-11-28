@@ -3,9 +3,10 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useGetAttendingEventQuery } from "@/redux/features/profile/profileAPI";
-import { MapPin, Star } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
+import { useEffect, useRef, useState } from "react";
 
 export interface IEvent {
   _id: string;
@@ -56,12 +57,57 @@ export interface IEvent {
 }
 
 const AttendingEvents = () => {
-  const { data: attendingEvents, isLoading } =
-    useGetAttendingEventQuery(undefined);
+  const [page, setPage] = useState(1);
+  const [allAttending, setAllAttending] = useState<IEvent[]>([]);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+  const limit = 3;
 
+  const {
+    data: attendingEvents,
+    isLoading,
+    isFetching,
+  } = useGetAttendingEventQuery(
+    {
+      page,
+      limit,
+    },
+
+    {
+      refetchOnMountOrArgChange: false,
+    }
+  );
   const attending = attendingEvents?.data;
 
-  if (isLoading) {
+  useEffect(() => {
+    if (attending && attending?.length > 0) {
+      setAllAttending((prev) => [...prev, ...attending]);
+    }
+  }, [attending]);
+
+  useEffect(() => {
+    if (isFetching) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && attending?.length > 0) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      {
+        root: null,
+        rootMargin: "0px",
+        threshold: 0,
+      }
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [isFetching, attending]);
+
+  if (isLoading && page === 1) {
     return (
       <div className='space-y-8'>
         {[1, 2, 3].map((i) => (
@@ -82,7 +128,7 @@ const AttendingEvents = () => {
   return (
     <div>
       <div className='space-y-8'>
-        {attending?.map((event: IEvent) => (
+        {allAttending?.map((event: IEvent) => (
           <Card key={event._id} className='overflow-hidden py-0'>
             <div className='relative h-48'>
               <Image
@@ -109,6 +155,8 @@ const AttendingEvents = () => {
           </Card>
         ))}
       </div>
+
+      <div ref={loaderRef} className='h-10'></div>
     </div>
   );
 };

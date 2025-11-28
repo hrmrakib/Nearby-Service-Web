@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "../ui/card";
 import { MapPin } from "lucide-react";
 import Image from "next/image";
@@ -7,60 +8,101 @@ import { useGetMyPostQuery } from "@/redux/features/profile/profileAPI";
 
 export interface IPost {
   _id: string;
+  author: string;
   image: string | null;
+  media: string | null;
   title: string;
   description: string;
+  startDate: string;
+  startTime: string | null;
   address: string;
+  location: { type: string; coordinates: [number, number] };
+  hasTag: string[];
+  views: number;
+  likes: number;
+  endDate: string | null;
+  price: string | null;
+  category: string;
+  subcategory: string | null;
+  serviceType: string | null;
+  missingName: string | null;
+  missingAge: string | null;
+  clothingDescription: string | null;
+  lastSeenLocation: { type: string; coordinates: [number, number] };
+  lastSeenDate: string | null;
+  contactInfo: string | null;
+  expireLimit: string | null;
+  capacity: number | null;
+  amenities: string | null;
+  licenses: string | null;
+  status: string;
+  boost: boolean;
+  attenders: any[];
+  isSaved: boolean;
+  totalSaved: number;
+  schedule: any[];
+  createdAt: string;
+  updatedAt: string;
 }
-
-const LIMIT = 2;
 
 const MyPost = () => {
   const [page, setPage] = useState(1);
   const [allPosts, setAllPosts] = useState<IPost[]>([]);
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+  const limit = 4;
 
   const { data, isLoading, isFetching } = useGetMyPostQuery(
-    { page, limit: LIMIT },
+    { page, limit },
     { refetchOnMountOrArgChange: false }
   );
 
-  const hasMore = data?.data?.length === LIMIT;
-
-  // Append new posts
   useEffect(() => {
-    if (data?.data) {
+    if (data?.data && data.data.length > 0) {
       setAllPosts((prev) => {
-        const ids = new Set(prev.map((p) => p._id));
-        const newPosts = data.data.filter((post: IPost) => !ids.has(post._id));
-        return [...prev, ...newPosts];
+        const newItems = data.data.filter(
+          (post: IPost) => !prev.some((p) => p._id === post._id)
+        );
+        return [...prev, ...newItems];
       });
     }
   }, [data]);
 
-  // Callback to observe last element
-  const lastPostRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (isFetching) return;
+  // 🔥 Smoothest Infinity Scroll — IntersectionObserver
+  useEffect(() => {
+    if (isFetching) return;
 
-      if (observerRef.current) observerRef.current.disconnect();
-
-      observerRef.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasMore && !isFetching) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && data?.data?.length > 0) {
           setPage((prev) => prev + 1);
         }
-      });
+      },
+      {
+        root: null,
+        rootMargin: "20px", // preload early
+        threshold: 0.1,
+      }
+    );
 
-      if (node) observerRef.current.observe(node);
-    },
-    [hasMore, isFetching]
-  );
+    if (loaderRef.current) observer.observe(loaderRef.current);
 
+    return () => observer.disconnect();
+  }, [isFetching, data?.data]);
+
+  // First load skeleton
   if (isLoading && page === 1) {
     return (
       <div className='space-y-8'>
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className='h-48 w-full' />
+          <Card key={i} className='overflow-hidden'>
+            <Skeleton className='h-48 w-full' />
+            <CardContent className='p-4 space-y-3'>
+              <Skeleton className='h-6 w-2/3' />
+              <Skeleton className='h-4 w-1/3' />
+              <Skeleton className='h-4 w-full' />
+              <Skeleton className='h-4 w-5/6' />
+            </CardContent>
+          </Card>
         ))}
       </div>
     );
@@ -68,15 +110,9 @@ const MyPost = () => {
 
   return (
     <div className='space-y-8'>
-      {allPosts.map((post, index) => {
-        const isLast = index === allPosts.length - 1;
-
-        return (
-          <Card
-            key={post._id}
-            ref={isLast ? lastPostRef : null}
-            className='overflow-hidden py-0'
-          >
+      {allPosts.map((post) => (
+        <div key={post._id}>
+          <Card className='overflow-hidden py-0'>
             <div className='relative h-48'>
               <Image
                 src={post.image || "/placeholder.svg"}
@@ -86,26 +122,43 @@ const MyPost = () => {
               />
             </div>
             <CardContent className='p-4'>
-              <h3 className='font-semibold text-xl'>{post.title}</h3>
-              <div className='flex items-center gap-4 mb-3 text-sm'>
-                <MapPin className='w-4 h-4 text-green-600' />
+              <div className='flex items-start justify-between mb-2'>
+                <h3 className='font-semibold text-[#1F2937] text-2xl'>
+                  {post.title}
+                </h3>
+              </div>
+              <div className='flex items-center gap-4 mb-3 text-sm text-[#4B5563]'>
+                <MapPin className='w-4 h-4 text-[#15B826]' />
                 <span>{post.address}</span>
               </div>
-              <p className='text-sm text-gray-600 leading-relaxed'>
+
+              <p className='text-sm text-[#4B5563] leading-relaxed'>
                 {post.description}
               </p>
             </CardContent>
           </Card>
-        );
-      })}
+        </div>
+      ))}
 
+      {/* Loader when fetching next pages */}
       {isFetching && (
-        <div className='space-y-6'>
+        <div className='space-y-8 mt-6'>
           {[1, 2].map((i) => (
-            <Skeleton key={i} className='h-48 w-full' />
+            <Card key={i} className='overflow-hidden'>
+              <Skeleton className='h-48 w-full' />
+              <CardContent className='p-4 space-y-3'>
+                <Skeleton className='h-6 w-2/3' />
+                <Skeleton className='h-4 w-1/3' />
+                <Skeleton className='h-4 w-full' />
+                <Skeleton className='h-4 w-5/6' />
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
+
+      {/* 🔥 Invisible Trigger for Smooth Infinite Scroll */}
+      <div ref={loaderRef} className='h-10'></div>
     </div>
   );
 };
@@ -113,8 +166,7 @@ const MyPost = () => {
 export default MyPost;
 
 // /* eslint-disable @typescript-eslint/no-explicit-any */
-
-// import React, { useEffect, useRef, useState } from "react";
+// import React, { useCallback, useEffect, useState } from "react";
 // import { Card, CardContent } from "../ui/card";
 // import { MapPin } from "lucide-react";
 // import Image from "next/image";
@@ -131,10 +183,7 @@ export default MyPost;
 //   startDate: string;
 //   startTime: string | null;
 //   address: string;
-//   location: {
-//     type: string;
-//     coordinates: [number, number];
-//   };
+//   location: { type: string; coordinates: [number, number] };
 //   hasTag: string[];
 //   views: number;
 //   likes: number;
@@ -146,10 +195,7 @@ export default MyPost;
 //   missingName: string | null;
 //   missingAge: string | null;
 //   clothingDescription: string | null;
-//   lastSeenLocation: {
-//     type: string;
-//     coordinates: [number, number];
-//   };
+//   lastSeenLocation: { type: string; coordinates: [number, number] };
 //   lastSeenDate: string | null;
 //   contactInfo: string | null;
 //   expireLimit: string | null;
@@ -170,42 +216,38 @@ export default MyPost;
 //   const [page, setPage] = useState(1);
 //   const [allPosts, setAllPosts] = useState<IPost[]>([]);
 //   const limit = 2;
+
+//   console.log("posts", allPosts.length);
+//   console.log("page", page);
+
 //   const { data, isLoading, isFetching } = useGetMyPostQuery(
 //     { page, limit },
 //     { refetchOnMountOrArgChange: false }
 //   );
 
-//   const lastPostRef = useRef(null);
-//   const hasMore = data?.data?.length > 0;
-
-//   // Append new posts whenever page changes
 //   useEffect(() => {
-//     if (data?.data) {
+//     if (data?.data && data.data.length > 0) {
 //       setAllPosts((prev) => [...prev, ...data.data]);
 //     }
 //   }, [data]);
 
-//   // Intersection Observer
+//   // Best Approach Infinity Scrolling
+//   const handleScroll = useCallback(() => {
+//     const reachedBottom =
+//       window.innerHeight + window.scrollY >=
+//       document.documentElement.scrollHeight - 300;
+
+//     if (reachedBottom && !isFetching && data?.data?.length > 0) {
+//       setPage((prev) => prev + 1);
+//     }
+//   }, [isFetching, data?.data]);
+
 //   useEffect(() => {
-//     if (!hasMore) return;
+//     window.addEventListener("scroll", handleScroll);
+//     return () => window.removeEventListener("scroll", handleScroll);
+//   }, [handleScroll]);
 
-//     const observer = new IntersectionObserver(
-//       (entries) => {
-//         if (entries[0].isIntersecting && !isFetching) {
-//           setPage((p) => p + 1);
-//         }
-//       },
-//       { threshold: 1 }
-//     );
-
-//     const ref = lastPostRef.current;
-//     if (ref) observer.observe(ref);
-
-//     return () => {
-//       if (ref) observer.unobserve(ref);
-//     };
-//   }, [isFetching, hasMore]);
-
+//   // First load skeleton
 //   if (isLoading && page === 1) {
 //     return (
 //       <div className='space-y-8'>
@@ -226,42 +268,39 @@ export default MyPost;
 
 //   return (
 //     <div className='space-y-8'>
-//       {allPosts.map((post, index) => {
-//         const isLast = index === allPosts.length - 1;
+//       {allPosts.map((post) => {
 //         return (
-//           <Card
-//             key={post._id}
-//             ref={isLast ? lastPostRef : null}
-//             className='overflow-hidden py-0'
-//           >
-//             <div className='relative h-48'>
-//               <Image
-//                 src={post.image || "/placeholder.svg"}
-//                 alt={post.title}
-//                 fill
-//                 className='object-cover'
-//               />
-//             </div>
-//             <CardContent className='p-4'>
-//               <div className='flex items-start justify-between mb-2'>
-//                 <h3 className='font-semibold text-[#1F2937] text-2xl'>
-//                   {post.title}
-//                 </h3>
+//           <div key={post._id}>
+//             <Card className='overflow-hidden py-0'>
+//               <div className='relative h-48'>
+//                 <Image
+//                   src={post.image || "/placeholder.svg"}
+//                   alt={post.title}
+//                   fill
+//                   className='object-cover'
+//                 />
 //               </div>
-//               <div className='flex items-center gap-4 mb-3 text-sm text-[#4B5563]'>
-//                 <MapPin className='w-4 h-4 text-[#15B826]' />
-//                 <span>{post.address}</span>
-//               </div>
+//               <CardContent className='p-4'>
+//                 <div className='flex items-start justify-between mb-2'>
+//                   <h3 className='font-semibold text-[#1F2937] text-2xl'>
+//                     {post.title}
+//                   </h3>
+//                 </div>
+//                 <div className='flex items-center gap-4 mb-3 text-sm text-[#4B5563]'>
+//                   <MapPin className='w-4 h-4 text-[#15B826]' />
+//                   <span>{post.address}</span>
+//                 </div>
 
-//               <p className='text-sm text-[#4B5563] leading-relaxed'>
-//                 {post.description}
-//               </p>
-//             </CardContent>
-//           </Card>
+//                 <p className='text-sm text-[#4B5563] leading-relaxed'>
+//                   {post.description}
+//                 </p>
+//               </CardContent>
+//             </Card>
+//           </div>
 //         );
 //       })}
 
-//       {/* Loader for next pages */}
+//       {/* Loader when fetching next pages */}
 //       {isFetching && (
 //         <div className='space-y-8 mt-6'>
 //           {[1, 2].map((i) => (

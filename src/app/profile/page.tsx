@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,10 +12,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CloudUpload, MapPin, Star } from "lucide-react";
+import { CloudUpload, MapPin } from "lucide-react";
 import Image from "next/image";
 import {
-  useGetAttendingEventQuery,
+  useGetFollowersQuery,
+  useGetFollowingQuery,
+  useGetMyPostQuery,
   useGetProfileQuery,
   useUpdateProfileMutation,
 } from "@/redux/features/profile/profileAPI";
@@ -25,78 +26,36 @@ import AttendingEvents from "@/components/profile/AttendingEvents";
 import SavedPost from "@/components/profile/SavedPost";
 import MyPost from "@/components/profile/MyPost";
 
-interface EventCard {
-  id: string;
-  title: string;
-  image: string;
-  distance: string;
-  rating: number;
-  description: string;
+export interface IFollow {
+  _id: string;
+  followed: string;
+  follower: {
+    name: string;
+    image: string;
+  };
+  isFollower: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface User {
-  id: string;
-  name: string;
-  avatar: string;
+export interface IFollowing {
+  _id: string;
+  followed:
+    | string
+    | {
+        name: string;
+        image: string;
+      };
+  follower:
+    | string
+    | {
+        name: string;
+        image: string;
+      };
+  isFollower: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
-
-const eventCards: EventCard[] = [
-  {
-    id: "1",
-    title: "Cozy Coffee Spot",
-    image: "/event/1.jpg",
-    distance: "2.3 miles",
-    rating: 4.9,
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Aliquam nunc tempus sagittis mauris. Tincidunt fermentum mi aenean tempus sagittis mauris. Tincidunt fermentum mi aenean",
-  },
-  {
-    id: "2",
-    title: "Rainbow Bar",
-    image: "/event/2.jpg",
-    distance: "2.3 miles",
-    rating: 4.9,
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Aliquam nunc tempus sagittis mauris. Tincidunt fermentum mi aenean tempus sagittis mauris. Tincidunt fermentum mi aenean",
-  },
-  {
-    id: "3",
-    title: "Live Jazz Night",
-    image: "/event/3.jpg",
-    distance: "2.3 miles",
-    rating: 4.9,
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Aliquam nunc tempus sagittis mauris. Tincidunt fermentum mi aenean tempus sagittis mauris. Tincidunt fermentum mi aenean",
-  },
-];
-
-const followers: User[] = [
-  { id: "1", name: "Theresa Webb", avatar: "/profile.png" },
-  { id: "2", name: "Devon Lane", avatar: "/profile.png" },
-  { id: "3", name: "Robert Fox", avatar: "/profile.png" },
-  { id: "4", name: "Guy Hawkins", avatar: "/profile.png" },
-  { id: "5", name: "Floyd Miles", avatar: "/profile.png" },
-  { id: "6", name: "Jenny Wilson", avatar: "/profile.png" },
-  { id: "7", name: "Jacob Jones", avatar: "/profile.png" },
-  { id: "8", name: "Arlene McCoy", avatar: "/profile.png" },
-  { id: "9", name: "Ralph Edwards", avatar: "/profile.jpg" },
-  { id: "10", name: "Esther Howard", avatar: "/profile.jpg" },
-  { id: "11", name: "Floyd Miles", avatar: "/profile.png" },
-];
-
-const following: User[] = [
-  { id: "1", name: "Theresa Webb", avatar: "/profile.png" },
-  { id: "2", name: "Devon Lane", avatar: "/profile.png" },
-  { id: "3", name: "Robert Fox", avatar: "/profile.png" },
-  { id: "4", name: "Guy Hawkins", avatar: "/profile.png" },
-  { id: "5", name: "Floyd Miles", avatar: "/profile.png" },
-  { id: "6", name: "Jenny Wilson", avatar: "/profile.png" },
-  { id: "7", name: "Jacob Jones", avatar: "/profile.png" },
-  { id: "8", name: "Arlene McCoy", avatar: "/profile.png" },
-  { id: "9", name: "Ralph Edwards", avatar: "/profile.jpg" },
-  { id: "10", name: "Esther Howard", avatar: "/profile.jpg" },
-  { id: "11", name: "Floyd Miles", avatar: "/profile.png" },
-];
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"post" | "attending" | "saved">(
@@ -116,6 +75,22 @@ export default function ProfilePage() {
   });
   const { data: userProfile, refetch } = useGetProfileQuery(undefined);
   const [updateProfileMutation] = useUpdateProfileMutation();
+  const { data: myPost } = useGetMyPostQuery({});
+
+  const { data: followersData } = useGetFollowersQuery({});
+  const { data: followingData } = useGetFollowingQuery({});
+
+  console.log({ followingData });
+
+  // ? followers
+  const followers = followersData?.data;
+  const followersCount = followersData?.meta?.total;
+
+  // ? following
+  const following = followingData?.data;
+  const followingCount = followingData?.meta?.total;
+
+  console.log({ following });
 
   const profile = userProfile?.data;
 
@@ -343,7 +318,7 @@ export default function ProfilePage() {
           <div className='flex justify-between gap-5'>
             <div className='flex-1 text-center bg-white hover:bg-gray-50 rounded-lg p-2 transition-colors'>
               <div className='text-2xl lg:text-[30px] font-bold text-[#1F2937]'>
-                {profile?.post || 0}
+                {myPost?.meta?.total || 0}
               </div>
               <div className='text-base text-[#4B5563]'>Posts</div>
             </div>
@@ -352,7 +327,7 @@ export default function ProfilePage() {
               className='flex-1 text-center bg-white hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer'
             >
               <div className='text-2xl font-bold text-[#1F2937]'>
-                {profile?.follower || 0}
+                {followersCount || 0}
               </div>
               <div className='text-base text-[#4B5563]'>Followers</div>
             </button>
@@ -361,7 +336,7 @@ export default function ProfilePage() {
               className='flex-1 text-center bg-white hover:bg-gray-50 rounded-lg p-2 transition-colors cursor-pointer'
             >
               <div className='text-2xl font-bold text-[#1F2937]'>
-                {profile?.following || 0}
+                {followingCount || 0}
               </div>
               <div className='text-base text-[#4B5563]'>Following</div>
             </button>
@@ -430,7 +405,7 @@ export default function ProfilePage() {
             <DialogHeader className='p-4 pb-2 border-b'>
               <div className='flex items-center justify-between'>
                 <DialogTitle className='text-lg font-semibold'>
-                  Followers (120)
+                  Followers ({followersCount})
                 </DialogTitle>
                 <button
                   onClick={() => setShowFollowersModal(false)}
@@ -442,17 +417,17 @@ export default function ProfilePage() {
             </DialogHeader>
             <div className='overflow-y-auto max-h-96 p-4'>
               <div className='space-y-3'>
-                {followers.map((user) => (
-                  <div key={user.id} className='flex items-center gap-3'>
+                {followers?.map((user: IFollow) => (
+                  <div key={user._id} className='flex items-center gap-3'>
                     <Avatar className='w-10 h-10'>
                       <AvatarImage
-                        src={user.avatar || "/placeholder.svg"}
-                        alt={user.name}
+                        src={user?.follower?.image}
+                        alt={user?.follower?.name}
                       />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{user?.follower?.name}</AvatarFallback>
                     </Avatar>
                     <span className='font-medium text-[#1F2937]'>
-                      {user.name}
+                      {user?.follower?.name}
                     </span>
                   </div>
                 ))}
@@ -467,7 +442,7 @@ export default function ProfilePage() {
             <DialogHeader className='p-4 pb-2 border-b'>
               <div className='flex items-center justify-between'>
                 <DialogTitle className='text-lg font-semibold'>
-                  Following (325)
+                  Following ({followingCount})
                 </DialogTitle>
                 <button
                   onClick={() => setShowFollowingModal(false)}
@@ -479,17 +454,17 @@ export default function ProfilePage() {
             </DialogHeader>
             <div className='overflow-y-auto max-h-96 p-4'>
               <div className='space-y-3'>
-                {following.map((user) => (
-                  <div key={user.id} className='flex items-center gap-3'>
+                {following?.map((user: IFollowing) => (
+                  <div key={user._id} className='flex items-center gap-3'>
                     <Avatar className='w-10 h-10'>
                       <AvatarImage
-                        src={user.avatar || "/placeholder.svg"}
-                        alt={user.name}
+                        src={user?.follower?.image}
+                        alt={user?.follower?.name}
                       />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{user?.followed?.name}</AvatarFallback>
                     </Avatar>
                     <span className='font-medium text-[#1F2937]'>
-                      {user.name}
+                      {user?.follower?.name}
                     </span>
                   </div>
                 ))}

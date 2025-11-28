@@ -16,5 +16,5 @@ export async function middleware(request: Request) {
 
 // Define which paths the middleware applies to
 export const config = {
-  matcher: ["/dashboard/:path*", "/sh/:page"],
+  matcher: ["/dashboard/:path*", "/sh/:page", "/profile"],
 };

@@ -179,7 +179,7 @@ export default function CreatePostModal({
             </Button>
           </div>
         </div>
-      </DialogContent>
+      </DialogContent> 
     </Dialog>
   );
 }

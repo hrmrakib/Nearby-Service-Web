@@ -136,8 +136,6 @@ export default function DashboardLayout() {
 
   const posts = allPosts?.data || [];
 
-  console.log("app", minPrice[0], maxPrice[0], distanceRadius[0]);
-
   const handleStarToggle = (stars: number) => {
     setSelectedStars((prev) =>
       prev.includes(stars) ? prev.filter((s) => s !== stars) : [...prev, stars]

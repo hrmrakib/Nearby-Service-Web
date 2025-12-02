@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -111,6 +110,7 @@ const contacts = [
 export default function DashboardLayout() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [distanceRadius, setDistanceRadius] = useState([50]);
+  const [minPrice, setMinPrice] = useState([150]);
   const [maxPrice, setMaxPrice] = useState([150]);
   const [selectedStars, setSelectedStars] = useState<number[]>([]);
   const [dateRange, setDateRange] = useState<{
@@ -128,7 +128,7 @@ export default function DashboardLayout() {
     // lat: 0,
     // lng: 0,
     // maxDistance: distanceRadius[0],
-    // minPrice: 0,
+    // minPrice: minPrice[0],
     // maxPrice: maxPrice[0],
     // date: "",
     search,
@@ -136,7 +136,7 @@ export default function DashboardLayout() {
 
   const posts = allPosts?.data || [];
 
-  console.log(posts);
+  console.log("app", minPrice[0], maxPrice[0], distanceRadius[0]);
 
   const handleStarToggle = (stars: number) => {
     setSelectedStars((prev) =>
@@ -173,10 +173,7 @@ export default function DashboardLayout() {
       >
         {/* Left Column - Filters */}
         <div className='sticky top-20 w-80 bg-transparent hidden lg:block h-[calc(100vh-80px)] overflow-y-auto'>
-          <ScrollArea
-            // className='h-full'
-            className='h-[calc(100vh-100px)]'
-          >
+          <ScrollArea className='h-[calc(100vh-100px)]'>
             <div className='p-6 space-y-6'>
               {/* Category Buttons */}
               <div className='space-y-2'>
@@ -268,19 +265,39 @@ export default function DashboardLayout() {
                 {/* Distance Radius */}
                 <div className='space-y-3'>
                   <Label className='text-sm font-medium text-gray-700'>
-                    Distance Radius
+                    Distance Radius (Max: 1500 miles)
                   </Label>
                   <div className='px-2'>
                     <Slider
                       value={distanceRadius}
                       onValueChange={setDistanceRadius}
-                      max={100}
+                      max={1500}
                       step={5}
                       className='w-full'
                     />
                     <div className='flex justify-between text-xs text-gray-500 mt-1'>
                       <span>0 miles</span>
                       <span>{distanceRadius[0]} miles</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Min Price */}
+                <div className='space-y-3'>
+                  <Label className='text-sm font-medium text-gray-700'>
+                    Min Price
+                  </Label>
+                  <div className='px-2'>
+                    <Slider
+                      value={minPrice}
+                      onValueChange={setMinPrice}
+                      max={500}
+                      step={10}
+                      className='w-full'
+                    />
+                    <div className='flex justify-between text-xs text-gray-500 mt-1'>
+                      <span>$0</span>
+                      <span>${minPrice[0]}</span>
                     </div>
                   </div>
                 </div>
@@ -306,7 +323,7 @@ export default function DashboardLayout() {
                 </div>
 
                 {/* Min Star Rating */}
-                <div className='space-y-3'>
+                {/* <div className='space-y-3'>
                   <Label className='text-sm font-medium text-gray-700'>
                     Min. Star Rating
                   </Label>
@@ -340,23 +357,21 @@ export default function DashboardLayout() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </ScrollArea>
         </div>
 
         {/* Middle Column - Content Feed */}
-        <div
-          // className='flex-1 bg-transparent'
-          className='min-w-0 min-h-0'
-        >
+        <div className='min-w-0 min-h-0'>
           <ScrollArea className='h-auto'>
             {isFetching && (
               <div className='p-6 flex items-center justify-center mb-4'>
                 <Loader className='animate-spin' />
               </div>
             )}
+
             <div className='p-6 space-y-6'>
               {posts?.map((item: EventItem) => (
                 <Card
@@ -421,10 +436,7 @@ export default function DashboardLayout() {
 
         {/* Right Column - Map & Contacts */}
         <div className='sticky top-20 w-80 bg-transparent hidden xl:block h-[calc(100vh-80px)] overflow-y-auto'>
-          <ScrollArea
-            // className='h-full'
-            className='h-[calc(100vh-100px)]'
-          >
+          <ScrollArea className='h-[calc(100vh-100px)]'>
             <div className='p-6 space-y-6'>
               {/* Map Section */}
               <div className='space-y-3'>

@@ -96,6 +96,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     // Handle logout logic here
+    localStorage.removeItem("accessToken");
     router.push("/login");
     setIsDropdownOpen(false);
   };
@@ -302,7 +303,7 @@ export default function Navbar() {
                     title={profile?.data?.name}
                     className='relative w-12 h-12'
                   >
-                    <AvatarImage src={`${profile?.data?.image}`} />
+                    <AvatarImage src={profile?.data?.image || "/avatar.png"} />
                     <AvatarFallback>
                       {profile?.data?.name
                         ?.split(" ")

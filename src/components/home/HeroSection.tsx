@@ -16,7 +16,7 @@ export function HeroSection() {
   return (
     <section className='min-h-[94vh] w-full bg-[#005865] overflow-hidden'>
       {/* Container */}
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-28'>
+      <div className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-28'>
         {/* Grid Layout - Mobile first */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center'>
           {/* Left Content */}

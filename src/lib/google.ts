@@ -1,7 +1,7 @@
 export const autoComplete = async (input: string) => {
   if (!input) return [];
 
-  const apiKey = "AIzaSyDltI2vV-mbS5Qy-gz2lPMTf7RAbR4tZRs";
+  const apiKey = process.env.GOOGLE_API_KEY!;
   const sessionToken = crypto.randomUUID();
 
   const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(

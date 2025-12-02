@@ -41,17 +41,17 @@ export interface IFollow {
 export interface IFollowing {
   _id: string;
   followed:
-    | string
     | {
         name: string;
         image: string;
-      };
+      }
+    | string;
   follower:
-    | string
     | {
         name: string;
         image: string;
-      };
+      }
+    | string;
   isFollower: boolean;
   createdAt: string;
   updatedAt: string;

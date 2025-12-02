@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,10 +21,26 @@ import {
   DialogHeader,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
 import { Skeleton } from "../ui/skeleton";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { setSearchValue } from "@/redux/features/search/globalSearchSlice";
+
+interface Notification {
+  id: number;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -31,6 +48,51 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const { data: profile } = useGetProfileQuery(undefined);
+  const [notifications] = useState<Notification[]>([
+    {
+      id: 1,
+      message: "Lorem ipsum dolor sit amet consectetur.",
+      timestamp: "Just now",
+      isRead: false,
+    },
+    {
+      id: 2,
+      message: "Lorem ipsum dolor sit amet consectetur.",
+      timestamp: "Just now",
+      isRead: false,
+    },
+    {
+      id: 3,
+      message: "Lorem ipsum dolor sit amet consectetur.",
+      timestamp: "Just now",
+      isRead: false,
+    },
+    {
+      id: 4,
+      message: "Lorem ipsum dolor sit amet consectetur.",
+      timestamp: "Just now",
+      isRead: false,
+    },
+    {
+      id: 5,
+      message: "Lorem ipsum dolor sit amet consectetur.",
+      timestamp: "Just now",
+      isRead: false,
+    },
+    {
+      id: 6,
+      message: "Lorem ipsum dolor sit amet consectetur.",
+      timestamp: "Just now",
+      isRead: false,
+    },
+    {
+      id: 7,
+      message: "Lorem ipsum dolor sit amet consectetur.",
+      timestamp: "Just now",
+      isRead: false,
+    },
+  ]);
+  const dispatch = useDispatch();
 
   const handleLogout = () => {
     // Handle logout logic here
@@ -71,6 +133,7 @@ export default function Navbar() {
               <Search className='absolute left-3 w-4 h-4 text-muted-foreground' />
               <Input
                 placeholder='Search nearby...'
+                onChange={(e) => dispatch(setSearchValue(e.target.value))}
                 className='pl-10 w-64 bg-[#E5E7EB] border-0'
               />
             </div>
@@ -144,37 +207,90 @@ export default function Navbar() {
             </Link>
 
             {/* Notifications */}
-            <Link href='/notifications'>
-              <svg
-                width='48'
-                height='48'
-                viewBox='0 0 48 48'
-                fill='none'
-                xmlns='http://www.w3.org/2000/svg'
+            <Popover>
+              <PopoverTrigger asChild>
+                <button>
+                  <svg
+                    width='48'
+                    height='48'
+                    viewBox='0 0 48 48'
+                    fill='none'
+                    xmlns='http://www.w3.org/2000/svg'
+                  >
+                    <rect
+                      x='-0.00012207'
+                      width='48'
+                      height='48'
+                      rx='24'
+                      fill='#E5E7EB'
+                    />
+                    <path
+                      d='M29.9999 20.4C29.9999 18.7026 29.3677 17.0747 28.2425 15.8745C27.1173 14.6743 25.5912 14 23.9999 14C22.4086 14 20.8825 14.6743 19.7572 15.8745C18.632 17.0747 17.9999 18.7026 17.9999 20.4C17.9999 27.8667 14.9999 30 14.9999 30H32.9999C32.9999 30 29.9999 27.8667 29.9999 20.4Z'
+                      stroke='#1F2937'
+                      strokeWidth='1.5'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                    <path
+                      d='M25.7299 33C25.5541 33.3031 25.3017 33.5547 24.9981 33.7295C24.6945 33.9044 24.3503 33.9965 23.9999 33.9965C23.6495 33.9965 23.3053 33.9044 23.0017 33.7295C22.6981 33.5547 22.4457 33.3031 22.2699 33'
+                      stroke='#1F2937'
+                      strokeWidth='1.5'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                  </svg>
+                </button>
+              </PopoverTrigger>
+
+              <PopoverContent
+                align='center'
+                sideOffset={10}
+                alignOffset={300}
+                className='max-w-2xl max-h-[400px] overflow-y-auto'
               >
-                <rect
-                  x='-0.00012207'
-                  width='48'
-                  height='48'
-                  rx='24'
-                  fill='#E5E7EB'
-                />
-                <path
-                  d='M29.9999 20.4C29.9999 18.7026 29.3677 17.0747 28.2425 15.8745C27.1173 14.6743 25.5912 14 23.9999 14C22.4086 14 20.8825 14.6743 19.7572 15.8745C18.632 17.0747 17.9999 18.7026 17.9999 20.4C17.9999 27.8667 14.9999 30 14.9999 30H32.9999C32.9999 30 29.9999 27.8667 29.9999 20.4Z'
-                  stroke='#1F2937'
-                  strokeWidth='1.5'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-                <path
-                  d='M25.7299 33C25.5541 33.3031 25.3017 33.5547 24.9981 33.7295C24.6945 33.9044 24.3503 33.9965 23.9999 33.9965C23.6495 33.9965 23.3053 33.9044 23.0017 33.7295C22.6981 33.5547 22.4457 33.3031 22.2699 33'
-                  stroke='#1F2937'
-                  strokeWidth='1.5'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                />
-              </svg>
-            </Link>
+                <div className='h-auto bg-gradient-to-br from-gray-50 to-gray-100'>
+                  <div className='max-w-2xl mx-auto px-4 py-6 sm:py-8'>
+                    <div className='px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100'>
+                      <h1 className='text-xl sm:text-2xl font-semibold text-gray-900'>
+                        Notifications
+                      </h1>
+                    </div>
+
+                    <div className='divide-y divide-gray-100'>
+                      {notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className='py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer'
+                        >
+                          <div className='flex items-start gap-3 sm:gap-4'>
+                            <div className='flex-shrink-0 mt-1'>
+                              <div className='w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-md p-1'>
+                                <Bell className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
+                              </div>
+                            </div>
+
+                            <div className='flex-1 min-w-0'>
+                              <p className='text-sm sm:text-base text-gray-900 leading-relaxed'>
+                                {notification.message}
+                              </p>
+                            </div>
+
+                            <div className='flex-shrink-0 flex items-center gap-2 ml-2'>
+                              <span className='text-xs sm:text-sm text-gray-500 whitespace-nowrap'>
+                                {notification.timestamp}
+                              </span>
+                              {!notification.isRead && (
+                                <div className='w-2 h-2 bg-green-500 rounded-full flex-shrink-0' />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {/* Profile */}
             <DropdownMenu>
@@ -191,7 +307,7 @@ export default function Navbar() {
                       {profile?.data?.name
                         ?.split(" ")
                         .map((n: string) => n[0])
-                        .join("")}
+                        .join("") || "N/A"}
                     </AvatarFallback>
                   </Avatar>
                 )}

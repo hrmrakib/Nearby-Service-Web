@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -22,95 +23,26 @@ import {
   Heart,
   MessageCircle,
   Phone,
+  Loader,
 } from "lucide-react";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import Image from "next/image";
 import { HeroSection } from "@/components/home/HeroSection";
+import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
+import { EventItem } from "@/types/post";
+import { useSelector } from "react-redux";
 
 const categories = [
   { id: "all", label: "All", icon: "🌟" },
-  { id: "events", label: "Events", icon: "📅" },
-  { id: "deals", label: "Deals", icon: "🏷️" },
-  { id: "services", label: "Services", icon: "🔧" },
-  { id: "alerts", label: "Alerts", icon: "⚠️" },
+  { id: "event", label: "Events", icon: "📅" },
+  { id: "deal", label: "Deals", icon: "🏷️" },
+  { id: "service", label: "Services", icon: "🔧" },
+  { id: "alert", label: "Alerts", icon: "⚠️" },
   { id: "nearby", label: "Nearby", icon: "📍" },
-  { id: "videos", label: "Videos", icon: "📹" },
+  { id: "video", label: "Videos", icon: "📹" },
   { id: "saved", label: "Saved", icon: "❤️" },
   { id: "following", label: "Following", icon: "👥" },
   { id: "attending", label: "Attending", icon: "🎉" },
-];
-
-const contentItems = [
-  {
-    id: 1,
-    title: "Cozy Coffee Spot",
-    image: "/product/1.jpg",
-    rating: 4.9,
-    distance: "2.3 miles",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
-    type: "deal",
-  },
-  {
-    id: 2,
-    title: "Live Jazz Night",
-    image: "/product/2.jpg",
-    rating: 4.9,
-    distance: "2.3 miles",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
-    type: "event",
-  },
-  {
-    id: 3,
-    title: "Live Jazz Night",
-    image: "/product/1.jpg",
-    rating: 4.9,
-    distance: "2.3 miles",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
-    type: "event",
-  },
-  {
-    id: 4,
-    title: "Live Jazz Night",
-    image: "/product/2.jpg",
-    rating: 4.9,
-    distance: "2.3 miles",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
-    type: "event",
-  },
-  {
-    id: 5,
-    title: "Live Jazz Night",
-    image: "/product/1.jpg",
-    rating: 4.9,
-    distance: "2.3 miles",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
-    type: "event",
-  },
-  {
-    id: 6,
-    title: "Live Jazz Night",
-    image: "/product/2.jpg",
-    rating: 4.9,
-    distance: "2.3 miles",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
-    type: "event",
-  },
-  {
-    id: 7,
-    title: "Live Jazz Night",
-    image: "/product/1.jpg",
-    rating: 4.9,
-    distance: "2.3 miles",
-    description:
-      "Lorem ipsum dolor sit amet consectetur. Cursus dictum cursus massa justo massa sed nibh sagittis nunc. Amet aliquet ac sit etiam elementum tempus commodo ornare ac.",
-    type: "event",
-  },
 ];
 
 const contacts = [
@@ -177,7 +109,7 @@ const contacts = [
 ];
 
 export default function DashboardLayout() {
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [distanceRadius, setDistanceRadius] = useState([50]);
   const [maxPrice, setMaxPrice] = useState([150]);
   const [selectedStars, setSelectedStars] = useState<number[]>([]);
@@ -189,6 +121,22 @@ export default function DashboardLayout() {
     endDate: new Date(2025, 8, 15), // September 15, 2025
   });
   const [showCalendar, setShowCalendar] = useState(false);
+  const search = useSelector((state: any) => state.globalSearch.searchValue);
+  const { data: allPosts, isFetching } = useGetAllPostQuery({
+    category: selectedCategory,
+    // subcategory: selectedCategory,
+    // lat: 0,
+    // lng: 0,
+    // maxDistance: distanceRadius[0],
+    // minPrice: 0,
+    // maxPrice: maxPrice[0],
+    // date: "",
+    search,
+  });
+
+  const posts = allPosts?.data || [];
+
+  console.log(posts);
 
   const handleStarToggle = (stars: number) => {
     setSelectedStars((prev) =>
@@ -219,10 +167,16 @@ export default function DashboardLayout() {
     <div className='min-h-[calc(100vh-60px)] bg-[#F3F4F6]'>
       <HeroSection />
 
-      <div className='container flex justify-between gap-6 h-full mx-auto mt-8'>
+      <div
+        // className='container mx-auto flex justify-between gap-6 h-full mt-8'
+        className='container mx-auto grid grid-cols-1 lg:grid-cols-[20rem_1fr] xl:grid-cols-[20rem_1fr_20rem] gap-6 mt-8'
+      >
         {/* Left Column - Filters */}
         <div className='sticky top-20 w-80 bg-transparent hidden lg:block h-[calc(100vh-80px)] overflow-y-auto'>
-          <ScrollArea className='h-full'>
+          <ScrollArea
+            // className='h-full'
+            className='h-[calc(100vh-100px)]'
+          >
             <div className='p-6 space-y-6'>
               {/* Category Buttons */}
               <div className='space-y-2'>
@@ -393,12 +347,20 @@ export default function DashboardLayout() {
         </div>
 
         {/* Middle Column - Content Feed */}
-        <div className='flex-1 bg-transparent'>
-          <ScrollArea className='h-full'>
+        <div
+          // className='flex-1 bg-transparent'
+          className='min-w-0 min-h-0'
+        >
+          <ScrollArea className='h-auto'>
+            {isFetching && (
+              <div className='p-6 flex items-center justify-center mb-4'>
+                <Loader className='animate-spin' />
+              </div>
+            )}
             <div className='p-6 space-y-6'>
-              {contentItems.map((item) => (
+              {posts?.map((item: EventItem) => (
                 <Card
-                  key={item.id}
+                  key={item._id}
                   className='overflow-hidden !border-none p-0'
                 >
                   <div className='aspect-vide relative'>
@@ -423,14 +385,14 @@ export default function DashboardLayout() {
 
                       <div className='flex items-center space-x-4'>
                         <div className='flex items-center space-x-1'>
-                          {renderStars(Math.floor(item.rating))}
+                          {renderStars(Math.floor(item?.reviewsCount || 0))}
                           <span className='text-sm font-medium text-gray-900 ml-1'>
-                            {item.rating}
+                            {item.averageRating}
                           </span>
                         </div>
                         <div className='flex items-center space-x-1 text-sm text-gray-600'>
                           <MapPin className='w-4 h-4' />
-                          <span>{item.distance}</span>
+                          <span>{item.address}</span>
                         </div>
                       </div>
 
@@ -459,7 +421,10 @@ export default function DashboardLayout() {
 
         {/* Right Column - Map & Contacts */}
         <div className='sticky top-20 w-80 bg-transparent hidden xl:block h-[calc(100vh-80px)] overflow-y-auto'>
-          <ScrollArea className='h-full'>
+          <ScrollArea
+            // className='h-full'
+            className='h-[calc(100vh-100px)]'
+          >
             <div className='p-6 space-y-6'>
               {/* Map Section */}
               <div className='space-y-3'>
@@ -552,6 +517,7 @@ export default function DashboardLayout() {
               onClick={() => setSelectedCategory(category.id)}
             >
               <span className='text-xs'>{category.icon}</span>
+              <span className='text-xs'>{category.label}</span>
             </Button>
           ))}
         </div>

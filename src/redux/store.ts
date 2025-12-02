@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import baseAPI from "./api/api";
+import globalSearchReducer from "./features/search/globalSearchSlice";
 
 export const store = configureStore({
   reducer: {
     [baseAPI.reducerPath]: baseAPI.reducer,
+    globalSearch: globalSearchReducer,
   },
 
   middleware: (getDefaultMiddleware) =>

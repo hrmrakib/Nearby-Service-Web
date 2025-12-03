@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Upload, MapPin, Video } from "lucide-react";
 import Image from "next/image";
 import AutoCompleteLocation from "../location/AutoCompleteLocation";
+import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
+import { toast } from "sonner";
 
 interface PostEventModalProps {
   isOpen: boolean;
@@ -41,6 +43,7 @@ export default function PostEventModal({
   const locationTimeout = useRef<any>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [createEventPostMutation] = useCreateEventPostMutation();
 
   const handleCoverImageUpload = (e: any) => {
     const file = e.target.files?.[0];
@@ -118,39 +121,53 @@ export default function PostEventModal({
       title,
       description,
       startDate: isoStartDate,
-      startTime: time,
+      startTime: isoStartDate,
       address: locationQuery,
       category: "Event",
       location: {
         type: "Point",
         coordinates: [parseFloat(lng), parseFloat(lat)],
       },
+      hasTag: hashtags,
     };
   };
 
   const handlePublish = async () => {
-    const formData = new FormData();
+    try {
+      const formData = new FormData();
 
-    const dataObj = buildPayload();
-    formData.append("data", JSON.stringify(dataObj));
+      const dataObj = buildPayload();
+      console.log(dataObj);
 
-    // COVER IMAGE OR VIDEO
-    if (coverImage) formData.append("coverImage", coverImage);
-    if (coverVideo) formData.append("coverVideo", coverVideo);
+      formData.append("data", JSON.stringify(dataObj));
 
-    // MULTIPLE IMAGES
-    images.forEach((img) => formData.append("images[]", img));
+      if (coverImage) {
+        formData.append("image", coverImage);
+      }
 
-    // MULTIPLE VIDEOS
-    videos.forEach((vid) => formData.append("videos[]", vid));
+      if (coverVideo) {
+        formData.append("media", coverVideo);
+      }
 
-    const res = await fetch("/api/events", {
-      method: "POST",
-      body: formData,
-    });
+      // MULTIPLE IMAGES
+      images.forEach((img) => {
+        formData.append("image", img);
+      });
 
-    const json = await res.json();
-    console.log("Submitted:", json);
+      // MULTIPLE VIDEOS
+      videos.forEach((vid) => {
+        formData.append("media", vid);
+      });
+
+      const res = await createEventPostMutation(formData).unwrap();
+
+      if (res?.success) {
+        toast.success(res?.message);
+        onClose();
+      }
+    } catch (err) {
+      console.error("Upload Failed:", err);
+    }
   };
 
   return (
@@ -352,7 +369,9 @@ export default function PostEventModal({
           <AutoCompleteLocation />
 
           <div className='relative'>
-            <label className='text-sm font-medium mb-2 block'>Location</label>
+            <label className='text-sm font-medium mb-2 block'>
+              Location (Type your full address)
+            </label>
             <div className='relative'>
               <Input
                 placeholder='Search location'

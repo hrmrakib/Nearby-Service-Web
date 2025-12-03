@@ -30,8 +30,46 @@ const postAPI = baseAPI.injectEndpoints({
         };
       },
     }),
+
+    createEventPost: builder.mutation({
+      query: (body) => ({
+        url: "/post/event",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    createDealPost: builder.mutation({
+      query: (body) => ({
+        url: "/post/deal",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    createAlertPost: builder.mutation({
+      query: (body) => ({
+        url: "/post/alert",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    createServicePost: builder.mutation({
+      query: (body) => ({
+        url: "/post/service",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useGetAllPostQuery } = postAPI;
+export const {
+  useGetAllPostQuery,
+  useCreateEventPostMutation,
+  useCreateDealPostMutation,
+  useCreateAlertPostMutation,
+  useCreateServicePostMutation,
+} = postAPI;
 export default postAPI;

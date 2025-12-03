@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Upload, MapPin, Video } from "lucide-react";
+import { Plus, Upload, MapPin, Video, Loader } from "lucide-react";
 import Image from "next/image";
 import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
@@ -43,7 +43,7 @@ export default function PostEventModal({
   const locationTimeout = useRef<any>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [createEventPostMutation] = useCreateEventPostMutation();
+  const [createEventPostMutation, { isLoading }] = useCreateEventPostMutation();
 
   const handleCoverImageUpload = (e: any) => {
     const file = e.target.files?.[0];
@@ -137,8 +137,6 @@ export default function PostEventModal({
       const formData = new FormData();
 
       const dataObj = buildPayload();
-      console.log(dataObj);
-
       formData.append("data", JSON.stringify(dataObj));
 
       if (coverImage) {
@@ -149,12 +147,10 @@ export default function PostEventModal({
         formData.append("media", coverVideo);
       }
 
-      // MULTIPLE IMAGES
       images.forEach((img) => {
-        formData.append("image", img);
+        formData.append("media", img);
       });
 
-      // MULTIPLE VIDEOS
       videos.forEach((vid) => {
         formData.append("media", vid);
       });
@@ -167,6 +163,7 @@ export default function PostEventModal({
       }
     } catch (err) {
       console.error("Upload Failed:", err);
+      toast.error("Upload failed.");
     }
   };
 
@@ -366,7 +363,7 @@ export default function PostEventModal({
             </div>
           </div>
 
-          <AutoCompleteLocation />
+          {/* <AutoCompleteLocation /> */}
 
           <div className='relative'>
             <label className='text-sm font-medium mb-2 block'>
@@ -436,10 +433,13 @@ export default function PostEventModal({
 
           <Button
             type='submit'
+            disabled={
+              !title || !description || !date || !time || !location || isLoading
+            }
             onClick={handlePublish}
             className='w-full bg-[#15B826] hover:bg-green-600 text-white'
           >
-            Publish
+            Publish {isLoading && <Loader className='animate-spin' />}
           </Button>
         </div>
       </DialogContent>

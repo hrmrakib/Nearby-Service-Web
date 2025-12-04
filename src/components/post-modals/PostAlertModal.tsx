@@ -48,6 +48,12 @@ export default function PostEventModal({
   onClose,
   onBack,
 }: PostEventModalProps) {
+  const [coverVideoPreview, setCoverVideoPreview] = useState<string | null>(
+    null
+  );
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
+    null
+  );
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverVideo, setCoverVideo] = useState<File | null>(null);
 
@@ -92,12 +98,14 @@ export default function PostEventModal({
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image")) return;
     setCoverImage(file);
+    setCoverImagePreview(URL.createObjectURL(file));
   };
 
   const handleCoverVideoUpload = (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("video")) return;
     setCoverVideo(file);
+    setCoverVideoPreview(URL.createObjectURL(file));
   };
 
   const handleMoreImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -295,12 +303,12 @@ export default function PostEventModal({
                 htmlFor='cover-image-upload'
                 className='border rounded-lg p-3 flex flex-col items-center cursor-pointer'
               >
-                {coverImage ? (
+                {coverImagePreview ? (
                   <Image
                     alt='Cover'
                     width={300}
                     height={300}
-                    src={URL.createObjectURL(coverImage)}
+                    src={coverImagePreview}
                     className='w-full h-32 object-cover rounded'
                   />
                 ) : (
@@ -316,9 +324,9 @@ export default function PostEventModal({
                 htmlFor='cover-video-upload'
                 className='border rounded-lg p-3 flex flex-col items-center cursor-pointer'
               >
-                {coverVideo ? (
+                {coverVideoPreview ? (
                   <video
-                    src={URL.createObjectURL(coverVideo)}
+                    src={coverVideoPreview}
                     controls
                     className='w-full h-32 rounded'
                   />

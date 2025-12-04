@@ -33,6 +33,12 @@ export default function PostDealModal({
   onClose,
   onBack,
 }: PostEventModalProps) {
+  const [coverVideoPreview, setCoverVideoPreview] = useState<string | null>(
+    null
+  );
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
+    null
+  );
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverVideo, setCoverVideo] = useState<File | null>(null);
 

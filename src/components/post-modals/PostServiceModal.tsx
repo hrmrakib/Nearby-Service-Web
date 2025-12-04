@@ -19,12 +19,26 @@ import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
 import { toast } from "sonner";
 import { Checkbox } from "../ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface PostEventModalProps {
   isOpen: boolean;
   onClose: () => void;
   onBack: () => void;
 }
+
+const alertCategories = [
+  "Food & Beverage",
+  "Entertainment",
+  "Personal/Home Services",
+  "Venues",
+];
 
 export default function PostEventModal({
   isOpen,
@@ -543,6 +557,26 @@ export default function PostEventModal({
                 </span>
               ))}
             </div>
+          </div>
+
+          {/* Category */}
+          <div className='w-full'>
+            <label className='text-sm font-medium mb-2 block'>Category</label>
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
+              <SelectTrigger className='w-full'>
+                <SelectValue placeholder='Choose alert category' />
+              </SelectTrigger>
+              <SelectContent className='w-full'>
+                {alertCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Button

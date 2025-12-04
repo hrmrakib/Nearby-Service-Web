@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CloudUpload, MapPin } from "lucide-react";
+import { CloudUpload, Loader, MapPin } from "lucide-react";
 import Image from "next/image";
 import {
   useGetFollowersQuery,
@@ -66,6 +66,7 @@ export default function ProfilePage() {
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [image, setImage] = useState();
   const [imagePreview, setImagePreview] = useState<string | null>();
+
   const [user, setUser] = useState({
     name: "",
     location: "",
@@ -74,13 +75,11 @@ export default function ProfilePage() {
     paypalAccount: "",
   });
   const { data: userProfile, refetch } = useGetProfileQuery(undefined);
-  const [updateProfileMutation] = useUpdateProfileMutation();
+  const [updateProfileMutation, { isLoading }] = useUpdateProfileMutation();
   const { data: myPost } = useGetMyPostQuery({});
 
   const { data: followersData } = useGetFollowersQuery({});
   const { data: followingData } = useGetFollowingQuery({});
-
-  console.log({ followingData });
 
   // ? followers
   const followers = followersData?.data;
@@ -89,8 +88,6 @@ export default function ProfilePage() {
   // ? following
   const following = followingData?.data;
   const followingCount = followingData?.meta?.total;
-
-  console.log({ following });
 
   const profile = userProfile?.data;
 
@@ -107,6 +104,7 @@ export default function ProfilePage() {
   const handleSaveChanges = async () => {
     try {
       const formData = new FormData();
+
       const data = {
         name: user.name,
         address: user.location,
@@ -115,13 +113,12 @@ export default function ProfilePage() {
       };
 
       formData.append("data", JSON.stringify(data));
+
       if (image) {
-        formData.append("profile_pic", image);
+        formData.append("image", image);
       }
 
       const res = await updateProfileMutation(formData).unwrap();
-
-      console.log(res);
 
       if (res?.success) {
         toast.success(res?.message);
@@ -144,15 +141,13 @@ export default function ProfilePage() {
   };
 
   const handleImageUpload = (event: any) => {
-    const file = event.target.files[0];
+    const file = event.target?.files[0];
 
     if (file) {
       setImage(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
-
-  console.log(image);
 
   if (isEditMode) {
     return (
@@ -246,9 +241,11 @@ export default function ProfilePage() {
               <div className='flex gap-3 mt-10'>
                 <Button
                   onClick={handleSaveChanges}
+                  disabled={isLoading}
                   className='flex-1 h-12 bg-[#15B826] hover:bg-[#0bca1e] text-white rounded-full py-3'
                 >
-                  Save Changes
+                  Save Changes{" "}
+                  {isLoading && <Loader className='animate-spin' />}
                 </Button>
                 <Button
                   onClick={handleCancelEdit}
@@ -275,7 +272,7 @@ export default function ProfilePage() {
             <div className='w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-green-500 p-1'>
               <div className='w-full h-full rounded-full overflow-hidden relative'>
                 <Image
-                  src={profile?.image || "/profile.png"}
+                  src={profile?.image || "/avatar.png"}
                   alt={profile?.name || "Profile Image"}
                   width={88}
                   height={88}

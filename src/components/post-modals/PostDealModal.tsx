@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Upload, MapPin, Video } from "lucide-react";
+import { Plus, Upload, MapPin, Video, Loader } from "lucide-react";
 import Image from "next/image";
 import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import {
@@ -54,20 +54,18 @@ export default function PostDealModal({
 
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [createDealPostMutation] = useCreateDealPostMutation();
+  const [createDealPostMutation, { isLoading }] = useCreateDealPostMutation();
 
   const handleCoverImageUpload = (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image")) return;
     setCoverImage(file);
-    setCoverVideo(null); // Reset video if selected
   };
 
   const handleCoverVideoUpload = (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("video")) return;
     setCoverVideo(file);
-    setCoverImage(null); // Reset image if selected
   };
 
   const handleMoreImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,31 +143,31 @@ export default function PostDealModal({
   };
 
   const handlePublish = async () => {
+    const start = new Date(`${date}T${time}`);
+    const end = new Date(`${endDate}T${endTime}`);
+
+    if (!date || !time || !endDate || !endTime) {
+      toast.error("Please select both start and end date & time.");
+      return;
+    }
+
+    if (end < start) {
+      toast.error("End date/time cannot be earlier than start date/time.");
+      return;
+    }
+
     try {
       const formData = new FormData();
 
       const dataObj = buildPayload();
-      console.log(dataObj);
 
       formData.append("data", JSON.stringify(dataObj));
 
-      if (coverImage) {
-        formData.append("image", coverImage);
-      }
+      if (coverImage) formData.append("image", coverImage);
+      if (coverVideo) formData.append("media", coverVideo);
 
-      if (coverVideo) {
-        formData.append("media", coverVideo);
-      }
-
-      // MULTIPLE IMAGES
-      images.forEach((img) => {
-        formData.append("image", img);
-      });
-
-      // MULTIPLE VIDEOS
-      videos.forEach((vid) => {
-        formData.append("media", vid);
-      });
+      images.forEach((file) => formData.append("media", file));
+      videos.forEach((file) => formData.append("media", file));
 
       const res = await createDealPostMutation(formData).unwrap();
 
@@ -178,6 +176,7 @@ export default function PostDealModal({
         onClose();
       }
     } catch (err) {
+      toast.error("Upload failed.");
       console.error("Upload Failed:", err);
     }
   };
@@ -342,6 +341,7 @@ export default function PostDealModal({
               placeholder='Enter title'
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              required
             />
           </div>
 
@@ -355,6 +355,7 @@ export default function PostDealModal({
               onChange={(e) => setDescription(e.target.value)}
               className='w-full resize-none'
               placeholder='Write event details...'
+              required
             />
           </div>
 
@@ -368,6 +369,7 @@ export default function PostDealModal({
                 type='date'
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                required
               />
             </div>
 
@@ -379,6 +381,7 @@ export default function PostDealModal({
                 type='time'
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
+                required
               />
             </div>
           </div>
@@ -391,6 +394,7 @@ export default function PostDealModal({
                 type='date'
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                required
               />
             </div>
 
@@ -400,6 +404,7 @@ export default function PostDealModal({
                 type='time'
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                required
               />
             </div>
           </div>
@@ -415,6 +420,7 @@ export default function PostDealModal({
                 placeholder='Search location'
                 value={locationQuery}
                 onChange={(e) => handleLocationSearch(e.target.value)}
+                required
               />
               <MapPin className='absolute right-3 top-1/2 -translate-y-1/2 text-green-600 w-4 h-4' />
             </div>
@@ -458,6 +464,7 @@ export default function PostDealModal({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
+              required
             />
             <div className='mt-2 flex flex-wrap gap-2'>
               {hashtags.map((tag, index) => (
@@ -475,9 +482,10 @@ export default function PostDealModal({
           <Button
             type='submit'
             onClick={handlePublish}
+            disabled={isLoading}
             className='w-full bg-[#15B826] hover:bg-green-600 text-white'
           >
-            Publish
+            Publish {isLoading && <Loader className='animate-spin' />}
           </Button>
         </div>
       </DialogContent>

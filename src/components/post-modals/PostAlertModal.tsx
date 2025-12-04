@@ -603,6 +603,7 @@ export default function PostEventModal({
                         lastSeenDate: e.target.value,
                       })
                     }
+                    required
                   />
                 </div>
 
@@ -617,6 +618,7 @@ export default function PostEventModal({
                         lastSeenTime: e.target.value,
                       })
                     }
+                    required
                   />
                 </div>
               </div>
@@ -664,6 +666,7 @@ export default function PostEventModal({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
+              required
             />
             <div className='mt-2 flex flex-wrap gap-2'>
               {hashtags.map((tag, index) => (

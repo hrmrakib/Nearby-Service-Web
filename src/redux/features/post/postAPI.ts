@@ -49,7 +49,15 @@ const postAPI = baseAPI.injectEndpoints({
 
     createAlertPost: builder.mutation({
       query: (body) => ({
-        url: "/post/alert",
+        url: "/post/alert/others",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    createAlertMissingPersonPost: builder.mutation({
+      query: (body) => ({
+        url: "/post/alert/missing-person",
         method: "POST",
         body,
       }),
@@ -70,6 +78,7 @@ export const {
   useCreateEventPostMutation,
   useCreateDealPostMutation,
   useCreateAlertPostMutation,
+  useCreateAlertMissingPersonPostMutation,
   useCreateServicePostMutation,
 } = postAPI;
 export default postAPI;

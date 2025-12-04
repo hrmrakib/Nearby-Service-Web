@@ -4,7 +4,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -181,7 +186,7 @@ export default function PostDealModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='sm:max-w-lg p-0 max-h-[90vh] overflow-y-auto scrollbar'>
         <DialogHeader className='flex flex-row items-center justify-between p-4 border-b'>
-          <h2 className='text-lg font-semibold'>Post Deal</h2>
+          <DialogTitle className='text-lg font-semibold'>Post Deal</DialogTitle>
         </DialogHeader>
 
         <div className='p-4 space-y-6'>

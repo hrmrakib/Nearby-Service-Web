@@ -4,14 +4,22 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Upload, MapPin, Video } from "lucide-react";
+import { Plus, Upload, MapPin, Video, Loader } from "lucide-react";
 import Image from "next/image";
 import AutoCompleteLocation from "../location/AutoCompleteLocation";
-import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
+import {
+  useCreateAlertMissingPersonPostMutation,
+  useCreateAlertPostMutation,
+} from "@/redux/features/post/postAPI";
 import { toast } from "sonner";
 import {
   Select,
@@ -61,6 +69,8 @@ export default function PostEventModal({
 
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
+  const [missingLat, setMissingLat] = useState("");
+  const [missingLng, setMissingLng] = useState("");
 
   const [missingPersonInfo, setMissingPersonInfo] = useState({
     name: "",
@@ -68,23 +78,26 @@ export default function PostEventModal({
     clothing: "",
     lastSeenLocation: "",
     lastSeenDate: "",
+    lastSeenTime: "",
   });
 
   const locationTimeout = useRef<any>(null);
-  const [createEventPostMutation] = useCreateEventPostMutation();
+  const [createAlertPostMutation, { isLoading }] = useCreateAlertPostMutation();
+  const [
+    createAlertMissingPersonPostMutation,
+    { isLoading: isLoadingMissing },
+  ] = useCreateAlertMissingPersonPostMutation();
 
   const handleCoverImageUpload = (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image")) return;
     setCoverImage(file);
-    setCoverVideo(null); // Reset video if selected
   };
 
   const handleCoverVideoUpload = (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("video")) return;
     setCoverVideo(file);
-    setCoverImage(null); // Reset image if selected
   };
 
   const handleMoreImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,13 +161,14 @@ export default function PostEventModal({
     setLng(place.lon);
     setLocationResults([]);
   };
+
   const selectLocation2 = (place: any) => {
     setMissingPersonInfo({
       ...missingPersonInfo,
       lastSeenLocation: place.display_name,
     });
-    // setLat(place.lat);
-    // setLng(place.lon);
+    setMissingLat(place.lat);
+    setMissingLng(place.lon);
     setMissingLocationResults([]);
   };
 
@@ -177,51 +191,86 @@ export default function PostEventModal({
     return {
       title,
       description,
+      category: selectedCategory,
       address: locationQuery,
-      category: "Event",
       location: {
         type: "Point",
         coordinates: [parseFloat(lng), parseFloat(lat)],
       },
       hasTag: hashtags,
+      contactInfo: contact,
+      expireLimit: autoExpire,
     };
+  };
+
+  const alertData = {
+    title,
+    description,
+    category: selectedCategory,
+    subcategory: selectedCategory,
+    address: locationQuery,
+    location: {
+      type: "Point",
+      coordinates: [parseFloat(lng), parseFloat(lat)],
+    },
+    hasTag: hashtags,
+    contactInfo: contact,
+    expireLimit: Number(autoExpire),
+  };
+
+  const missingPersonAlertData = {
+    title,
+    description,
+    category: selectedCategory,
+    subcategory: "Missing Person",
+    address: locationQuery,
+    location: {
+      type: "Point",
+      coordinates: [parseFloat(lng), parseFloat(lat)],
+    },
+    lastSeenLocation: {
+      type: "Point",
+      coordinates: [parseFloat(missingLng), parseFloat(missingLat)],
+    },
+    hasTag: hashtags,
+    missingName: missingPersonInfo.name,
+    missingAge: Number(missingPersonInfo.age),
+    clothingDescription: missingPersonInfo.clothing,
+    lastSeenDate: `${missingPersonInfo.lastSeenDate}T${missingPersonInfo.lastSeenTime}:00`,
+    contactInfo: contact,
+    expireLimit: Number(autoExpire),
   };
 
   const handlePublish = async () => {
     try {
       const formData = new FormData();
 
-      const dataObj = buildPayload();
-      console.log(dataObj);
-
-      formData.append("data", JSON.stringify(dataObj));
-
-      if (coverImage) {
-        formData.append("image", coverImage);
+      if (selectedCategory === "Missing Person") {
+        formData.append("data", JSON.stringify(missingPersonAlertData));
+      } else {
+        formData.append("data", JSON.stringify(alertData));
       }
 
-      if (coverVideo) {
-        formData.append("media", coverVideo);
-      }
+      if (coverImage) formData.append("image", coverImage);
+      if (coverVideo) formData.append("media", coverVideo);
 
-      // MULTIPLE IMAGES
-      images.forEach((img) => {
-        formData.append("image", img);
-      });
+      images.forEach((file) => formData.append("media", file));
+      videos.forEach((file) => formData.append("media", file));
 
-      // MULTIPLE VIDEOS
-      videos.forEach((vid) => {
-        formData.append("media", vid);
-      });
-
-      const res = await createEventPostMutation(formData).unwrap();
-
-      if (res?.success) {
-        toast.success(res?.message);
+      if (selectedCategory === "Missing Person") {
+        const res = await createAlertMissingPersonPostMutation(
+          formData
+        ).unwrap();
+        if (res?.success) toast.success(res.message);
+        onClose();
+      } else {
+        const res = await createAlertPostMutation(formData).unwrap();
+        if (res?.success) toast.success(res.message);
         onClose();
       }
     } catch (err) {
       console.error("Upload Failed:", err);
+      toast.error("Upload failed.");
     }
   };
 
@@ -229,7 +278,9 @@ export default function PostEventModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='sm:max-w-lg p-0 max-h-[90vh] overflow-y-auto scrollbar'>
         <DialogHeader className='flex flex-row items-center justify-between p-4 border-b'>
-          <h2 className='text-lg font-semibold'>Post Event</h2>
+          <DialogTitle className='text-lg font-semibold'>
+            Post Alert
+          </DialogTitle>
         </DialogHeader>
 
         <div className='p-4 space-y-6'>
@@ -447,10 +498,7 @@ export default function PostEventModal({
               </SelectTrigger>
               <SelectContent className='w-full'>
                 {alertCategories.map((category) => (
-                  <SelectItem
-                    key={category}
-                    value={category.toLowerCase().replace(/\s+/g, "-")}
-                  >
+                  <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>
                 ))}
@@ -459,19 +507,36 @@ export default function PostEventModal({
           </div>
 
           {/* Only for missing person */}
-          {selectedCategory === "missing-person" && (
+          {selectedCategory === "Missing Person" && (
             <>
               <div>
                 <label className='text-sm font-medium mb-2 block'>
                   Missing Person&apos;s Name
                 </label>
                 <Input
-                  placeholder='Enter missing person age range'
+                  placeholder='Enter missing person name'
                   value={missingPersonInfo.name}
                   onChange={(e) =>
                     setMissingPersonInfo({
                       ...missingPersonInfo,
                       name: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
+
+              <div>
+                <label className='text-sm font-medium mb-2 block'>
+                  Missing Person&apos;s Age
+                </label>
+                <Input
+                  placeholder='Enter missing person age'
+                  value={missingPersonInfo.age}
+                  onChange={(e) =>
+                    setMissingPersonInfo({
+                      ...missingPersonInfo,
+                      age: e.target.value,
                     })
                   }
                   required
@@ -525,11 +590,41 @@ export default function PostEventModal({
                   </ul>
                 )}
               </div>
+
+              <div className='grid grid-cols-2 gap-3'>
+                <div>
+                  <label className='text-sm font-medium mb-2 block'>Date</label>
+                  <Input
+                    type='date'
+                    value={missingPersonInfo.lastSeenDate}
+                    onChange={(e) =>
+                      setMissingPersonInfo({
+                        ...missingPersonInfo,
+                        lastSeenDate: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className='text-sm font-medium mb-2 block'>Time</label>
+                  <Input
+                    type='time'
+                    value={missingPersonInfo.lastSeenTime}
+                    onChange={(e) =>
+                      setMissingPersonInfo({
+                        ...missingPersonInfo,
+                        lastSeenTime: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
             </>
           )}
 
           {/* Lat & Lng */}
-          {selectedCategory !== "missing-person" && (
+          {selectedCategory !== "Missing Person" && (
             <div className='grid grid-cols-2 gap-3'>
               <div>
                 <label className='text-sm font-medium mb-2 block'>
@@ -591,7 +686,7 @@ export default function PostEventModal({
             <Select
               value={autoExpire}
               onValueChange={setAutoExpire}
-              defaultValue='7-days'
+              defaultValue='7'
             >
               <SelectTrigger className='w-full'>
                 <SelectValue placeholder='Select auto-expire' />
@@ -610,9 +705,13 @@ export default function PostEventModal({
           <Button
             type='submit'
             onClick={handlePublish}
+            disabled={isLoadingMissing || isLoading}
             className='w-full bg-[#15B826] hover:bg-green-600 text-white'
           >
-            Publish
+            Publish{" "}
+            {(isLoadingMissing || isLoading) && (
+              <Loader className='animate-spin' />
+            )}
           </Button>
         </div>
       </DialogContent>

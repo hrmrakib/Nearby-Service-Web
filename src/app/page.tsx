@@ -377,13 +377,15 @@ export default function DashboardLayout() {
                   className='overflow-hidden !border-none p-0'
                 >
                   <div className='aspect-vide relative'>
-                    <Image
-                      width={600}
-                      height={600}
-                      src={item.image}
-                      alt={item.title}
-                      className='w-full h-[232px] object-cover'
-                    />
+                    {item?.image && (
+                      <Image
+                        width={600}
+                        height={600}
+                        src={item.image || ""}
+                        alt={item.title}
+                        className='w-full h-[232px] object-cover'
+                      />
+                    )}
                   </div>
                   <CardContent className='p-6'>
                     <div className='space-y-4'>

@@ -4,7 +4,12 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,14 +54,12 @@ export default function PostEventModal({
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("image")) return;
     setCoverImage(file);
-    setCoverVideo(null); // Reset video if selected
   };
 
   const handleCoverVideoUpload = (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !file.type.startsWith("video")) return;
     setCoverVideo(file);
-    setCoverImage(null); // Reset image if selected
   };
 
   const handleMoreImages = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,7 +174,9 @@ export default function PostEventModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='sm:max-w-lg p-0 max-h-[90vh] overflow-y-auto scrollbar'>
         <DialogHeader className='flex flex-row items-center justify-between p-4 border-b'>
-          <h2 className='text-lg font-semibold'>Post Event</h2>
+          <DialogTitle className='text-lg font-semibold'>
+            Post Event
+          </DialogTitle>
         </DialogHeader>
 
         <div className='p-4 space-y-6'>
@@ -434,7 +439,12 @@ export default function PostEventModal({
           <Button
             type='submit'
             disabled={
-              !title || !description || !date || !time || !location || isLoading
+              !title ||
+              !description ||
+              !date ||
+              !time ||
+              !locationQuery ||
+              isLoading
             }
             onClick={handlePublish}
             className='w-full bg-[#15B826] hover:bg-green-600 text-white'

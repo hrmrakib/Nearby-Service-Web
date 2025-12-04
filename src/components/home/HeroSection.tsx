@@ -80,7 +80,7 @@ export function HeroSection() {
         <div className='relative w-full aspect-video'>
           <div className='absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 rounded-2xl shadow-2xl overflow-hidden'>
             <Image
-              src='/festival-outdoor-event-girl-community-gathering-co.jpg'
+              src='/hero-bg.jpg'
               alt='Festival Community Event'
               fill
               className='object-cover w-full h-full'

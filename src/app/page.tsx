@@ -30,6 +30,9 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
 import { EventItem } from "@/types/post";
 import { useSelector } from "react-redux";
+import { useToggleLikeMutation } from "@/redux/features/like/likeAPI";
+import { toast } from "sonner";
+import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 
 const categories = [
   { id: "all", label: "All", icon: "🌟" },
@@ -122,7 +125,15 @@ export default function DashboardLayout() {
   });
   const [showCalendar, setShowCalendar] = useState(false);
   const search = useSelector((state: any) => state.globalSearch.searchValue);
-  const { data: allPosts, isFetching } = useGetAllPostQuery({
+  const [toggleLikeMutation] = useToggleLikeMutation();
+  const [toggleSaveMutation] = useToggleSaveMutation();
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const {
+    data: allPosts,
+    isFetching,
+    refetch,
+  } = useGetAllPostQuery({
     category: selectedCategory,
     // subcategory: selectedCategory,
     // lat: 0,
@@ -136,10 +147,31 @@ export default function DashboardLayout() {
 
   const posts = allPosts?.data || [];
 
-  const handleStarToggle = (stars: number) => {
-    setSelectedStars((prev) =>
-      prev.includes(stars) ? prev.filter((s) => s !== stars) : [...prev, stars]
-    );
+  const handleLikeToggle = async (postId: string) => {
+    try {
+      const res = await toggleLikeMutation({
+        postId,
+      }).unwrap();
+
+      // if (res?.success) {
+      //   refetch();
+      // }
+    } catch (error: any) {
+      toast.error(error?.data?.message);
+    }
+  };
+  const handleSaveToggle = async (postId: string) => {
+    try {
+      await toggleSaveMutation({
+        postId,
+      }).unwrap();
+
+      // if (res?.success) {
+      //   refetch();
+      // }
+    } catch (error: any) {
+      toast.error(error?.data?.message);
+    }
   };
 
   const handleDateRangeChange = (
@@ -151,11 +183,11 @@ export default function DashboardLayout() {
   };
 
   const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
+    return Array.from({ length: rating }, (_, i) => (
       <Star
         key={i}
         className={`w-4 h-4 ${
-          i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+          i < rating ? "fill-[#17CA2A] text-[#17CA2A]" : "text-gray-300"
         }`}
       />
     ));
@@ -319,43 +351,6 @@ export default function DashboardLayout() {
                     </div>
                   </div>
                 </div>
-
-                {/* Min Star Rating */}
-                {/* <div className='space-y-3'>
-                  <Label className='text-sm font-medium text-gray-700'>
-                    Min. Star Rating
-                  </Label>
-                  <div className='space-y-2'>
-                    {[5, 4, 3, 2, 1].map((stars) => (
-                      <div key={stars} className='flex items-center space-x-2'>
-                        <Checkbox
-                          id={`stars-${stars}`}
-                          checked={selectedStars.includes(stars)}
-                          onCheckedChange={() => handleStarToggle(stars)}
-                        />
-                        <label
-                          htmlFor={`stars-${stars}`}
-                          className='flex items-center space-x-1 cursor-pointer'
-                        >
-                          <div className='flex'>
-                            {Array.from({ length: stars }, (_, i) => (
-                              <Star
-                                key={i}
-                                className='w-4 h-4 fill-[#15B826] text-[#15B826]'
-                              />
-                            ))}
-                            {Array.from({ length: 5 - stars }, (_, i) => (
-                              <Star key={i} className='w-4 h-4 text-gray-300' />
-                            ))}
-                          </div>
-                          <span className='text-sm text-gray-600'>
-                            ({stars}+ Stars)
-                          </span>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div> */}
               </div>
             </div>
           </ScrollArea>
@@ -393,25 +388,34 @@ export default function DashboardLayout() {
                         <h3 className='text-xl font-semibold text-gray-900'>
                           {item.title}
                         </h3>
-                        <Button variant='ghost' size='sm'>
+                        <Button
+                          onClick={() => handleLikeToggle(item?._id)}
+                          variant='ghost'
+                          size='sm'
+                        >
                           <Heart className='w-4 h-4' />
                         </Button>
                       </div>
 
                       <div className='flex items-center space-x-4'>
+                        <div className='flex items-center space-x-1 text-base text-gray-600'>
+                          <div className='w-6 h-6'>
+                            <MapPin className='w-4 h-4 text-[#15B826]' />
+                          </div>
+                          <p>{item.address}</p>
+                        </div>
+                      </div>
+
+                      {item?.reviewsCount > 0 && (
                         <div className='flex items-center space-x-1'>
                           {renderStars(Math.floor(item?.reviewsCount || 0))}
                           <span className='text-sm font-medium text-gray-900 ml-1'>
                             {item.averageRating}
                           </span>
                         </div>
-                        <div className='flex items-center space-x-1 text-sm text-gray-600'>
-                          <MapPin className='w-4 h-4' />
-                          <span>{item.address}</span>
-                        </div>
-                      </div>
+                      )}
 
-                      <p className='text-gray-600 text-sm leading-relaxed'>
+                      <p className='text-[#374151] text-base leading-relaxed'>
                         {item.description}
                       </p>
 
@@ -422,6 +426,7 @@ export default function DashboardLayout() {
                         <Button
                           variant='outline'
                           className='px-6 bg-transparent'
+                          onClick={() => handleSaveToggle(item?._id)}
                         >
                           Save
                         </Button>

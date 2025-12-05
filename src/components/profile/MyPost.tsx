@@ -64,7 +64,7 @@ const MyPost = () => {
         );
         return [...prev, ...newItems];
       });
-    }
+    } 
   }, [data]);
 
   // 🔥 Smoothest Infinity Scroll — IntersectionObserver

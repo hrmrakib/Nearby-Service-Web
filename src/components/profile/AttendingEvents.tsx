@@ -128,6 +128,11 @@ const AttendingEvents = () => {
   return (
     <div>
       <div className='space-y-8'>
+        {allAttending?.length === 0 && (
+          <div className='text-center text-xl text-gray-500'>
+            No Attending Post
+          </div>
+        )}
         {allAttending?.map((event: IEvent) => (
           <Card key={event._id} className='overflow-hidden py-0'>
             <div className='relative h-48'>

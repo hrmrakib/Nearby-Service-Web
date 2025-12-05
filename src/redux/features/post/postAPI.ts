@@ -37,6 +37,7 @@ const postAPI = baseAPI.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Post"],
     }),
 
     createDealPost: builder.mutation({
@@ -45,6 +46,7 @@ const postAPI = baseAPI.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Post"],
     }),
 
     createAlertPost: builder.mutation({
@@ -53,6 +55,7 @@ const postAPI = baseAPI.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Post"],
     }),
 
     createAlertMissingPersonPost: builder.mutation({
@@ -61,6 +64,7 @@ const postAPI = baseAPI.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Post"],
     }),
 
     createServicePost: builder.mutation({
@@ -69,6 +73,7 @@ const postAPI = baseAPI.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["Post"],
     }),
   }),
 });

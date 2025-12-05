@@ -294,7 +294,9 @@ export default function EventDetailPage({ eventId }: EventDetailPageProps) {
           <div className='space-y-6'>
             {/* Map */}
             <Card className='p-4'>
-              <h3 className='text-center text-2xl font-bold text-[#374151] mb-3'>Map</h3>
+              <h3 className='text-center text-2xl font-bold text-[#374151] mb-3'>
+                Map
+              </h3>
               <div className='relative aspect-squar rounded-lg overflow-hidden mb-3'>
                 <Image
                   src='/map.png'

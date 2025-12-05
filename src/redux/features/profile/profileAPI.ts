@@ -1,5 +1,4 @@
 import baseAPI from "@/redux/api/api";
-import { get } from "http";
 
 const profileAPI = baseAPI.injectEndpoints({
   endpoints: (builder) => ({

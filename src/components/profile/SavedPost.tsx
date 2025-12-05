@@ -117,9 +117,7 @@ export default function SavedPost() {
             </Card>
           ))
         ) : (
-          <div className='text-center text-2xl text-gray-500'>
-            No Saved Post
-          </div>
+          <div className='text-center text-xl text-gray-500'>No Saved Post</div>
         )}
       </div>
     </div>

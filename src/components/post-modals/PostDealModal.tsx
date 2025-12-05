@@ -196,7 +196,7 @@ export default function PostDealModal({
 
         <div className='p-4 space-y-6'>
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Cover Image / Cover Video
             </label>
 
@@ -260,7 +260,7 @@ export default function PostDealModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Add More Images
             </label>
 
@@ -304,7 +304,7 @@ export default function PostDealModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Add More Videos
             </label>
 
@@ -342,7 +342,7 @@ export default function PostDealModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>Title</label>
+            <label className='text-sm font-bold mb-2 block'>Title</label>
             <Input
               placeholder='Enter title'
               value={title}
@@ -352,9 +352,7 @@ export default function PostDealModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
-              Description
-            </label>
+            <label className='text-sm font-bold mb-2 block'>Description</label>
             <Textarea
               rows={4}
               value={description}
@@ -368,9 +366,7 @@ export default function PostDealModal({
           {/* start date and time */}
           <div className='grid grid-cols-2 gap-3'>
             <div>
-              <label className='text-sm font-medium mb-2 block'>
-                Start Date
-              </label>
+              <label className='text-sm font-bold mb-2 block'>Start Date</label>
               <Input
                 type='date'
                 value={date}
@@ -380,9 +376,7 @@ export default function PostDealModal({
             </div>
 
             <div>
-              <label className='text-sm font-medium mb-2 block'>
-                Start Time
-              </label>
+              <label className='text-sm font-bold mb-2 block'>Start Time</label>
               <Input
                 type='time'
                 value={time}
@@ -395,7 +389,7 @@ export default function PostDealModal({
           {/* end date and time */}
           <div className='grid grid-cols-2 gap-3'>
             <div>
-              <label className='text-sm font-medium mb-2 block'>End Date</label>
+              <label className='text-sm font-bold mb-2 block'>End Date</label>
               <Input
                 type='date'
                 value={endDate}
@@ -405,7 +399,7 @@ export default function PostDealModal({
             </div>
 
             <div>
-              <label className='text-sm font-medium mb-2 block'>End Time</label>
+              <label className='text-sm font-bold mb-2 block'>End Time</label>
               <Input
                 type='time'
                 value={endTime}
@@ -418,7 +412,7 @@ export default function PostDealModal({
           <AutoCompleteLocation />
 
           <div className='relative'>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Location (Type your full address)
             </label>
             <div className='relative'>
@@ -448,19 +442,17 @@ export default function PostDealModal({
 
           <div className='grid grid-cols-2 gap-3'>
             <div>
-              <label className='text-sm font-medium mb-2 block'>Latitude</label>
+              <label className='text-sm font-bold mb-2 block'>Latitude</label>
               <Input value={lat} readOnly className='bg-gray-100' />
             </div>
             <div>
-              <label className='text-sm font-medium mb-2 block'>
-                Longitude
-              </label>
+              <label className='text-sm font-bold mb-2 block'>Longitude</label>
               <Input value={lng} readOnly className='bg-gray-100' />
             </div>
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Hashtags{" "}
               <span className='text-xs'>(Type tag and press Enter)</span>
             </label>

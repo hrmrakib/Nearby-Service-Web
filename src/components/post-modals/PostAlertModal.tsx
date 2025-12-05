@@ -293,7 +293,7 @@ export default function PostEventModal({
 
         <div className='p-4 space-y-6'>
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Cover Image / Cover Video
             </label>
 
@@ -357,7 +357,7 @@ export default function PostEventModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Add More Images
             </label>
 
@@ -401,7 +401,7 @@ export default function PostEventModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Add More Videos
             </label>
 
@@ -439,7 +439,7 @@ export default function PostEventModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>Title</label>
+            <label className='text-sm font-bold mb-2 block'>Title</label>
             <Input
               placeholder='Enter title'
               value={title}
@@ -449,9 +449,7 @@ export default function PostEventModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
-              Description
-            </label>
+            <label className='text-sm font-bold mb-2 block'>Description</label>
             <Textarea
               rows={4}
               value={description}
@@ -466,7 +464,7 @@ export default function PostEventModal({
           {/* <AutoCompleteLocation /> */}
 
           <div className='relative'>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Location (Type your full address)
             </label>
             <div className='relative'>
@@ -496,7 +494,7 @@ export default function PostEventModal({
 
           {/* Category */}
           <div className='w-full'>
-            <label className='text-sm font-medium mb-2 block'>Category</label>
+            <label className='text-sm font-bold mb-2 block'>Category</label>
             <Select
               value={selectedCategory}
               onValueChange={setSelectedCategory}
@@ -518,7 +516,7 @@ export default function PostEventModal({
           {selectedCategory === "Missing Person" && (
             <>
               <div>
-                <label className='text-sm font-medium mb-2 block'>
+                <label className='text-sm font-bold mb-2 block'>
                   Missing Person&apos;s Name
                 </label>
                 <Input
@@ -535,7 +533,7 @@ export default function PostEventModal({
               </div>
 
               <div>
-                <label className='text-sm font-medium mb-2 block'>
+                <label className='text-sm font-bold mb-2 block'>
                   Missing Person&apos;s Age
                 </label>
                 <Input
@@ -552,7 +550,7 @@ export default function PostEventModal({
               </div>
 
               <div>
-                <label className='text-sm font-medium mb-2 block'>
+                <label className='text-sm font-bold mb-2 block'>
                   Clothing Information
                 </label>
                 <Input
@@ -569,7 +567,7 @@ export default function PostEventModal({
               </div>
 
               <div className='relative'>
-                <label className='text-sm font-medium mb-2 block'>
+                <label className='text-sm font-bold mb-2 block'>
                   Last Seen Location
                 </label>
                 <div className='relative'>
@@ -601,7 +599,7 @@ export default function PostEventModal({
 
               <div className='grid grid-cols-2 gap-3'>
                 <div>
-                  <label className='text-sm font-medium mb-2 block'>Date</label>
+                  <label className='text-sm font-bold mb-2 block'>Date</label>
                   <Input
                     type='date'
                     value={missingPersonInfo.lastSeenDate}
@@ -616,7 +614,7 @@ export default function PostEventModal({
                 </div>
 
                 <div>
-                  <label className='text-sm font-medium mb-2 block'>Time</label>
+                  <label className='text-sm font-bold mb-2 block'>Time</label>
                   <Input
                     type='time'
                     value={missingPersonInfo.lastSeenTime}
@@ -637,13 +635,11 @@ export default function PostEventModal({
           {selectedCategory !== "Missing Person" && (
             <div className='grid grid-cols-2 gap-3'>
               <div>
-                <label className='text-sm font-medium mb-2 block'>
-                  Latitude
-                </label>
+                <label className='text-sm font-bold mb-2 block'>Latitude</label>
                 <Input value={lat} readOnly className='bg-gray-100' />
               </div>
               <div>
-                <label className='text-sm font-medium mb-2 block'>
+                <label className='text-sm font-bold mb-2 block'>
                   Longitude
                 </label>
                 <Input value={lng} readOnly className='bg-gray-100' />
@@ -653,7 +649,7 @@ export default function PostEventModal({
 
           {/* Contact */}
           <div>
-            <label className='text-sm font-medium mb-2 block'>Contact </label>
+            <label className='text-sm font-bold mb-2 block'>Contact </label>
             <Input
               placeholder='Share contact information'
               value={contact}
@@ -664,7 +660,7 @@ export default function PostEventModal({
 
           {/* Hashtags */}
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Hashtags{" "}
               <span className='text-xs'>(Type tag and press Enter)</span>
             </label>
@@ -691,7 +687,7 @@ export default function PostEventModal({
 
           {/* Set auto-expire */}
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Set auto-expire
             </label>
             <Select

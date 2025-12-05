@@ -45,6 +45,7 @@ export default function PostEventModal({
   onClose,
   onBack,
 }: PostEventModalProps) {
+  const [selectedCategory, setSelectedCategory] = useState(alertCategories[0]);
   const [selectedDays, setSelectedDays] = useState<string[]>(["Mon"]);
   const [repeatAll, setRepeatAll] = useState(false);
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -68,6 +69,12 @@ export default function PostEventModal({
   const locationTimeout = useRef<any>(null);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [rate, setRate] = useState({
+    hourly: 0,
+    day: 0,
+  });
+  const [license, setLicense] = useState<File | null>(null);
+
   const [createEventPostMutation] = useCreateEventPostMutation();
 
   const toggleDay = (day: string) => {
@@ -146,13 +153,13 @@ export default function PostEventModal({
   };
 
   const buildPayload = () => {
-    const isoStartDate = new Date(`${date}T${time}`).toISOString();
+    // const isoStartDate = new Date(`${date}T${time}`).toISOString();
 
     return {
       title,
       description,
-      startDate: isoStartDate,
-      startTime: isoStartDate,
+      // startDate: isoStartDate,
+      // startTime: isoStartDate,
       address: locationQuery,
       category: "Event",
       location: {
@@ -212,7 +219,7 @@ export default function PostEventModal({
 
         <div className='p-4 space-y-6'>
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Cover Image / Cover Video
             </label>
 
@@ -276,7 +283,7 @@ export default function PostEventModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Add More Images
             </label>
 
@@ -320,7 +327,7 @@ export default function PostEventModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Add More Videos
             </label>
 
@@ -358,7 +365,7 @@ export default function PostEventModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>Title</label>
+            <label className='text-sm font-bold mb-2 block'>Title</label>
             <Input
               placeholder='Enter title'
               value={title}
@@ -367,9 +374,7 @@ export default function PostEventModal({
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
-              Description
-            </label>
+            <label className='text-sm font-bold mb-2 block'>Description</label>
             <Textarea
               rows={4}
               value={description}
@@ -381,7 +386,7 @@ export default function PostEventModal({
 
           {/* Starting Price */}
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Starting price
             </label>
             <Input
@@ -394,9 +399,7 @@ export default function PostEventModal({
 
           {/* Availability */}
           <div>
-            <label className='text-sm font-medium mb-2 block'>
-              Availability
-            </label>
+            <label className='text-sm font-bold mb-2 block'>Availability</label>
             <div className='space-y-3'>
               <div>
                 <label className='text-xs text-muted-foreground mb-2 block'>
@@ -425,7 +428,7 @@ export default function PostEventModal({
 
               <div className='grid grid-cols-2 gap-3'>
                 <div>
-                  <label className='text-sm font-medium mb-2 block'>
+                  <label className='text-sm font-bold mb-2 block'>
                     Start Time
                   </label>
                   <Input
@@ -437,7 +440,7 @@ export default function PostEventModal({
                 </div>
 
                 <div>
-                  <label className='text-sm font-medium mb-2 block'>Time</label>
+                  <label className='text-sm font-bold mb-2 block'>Time</label>
                   <Input
                     type='time'
                     value={endTime}
@@ -494,7 +497,7 @@ export default function PostEventModal({
           <AutoCompleteLocation />
 
           <div className='relative'>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Location (Type your full address)
             </label>
             <div className='relative'>
@@ -523,19 +526,17 @@ export default function PostEventModal({
 
           <div className='grid grid-cols-2 gap-3'>
             <div>
-              <label className='text-sm font-medium mb-2 block'>Latitude</label>
+              <label className='text-sm font-bold mb-2 block'>Latitude</label>
               <Input value={lat} readOnly className='bg-gray-100' />
             </div>
             <div>
-              <label className='text-sm font-medium mb-2 block'>
-                Longitude
-              </label>
+              <label className='text-sm font-bold mb-2 block'>Longitude</label>
               <Input value={lng} readOnly className='bg-gray-100' />
             </div>
           </div>
 
           <div>
-            <label className='text-sm font-medium mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Hashtags{" "}
               <span className='text-xs'>(Type tag and press Enter)</span>
             </label>
@@ -561,7 +562,7 @@ export default function PostEventModal({
 
           {/* Category */}
           <div className='w-full'>
-            <label className='text-sm font-medium mb-2 block'>Category</label>
+            <label className='text-sm font-bold mb-2 block'>Category</label>
             <Select
               value={selectedCategory}
               onValueChange={setSelectedCategory}
@@ -578,6 +579,88 @@ export default function PostEventModal({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Service - Entertainment */}
+          {selectedCategory === "Entertainment" && (
+            <div>
+              <label className='text-sm font-bold mb-2 block text-[#030712]'>
+                Rate
+              </label>
+              <div className='flex items-center justify-between gap-4 border border-gray-200 rounded-2xl px-2 py-5'>
+                <div className='w-1/2'>
+                  <label className='text-sm font-bold mb-2 block'>Hourly</label>
+                  <Input
+                    type='number'
+                    value={rate.hourly}
+                    onChange={(e) =>
+                      setRate({ ...rate, hourly: e.target.value })
+                    }
+                    placeholder='Enter starting price'
+                  />
+                </div>
+                <div className='w-1/2'>
+                  <label className='text-sm font-bold mb-2 block'>Day</label>
+                  <Input
+                    type='number'
+                    value={rate.day}
+                    onChange={(e) => setRate({ ...rate, day: e.target.value })}
+                    placeholder='Enter starting price'
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Service - Personal/Home Services */}
+          {selectedCategory === "Personal/Home Services" && (
+            <>
+              <div>
+                <label className='text-sm font-bold mb-2 block'>
+                  Service Type
+                </label>
+                <Input
+                  type='text'
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder='Enter your service type'
+                />
+              </div>
+              
+              <div className='relative'>
+                <label className='text-sm font-bold mb-2 block'>Licenses</label>
+                <Input
+                  type='file'
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder='Upload your licenses'
+                />
+                <div className='absolute right-2 top-[60%]'>
+                  <svg
+                    width='16'
+                    height='16'
+                    viewBox='0 0 16 16'
+                    fill='none'
+                    xmlns='http://www.w3.org/2000/svg'
+                  >
+                    <g clip-path='url(#clip0_5788_1215)'>
+                      <path
+                        d='M14.2924 7.77449L8.16572 13.9012C7.41516 14.6517 6.39718 15.0734 5.33572 15.0734C4.27426 15.0734 3.25628 14.6517 2.50572 13.9012C1.75516 13.1506 1.3335 12.1326 1.3335 11.0712C1.3335 10.0097 1.75516 8.99172 2.50572 8.24116L8.63239 2.11449C9.13276 1.61412 9.81142 1.33301 10.5191 1.33301C11.2267 1.33301 11.9053 1.61412 12.4057 2.11449C12.9061 2.61487 13.1872 3.29352 13.1872 4.00116C13.1872 4.70879 12.9061 5.38745 12.4057 5.88782L6.27239 12.0145C6.0222 12.2647 5.68287 12.4052 5.32905 12.4052C4.97524 12.4052 4.63591 12.2647 4.38572 12.0145C4.13553 11.7643 3.99498 11.425 3.99498 11.0712C3.99498 10.7173 4.13553 10.378 4.38572 10.1278L10.0457 4.47449'
+                        stroke='#108F1E'
+                        stroke-width='1.5'
+                        stroke-linecap='round'
+                        stroke-linejoin='round'
+                      />
+                    </g>
+                    <defs>
+                      <clipPath id='clip0_5788_1215'>
+                        <rect width='16' height='16' fill='white' />
+                      </clipPath>
+                    </defs>
+                  </svg>
+                </div>
+              </div>
+            </>
+          )}
 
           <Button
             type='submit'

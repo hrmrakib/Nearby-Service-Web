@@ -17,7 +17,6 @@ import { Plus, Upload, MapPin, Video, Clock } from "lucide-react";
 import Image from "next/image";
 import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import {
-  useCreateEventPostMutation,
   useCreateServicePostForEntertainmentMutation,
   useCreateServicePostForFoodAndBeverageMutation,
   useCreateServicePostForPersonalHomeMutation,
@@ -85,7 +84,7 @@ const mockSchedule = [
   },
 ];
 
-const alertCategories = [
+const serviceCategories = [
   "Food & Beverage",
   "Entertainment",
   "Personal/Home Services",
@@ -98,7 +97,9 @@ export default function PostEventModal({
   onBack,
 }: PostEventModalProps) {
   const [scheduleData, setScheduleData] = useState(mockSchedule);
-  const [selectedCategory, setSelectedCategory] = useState(alertCategories[0]);
+  const [selectedCategory, setSelectedCategory] = useState(
+    serviceCategories[0]
+  );
   const [selectedDays, setSelectedDays] = useState<string[]>(["Mon"]);
   const [repeatAll, setRepeatAll] = useState(false);
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -121,6 +122,7 @@ export default function PostEventModal({
   const [price, setPrice] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [amenitiesInput, setAmenitiesInput] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const [locationResults, setLocationResults] = useState<any[]>([]);
   const [lat, setLat] = useState("");
@@ -136,9 +138,8 @@ export default function PostEventModal({
   });
   const [license, setLicense] = useState<File | null>(null);
   const [guestCapacity, setGuestCapacity] = useState<number | string>();
-  const [amenities, setAmenities] = useState<number | string>();
-
-  const [createEventPostMutation] = useCreateEventPostMutation();
+  const [amenities, setAmenities] = useState<string[]>([]);
+  const [serviceType, setServiceType] = useState("");
 
   const [createServicePostForFoodAndBeverageMutation] =
     useCreateServicePostForFoodAndBeverageMutation();
@@ -150,12 +151,6 @@ export default function PostEventModal({
     useCreateServicePostForVenuesMutation();
 
   console.log({ scheduleData });
-
-  const toggleDay = (day: string) => {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
-  };
 
   const handleCoverImageUpload = (e: any) => {
     const file = e.target.files?.[0];
@@ -262,8 +257,25 @@ export default function PostEventModal({
     }
   };
 
+  const handleKeyDownForAmenity = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const value = amenitiesInput.trim().replace(/^#/, ""); // remove leading #
+      if (value && !amenities.includes(value)) {
+        setAmenities([...amenities, value]);
+      }
+      setAmenitiesInput(""); // reset input
+    }
+  };
+
   const handleRemove = (tag: string) => {
     setHashtags(hashtags.filter((t) => t !== tag));
+  };
+
+  const handleRemoveAmenity = (ame: string) => {
+    setAmenities(amenities.filter((t) => t !== ame));
   };
 
   const buildPayload = () => {
@@ -284,10 +296,11 @@ export default function PostEventModal({
     };
   };
 
+  // common - food and beverage / entertainment
   const data = {
     title,
     description,
-    price,
+    price: Number(price),
     schedule: [
       {
         day: "mon",
@@ -320,8 +333,17 @@ export default function PostEventModal({
       coordinates: [parseFloat(lng), parseFloat(lat)],
     },
     hasTag: hashtags,
-    capacity: guestCapacity,
-    amenities: ["Wi-Fi", "Projector", "Audio System", "Catering"],
+  };
+
+  const homeServiceData = {
+    ...data,
+    serviceType: serviceType,
+  };
+
+  const venueServiceData = {
+    ...data,
+    capacity: Number(guestCapacity),
+    amenities,
   };
 
   console.log({ amenities });
@@ -330,10 +352,22 @@ export default function PostEventModal({
     try {
       const formData = new FormData();
 
-      const dataObj = buildPayload();
-      console.log(dataObj);
+      if (
+        selectedCategory === "Food & Beverage" ||
+        selectedCategory === "Entertainment"
+      ) {
+        formData.append("data", JSON.stringify(data));
+      }
+      if (selectedCategory === "Personal/Home Services") {
+        formData.append("data", JSON.stringify(homeServiceData));
+      }
+      if (selectedCategory === "Venues") {
+        formData.append("data", JSON.stringify(venueServiceData));
+      }
 
-      formData.append("data", JSON.stringify(dataObj));
+      if (serviceType === "Personal/Home Services" && license) {
+        formData.append("licenses", license);
+      }
 
       if (coverImage) {
         formData.append("image", coverImage);
@@ -343,22 +377,39 @@ export default function PostEventModal({
         formData.append("media", coverVideo);
       }
 
-      // MULTIPLE IMAGES
       images.forEach((img) => {
-        formData.append("image", img);
+        formData.append("media", img);
       });
 
-      // MULTIPLE VIDEOS
       videos.forEach((vid) => {
         formData.append("media", vid);
       });
 
-      // const res = await createEventPostMutation(formData).unwrap();
+      let res;
 
-      // if (res?.success) {
-      //   toast.success(res?.message);
-      //   onClose();
-      // }
+      if (selectedCategory === "Food & Beverage") {
+        res = await createServicePostForFoodAndBeverageMutation(
+          formData
+        ).unwrap();
+      }
+      if (selectedCategory === "Entertainment") {
+        res = await createServicePostForEntertainmentMutation(
+          formData
+        ).unwrap();
+      }
+      if (selectedCategory === "Personal/Home Services") {
+        res = await createServicePostForPersonalHomeMutation(formData).unwrap();
+      }
+      if (selectedCategory === "Venues") {
+        res = await createServicePostForVenuesMutation(formData).unwrap();
+      }
+
+      console.log(res);
+
+      if (res?.success) {
+        toast.success(res?.message);
+        onClose();
+      }
     } catch (err) {
       console.error("Upload Failed:", err);
     }
@@ -542,14 +593,12 @@ export default function PostEventModal({
 
           {/* Starting Price */}
           <div>
-            <label className='text-sm font-bold mb-2 block'>
-              Starting price
-            </label>
+            <label className='text-sm font-bold mb-2 block'>Price</label>
             <Input
               type='number'
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder='$ Enter starting price'
+              placeholder='$ Enter price'
             />
           </div>
 
@@ -635,11 +684,6 @@ export default function PostEventModal({
             </div>
           </div> */}
 
-          {/* <ScheduleSelector
-            schedule={scheduleData}
-            onScheduleChange={setScheduleData}
-          /> */}
-
           <ScheduleSelector
             schedule={scheduleData}
             onScheduleChange={(updated: any) => setScheduleData(updated)}
@@ -722,7 +766,7 @@ export default function PostEventModal({
                 <SelectValue placeholder='Choose alert category' />
               </SelectTrigger>
               <SelectContent className='w-full'>
-                {alertCategories.map((category) => (
+                {serviceCategories?.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>
@@ -732,7 +776,7 @@ export default function PostEventModal({
           </div>
 
           {/* Service - Entertainment */}
-          {selectedCategory === "Entertainment" && (
+          {/* {selectedCategory === "Entertainment" && (
             <div>
               <label className='text-sm font-bold mb-2 block text-[#030712]'>
                 Rate
@@ -762,7 +806,7 @@ export default function PostEventModal({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Service - Personal/Home Services */}
           {selectedCategory === "Personal/Home Services" && (
@@ -773,8 +817,8 @@ export default function PostEventModal({
                 </label>
                 <Input
                   type='text'
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
+                  value={serviceType}
+                  onChange={(e) => setServiceType(e.target.value)}
                   placeholder='Enter your service type'
                 />
               </div>
@@ -827,31 +871,6 @@ export default function PostEventModal({
                     onChange={handleLicenceUpload}
                   />
                 </div>
-
-                {/* <div className='absolute right-2 top-[60%]'>
-                  <svg
-                    width='16'
-                    height='16'
-                    viewBox='0 0 16 16'
-                    fill='none'
-                    xmlns='http://www.w3.org/2000/svg'
-                  >
-                    <g clip-path='url(#clip0_5788_1215)'>
-                      <path
-                        d='M14.2924 7.77449L8.16572 13.9012C7.41516 14.6517 6.39718 15.0734 5.33572 15.0734C4.27426 15.0734 3.25628 14.6517 2.50572 13.9012C1.75516 13.1506 1.3335 12.1326 1.3335 11.0712C1.3335 10.0097 1.75516 8.99172 2.50572 8.24116L8.63239 2.11449C9.13276 1.61412 9.81142 1.33301 10.5191 1.33301C11.2267 1.33301 11.9053 1.61412 12.4057 2.11449C12.9061 2.61487 13.1872 3.29352 13.1872 4.00116C13.1872 4.70879 12.9061 5.38745 12.4057 5.88782L6.27239 12.0145C6.0222 12.2647 5.68287 12.4052 5.32905 12.4052C4.97524 12.4052 4.63591 12.2647 4.38572 12.0145C4.13553 11.7643 3.99498 11.425 3.99498 11.0712C3.99498 10.7173 4.13553 10.378 4.38572 10.1278L10.0457 4.47449'
-                        stroke='#108F1E'
-                        stroke-width='1.5'
-                        stroke-linecap='round'
-                        stroke-linejoin='round'
-                      />
-                    </g>
-                    <defs>
-                      <clipPath id='clip0_5788_1215'>
-                        <rect width='16' height='16' fill='white' />
-                      </clipPath>
-                    </defs>
-                  </svg>
-                </div> */}
               </div>
             </>
           )}
@@ -871,14 +890,26 @@ export default function PostEventModal({
 
               <div>
                 <label className='text-sm font-bold mb-2 block'>
-                  Amenities
+                  Amenities (Comma separated or Press Enter)
                 </label>
                 <Input
                   type='text'
-                  value={amenities}
-                  onChange={(e) => setAmenities(e.target.value)}
+                  value={amenitiesInput}
+                  onChange={(e) => setAmenitiesInput(e.target.value)}
                   placeholder='Enter amenities (comma separated)'
+                  onKeyDown={handleKeyDownForAmenity}
                 />
+                <div className='mt-2 flex flex-wrap gap-2'>
+                  {amenities?.map((ame, index) => (
+                    <span
+                      key={index}
+                      className='bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm cursor-pointer'
+                      onClick={() => handleRemoveAmenity(ame)}
+                    >
+                      {ame} ×
+                    </span>
+                  ))}
+                </div>
               </div>
             </>
           )}

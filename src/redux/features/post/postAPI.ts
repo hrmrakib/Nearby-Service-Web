@@ -67,33 +67,38 @@ const postAPI = baseAPI.injectEndpoints({
       invalidatesTags: ["Post"],
     }),
 
+    // ? service post api
+
     createServicePostForFoodAndBeverage: builder.mutation({
       query: (body) => ({
-        url: "/post/service",
+        url: "/post/service/food-beverage",
         method: "POST",
         body,
       }),
       invalidatesTags: ["Post"],
     }),
+
     createServicePostForEntertainment: builder.mutation({
       query: (body) => ({
-        url: "/post/service",
+        url: "/post/service/entertainment",
         method: "POST",
         body,
       }),
       invalidatesTags: ["Post"],
     }),
+
     createServicePostForPersonalHome: builder.mutation({
       query: (body) => ({
-        url: "/post/service",
+        url: "/post/service/home",
         method: "POST",
         body,
       }),
       invalidatesTags: ["Post"],
     }),
+    
     createServicePostForVenues: builder.mutation({
       query: (body) => ({
-        url: "/post/service",
+        url: "/post/service/venue",
         method: "POST",
         body,
       }),

@@ -114,10 +114,6 @@ export function ScheduleSelector({
     onScheduleChange(updatedSchedule);
   };
 
-  const handleApply = () => {
-    console.log("[v0] Final schedule:", schedule);
-  };
-
   return (
     <div className='w-full mx-auto'>
       <Card className='p-4 border-2'>

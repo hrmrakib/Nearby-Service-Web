@@ -67,7 +67,31 @@ const postAPI = baseAPI.injectEndpoints({
       invalidatesTags: ["Post"],
     }),
 
-    createServicePost: builder.mutation({
+    createServicePostForFoodAndBeverage: builder.mutation({
+      query: (body) => ({
+        url: "/post/service",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Post"],
+    }),
+    createServicePostForEntertainment: builder.mutation({
+      query: (body) => ({
+        url: "/post/service",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Post"],
+    }),
+    createServicePostForPersonalHome: builder.mutation({
+      query: (body) => ({
+        url: "/post/service",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Post"],
+    }),
+    createServicePostForVenues: builder.mutation({
       query: (body) => ({
         url: "/post/service",
         method: "POST",
@@ -84,6 +108,10 @@ export const {
   useCreateDealPostMutation,
   useCreateAlertPostMutation,
   useCreateAlertMissingPersonPostMutation,
-  useCreateServicePostMutation,
+
+  useCreateServicePostForFoodAndBeverageMutation,
+  useCreateServicePostForEntertainmentMutation,
+  useCreateServicePostForPersonalHomeMutation,
+  useCreateServicePostForVenuesMutation,
 } = postAPI;
 export default postAPI;

@@ -64,10 +64,10 @@ const MyPost = () => {
         );
         return [...prev, ...newItems];
       });
-    } 
+    }
   }, [data]);
 
-  // 🔥 Smoothest Infinity Scroll — IntersectionObserver
+  // Smoothest Infinity Scroll — IntersectionObserver
   useEffect(() => {
     if (isFetching) return;
 

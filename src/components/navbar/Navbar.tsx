@@ -53,7 +53,7 @@ export default function Navbar() {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const { data: profile } = useGetProfileQuery(undefined);
+  const { data: profile, isFetching } = useGetProfileQuery(undefined);
   const [notifications] = useState<Notification[]>([
     {
       id: 1,
@@ -298,12 +298,19 @@ export default function Navbar() {
                 </PopoverContent>
               </Popover>
 
+              {!isFetching && !profile?.data && (
+                <Link
+                  href='/login'
+                  className='bg-[#15B826] text-white px-4 py-2 rounded-md'
+                >
+                  Login
+                </Link>
+              )}
+
               {/* User Profile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  {!profile?.data?.image ? (
-                    <Skeleton className='h-12 w-12 rounded-full' />
-                  ) : (
+                  {!profile?.data?.image ? null : (
                     <Avatar
                       title={profile?.data?.name}
                       className='relative w-12 h-12'

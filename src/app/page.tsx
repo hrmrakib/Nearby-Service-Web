@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,7 +19,6 @@ import {
   Calendar,
   MapPin,
   Star,
-  Heart,
   MessageCircle,
   Phone,
   Loader,
@@ -30,9 +29,9 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
 import { EventItem } from "@/types/post";
 import { useSelector } from "react-redux";
-import { useToggleLikeMutation } from "@/redux/features/like/likeAPI";
 import { toast } from "sonner";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
+import Link from "next/link";
 
 const categories = [
   { id: "all", label: "All", icon: "🌟" },
@@ -110,12 +109,50 @@ const contacts = [
   },
 ];
 
+export interface IPost {
+  _id: string;
+  author: string;
+  image: string | null;
+  media: string | null;
+  title: string;
+  description: string;
+  startDate: string;
+  startTime: string | null;
+  address: string;
+  location: { type: string; coordinates: [number, number] };
+  hasTag: string[];
+  views: number;
+  likes: number;
+  endDate: string | null;
+  price: string | null;
+  category: string;
+  subcategory: string | null;
+  serviceType: string | null;
+  missingName: string | null;
+  missingAge: string | null;
+  clothingDescription: string | null;
+  lastSeenLocation: { type: string; coordinates: [number, number] };
+  lastSeenDate: string | null;
+  contactInfo: string | null;
+  expireLimit: string | null;
+  capacity: number | null;
+  amenities: string | null;
+  licenses: string | null;
+  status: string;
+  boost: boolean;
+  attenders: any[];
+  isSaved: boolean;
+  totalSaved: number;
+  schedule: any[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function DashboardLayout() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [distanceRadius, setDistanceRadius] = useState([50]);
   const [minPrice, setMinPrice] = useState([150]);
   const [maxPrice, setMaxPrice] = useState([150]);
-  const [selectedStars, setSelectedStars] = useState<number[]>([]);
   const [dateRange, setDateRange] = useState<{
     startDate: Date | null;
     endDate: Date | null;
@@ -125,15 +162,15 @@ export default function DashboardLayout() {
   });
   const [showCalendar, setShowCalendar] = useState(false);
   const search = useSelector((state: any) => state.globalSearch.searchValue);
-  const [toggleLikeMutation] = useToggleLikeMutation();
   const [toggleSaveMutation] = useToggleSaveMutation();
+
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+  const [allPosts, setAllPosts] = useState<IPost[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+
   const [page, setPage] = useState(1);
   const limit = 10;
-  const {
-    data: allPosts,
-    isFetching,
-    refetch,
-  } = useGetAllPostQuery({
+  const { data, isLoading, isFetching, refetch } = useGetAllPostQuery({
     category: selectedCategory,
     // subcategory: selectedCategory,
     // lat: 0,
@@ -143,32 +180,61 @@ export default function DashboardLayout() {
     // maxPrice: maxPrice[0],
     // date: "",
     search,
+    page,
+    limit,
   });
 
-  const posts = allPosts?.data || [];
+  // const posts = allPosts?.data || [];
 
-  const handleLikeToggle = async (postId: string) => {
-    try {
-      const res = await toggleLikeMutation({
-        postId,
-      }).unwrap();
+  useEffect(() => {
+    if (data?.data && data.data.length > 0) {
+      if (page === 1) {
+        setAllPosts(data.data);
+      } else {
+        setAllPosts((prev) => {
+          const newItems = data.data.filter(
+            (post: any) => !prev.some((p) => p._id === post._id)
+          );
+          return [...prev, ...newItems];
+        });
+      }
 
-      // if (res?.success) {
-      //   refetch();
-      // }
-    } catch (error: any) {
-      toast.error(error?.data?.message);
+      if (data?.data?.length < limit) {
+        setHasMore(false);
+      }
     }
-  };
+  }, [data, page, refetch]);
+
+  // Smoothest Infinity Scroll — IntersectionObserver
+  useEffect(() => {
+    if (isFetching || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && data?.data?.length > 0) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      {
+        root: null,
+        rootMargin: "20px", // preload early
+        threshold: 0.1,
+      }
+    );
+
+    if (loaderRef.current) observer.observe(loaderRef.current);
+
+    return () => observer.disconnect();
+  }, [isFetching, data?.data]);
+
   const handleSaveToggle = async (postId: string) => {
     try {
-      await toggleSaveMutation({
+      const res = await toggleSaveMutation({
         postId,
       }).unwrap();
-
-      // if (res?.success) {
-      //   refetch();
-      // }
+      if (res?.success) {
+        refetch();
+      }
     } catch (error: any) {
       toast.error(error?.data?.message);
     }
@@ -359,14 +425,8 @@ export default function DashboardLayout() {
         {/* Middle Column - Content Feed */}
         <div className='min-w-0 min-h-0'>
           <ScrollArea className='h-auto'>
-            {isFetching && (
-              <div className='p-6 flex items-center justify-center mb-4'>
-                <Loader className='animate-spin' />
-              </div>
-            )}
-
             <div className='p-6 space-y-6'>
-              {posts?.map((item: EventItem) => (
+              {allPosts?.map((item: IPost) => (
                 <Card
                   key={item._id}
                   className='overflow-hidden !border-none p-0'
@@ -388,13 +448,13 @@ export default function DashboardLayout() {
                         <h3 className='text-xl font-semibold text-gray-900'>
                           {item.title}
                         </h3>
-                        <Button
+                        {/* <Button
                           onClick={() => handleLikeToggle(item?._id)}
                           variant='ghost'
                           size='sm'
                         >
                           <Heart className='w-4 h-4' />
-                        </Button>
+                        </Button> */}
                       </div>
 
                       <div className='flex items-center space-x-4'>
@@ -406,29 +466,34 @@ export default function DashboardLayout() {
                         </div>
                       </div>
 
-                      {item?.reviewsCount > 0 && (
+                      {/* {item?.reviewsCount > 0 && (
                         <div className='flex items-center space-x-1'>
                           {renderStars(Math.floor(item?.reviewsCount || 0))}
                           <span className='text-sm font-medium text-gray-900 ml-1'>
                             {item.averageRating}
                           </span>
                         </div>
-                      )}
+                      )} */}
 
                       <p className='text-[#374151] text-base leading-relaxed'>
                         {item.description}
                       </p>
 
-                      <div className='flex space-x-3 pt-2'>
-                        <Button className='flex-1 bg-[#15B826] hover:bg-green-600'>
+                      <div className='flex items-center space-x-3 pt-2'>
+                        <Link
+                          href={`/service-booking/${item._id}`}
+                          className='h-11 flex-1 flex items-center justify-center font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600'
+                        >
                           Request Quote
-                        </Button>
+                        </Link>
                         <Button
                           variant='outline'
-                          className='px-6 bg-transparent'
+                          className={`h-11 px-6 bg-transparent font-semibold text-[#15B826] border border-[#15B826] ${
+                            item.isSaved ? "bg-[#15B826] text-white" : ""
+                          }`}
                           onClick={() => handleSaveToggle(item?._id)}
                         >
-                          Save
+                          {item.isSaved ? "Saved" : "Save"}
                         </Button>
                       </div>
                     </div>
@@ -436,6 +501,12 @@ export default function DashboardLayout() {
                 </Card>
               ))}
             </div>
+
+            {isFetching && (
+              <div className='p-6 flex items-center justify-center mb-4'>
+                <Loader className='animate-spin' />
+              </div>
+            )}
           </ScrollArea>
         </div>
 
@@ -539,6 +610,9 @@ export default function DashboardLayout() {
           ))}
         </div>
       </div>
+
+      {/* Invisible Trigger for Smooth Infinite Scroll */}
+      <div ref={loaderRef} className='h-10'></div>
     </div>
   );
 }

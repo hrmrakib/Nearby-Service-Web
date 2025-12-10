@@ -24,6 +24,7 @@ const postAPI = baseAPI.injectEndpoints({
         if (maxPrice) queryParams.append("maxPrice", maxPrice.toString());
         if (date) queryParams.append("date", date);
         if (search) queryParams.append("search", search);
+        
         return {
           url: `/post/all-post?${queryParams.toString()}`,
           method: "GET",

@@ -9,6 +9,13 @@ const profileAPI = baseAPI.injectEndpoints({
       }),
     }),
 
+    getNotifications: builder.query({
+      query: ({ page, limit }) => ({
+        url: `/notification?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+    }),
+
     updateProfile: builder.mutation({
       query: (body) => ({
         url: "/user/update-profile",
@@ -44,6 +51,7 @@ const profileAPI = baseAPI.injectEndpoints({
         method: "GET",
       }),
     }),
+
     getFollowing: builder.query({
       query: ({ page, limit }) => ({
         url: `/follower/my-following?page=${page}&limit=${limit}`,

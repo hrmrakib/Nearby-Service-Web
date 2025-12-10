@@ -41,12 +41,6 @@ interface Notification {
   isRead: boolean;
 }
 
-const navigationLinks = [
-  { label: "Home", href: "/" },
-  { label: "Recommended", href: "/recommended" },
-  { label: "Add Post", href: "/add-post" },
-];
-
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
@@ -54,6 +48,7 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const { data: profile, isFetching } = useGetProfileQuery(undefined);
+  // const {data}  =
   const [notifications] = useState<Notification[]>([
     {
       id: 1,
@@ -116,12 +111,8 @@ export default function Navbar() {
     pathname === "/verify-otp" ||
     pathname === "/otp-verify" ||
     pathname === "/reset-password" ||
-    pathname.split("/")[1] === "dashboard" ||
-    pathname === "/signup/agent" ||
-    pathname === "/signup/artist" ||
-    pathname === "/signup/venue" ||
-    pathname === "/signup/buyer" ||
-    pathname === "/signup/organizer"
+    pathname === "/payment/success" ||
+    pathname === "/payment/failure"
   ) {
     return null;
   }

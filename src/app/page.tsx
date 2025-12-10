@@ -15,23 +15,15 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Calendar,
-  MapPin,
-  Star,
-  MessageCircle,
-  Phone,
-  Loader,
-} from "lucide-react";
-import CalendarDatePicker from "@/components/others/CalenderDatePicker";
+import { MapPin, Star, MessageCircle, Phone, Loader } from "lucide-react";
 import Image from "next/image";
 import { HeroSection } from "@/components/home/HeroSection";
 import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
-import { EventItem } from "@/types/post";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import Link from "next/link";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const categories = [
   { id: "all", label: "All", icon: "🌟" },
@@ -164,12 +156,13 @@ export default function DashboardLayout() {
   const search = useSelector((state: any) => state.globalSearch.searchValue);
   const [toggleSaveMutation] = useToggleSaveMutation();
 
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const [allPosts, setAllPosts] = useState<IPost[]>([]);
   const [hasMore, setHasMore] = useState(true);
 
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const limit = 3;
   const { data, isLoading, isFetching, refetch } = useGetAllPostQuery({
     category: selectedCategory,
     // subcategory: selectedCategory,
@@ -186,13 +179,20 @@ export default function DashboardLayout() {
 
   // const posts = allPosts?.data || [];
 
+  // reset posts
   useEffect(() => {
-    if (data?.data && data.data.length > 0) {
+    setPage(1);
+    setHasMore(true);
+    setAllPosts([]);
+  }, [selectedCategory, search]);
+
+  useEffect(() => {
+    if (data?.data && data?.data?.length > 0) {
       if (page === 1) {
-        setAllPosts(data.data);
+        setAllPosts(data?.data);
       } else {
         setAllPosts((prev) => {
-          const newItems = data.data.filter(
+          const newItems = data?.data?.filter(
             (post: any) => !prev.some((p) => p._id === post._id)
           );
           return [...prev, ...newItems];
@@ -207,25 +207,31 @@ export default function DashboardLayout() {
 
   // Smoothest Infinity Scroll — IntersectionObserver
   useEffect(() => {
-    if (isFetching || !hasMore) return;
+    if (!hasMore || isFetching) return;
+
+    const viewport = scrollRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    );
+
+    if (!viewport || !loaderRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && data?.data?.length > 0) {
+        if (entries[0].isIntersecting) {
           setPage((prev) => prev + 1);
         }
       },
       {
-        root: null,
-        rootMargin: "20px", // preload early
-        threshold: 0.1,
+        root: viewport,
+        rootMargin: "0px",
+        threshold: 0.5,
       }
     );
 
-    if (loaderRef.current) observer.observe(loaderRef.current);
+    observer.observe(loaderRef.current);
 
     return () => observer.disconnect();
-  }, [isFetching, data?.data]);
+  }, [hasMore, isFetching]);
 
   const handleSaveToggle = async (postId: string) => {
     try {
@@ -314,48 +320,17 @@ export default function DashboardLayout() {
                 </div>
 
                 {/* Date Range Filter */}
-                <div className='space-y-3 relative'>
+                <div className='flex flex-col gap-3'>
                   <Label className='text-sm font-medium text-gray-700'>
                     Date
                   </Label>
-                  <Button
-                    variant='outline'
-                    onClick={() => setShowCalendar(!showCalendar)}
-                    className='w-full justify-start text-left'
-                  >
-                    <Calendar className='w-4 h-4 mr-2 text-gray-500' />
-                    {dateRange.startDate && dateRange.endDate ? (
-                      <span>
-                        {dateRange.startDate.toLocaleDateString("en-US", {
-                          month: "short", // Use "short" for abbreviated month
-                          day: "numeric",
-                          year: "numeric",
-                        })}{" "}
-                        -{" "}
-                        {dateRange.endDate.toLocaleDateString("en-US", {
-                          month: "short", // Use "short" for abbreviated month
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                    ) : (
-                      <span className='text-gray-500'>Select date range</span>
-                    )}
-                  </Button>
-
-                  {/* Calendar Dropdown */}
-                  {showCalendar && (
-                    <div className='absolute top-full left-0 z-50 mt-1'>
-                      {dateRange.startDate && dateRange.endDate && (
-                        <CalendarDatePicker
-                          startDate={dateRange.startDate}
-                          endDate={dateRange.endDate}
-                          onDateRangeChange={handleDateRangeChange}
-                          onClose={() => setShowCalendar(false)}
-                        />
-                      )}
-                    </div>
-                  )}
+                  <div className='flex items-center gap-3'>
+                    <Checkbox
+                      id='terms'
+                      className='!size-4 border border-gray-500'
+                    />
+                    <Label htmlFor='terms'>Upcoming (Events/Posts)</Label>
+                  </div>
                 </div>
 
                 {/* Distance Radius */}
@@ -424,7 +399,7 @@ export default function DashboardLayout() {
 
         {/* Middle Column - Content Feed */}
         <div className='min-w-0 min-h-0'>
-          <ScrollArea className='h-auto'>
+          <ScrollArea className='h-auto' ref={scrollRef}>
             <div className='p-6 space-y-6'>
               {allPosts?.map((item: IPost) => (
                 <Card
@@ -502,7 +477,7 @@ export default function DashboardLayout() {
               ))}
             </div>
 
-            {isFetching && (
+            {hasMore && !isFetching && (
               <div className='p-6 flex items-center justify-center mb-4'>
                 <Loader className='animate-spin' />
               </div>

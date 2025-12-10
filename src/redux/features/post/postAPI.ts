@@ -24,12 +24,19 @@ const postAPI = baseAPI.injectEndpoints({
         if (maxPrice) queryParams.append("maxPrice", maxPrice.toString());
         if (date) queryParams.append("date", date);
         if (search) queryParams.append("search", search);
-        
+
         return {
           url: `/post/all-post?${queryParams.toString()}`,
           method: "GET",
         };
       },
+    }),
+
+    getNotifications: builder.query({
+      query: ({ page, limit }) => ({
+        url: `/notification?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
     }),
 
     createEventPost: builder.mutation({
@@ -96,7 +103,7 @@ const postAPI = baseAPI.injectEndpoints({
       }),
       invalidatesTags: ["Post"],
     }),
-    
+
     createServicePostForVenues: builder.mutation({
       query: (body) => ({
         url: "/post/service/venue",
@@ -110,6 +117,7 @@ const postAPI = baseAPI.injectEndpoints({
 
 export const {
   useGetAllPostQuery,
+  useGetNotificationsQuery,
   useCreateEventPostMutation,
   useCreateDealPostMutation,
   useCreateAlertPostMutation,

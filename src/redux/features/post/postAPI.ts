@@ -13,6 +13,8 @@ const postAPI = baseAPI.injectEndpoints({
         maxPrice,
         date,
         search,
+        page,
+        limit,
       }) => {
         const queryParams = new URLSearchParams();
 
@@ -24,6 +26,8 @@ const postAPI = baseAPI.injectEndpoints({
         if (maxPrice) queryParams.append("maxPrice", maxPrice.toString());
         if (date) queryParams.append("date", date);
         if (search) queryParams.append("search", search);
+        if (page) queryParams.append("page", page.toString());
+        if (limit) queryParams.append("limit", limit.toString());
 
         return {
           url: `/post/all-post?${queryParams.toString()}`,

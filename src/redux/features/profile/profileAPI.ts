@@ -63,6 +63,7 @@ const profileAPI = baseAPI.injectEndpoints({
 
 export const {
   useGetProfileQuery,
+  useGetNotificationsQuery,
   useUpdateProfileMutation,
   useGetMyPostQuery,
   useGetAttendingEventQuery,

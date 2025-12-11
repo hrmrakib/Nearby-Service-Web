@@ -15,7 +15,7 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Star, MessageCircle, Phone, Loader } from "lucide-react";
+import { MapPin, MessageCircle, Phone, Loader, Calendar } from "lucide-react";
 import Image from "next/image";
 import { HeroSection } from "@/components/home/HeroSection";
 import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
@@ -23,7 +23,7 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import Link from "next/link";
-import { Checkbox } from "@/components/ui/checkbox";
+import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 
 const categories = [
   { id: "all", label: "All", icon: "🌟" },
@@ -149,8 +149,8 @@ export default function DashboardLayout() {
     startDate: Date | null;
     endDate: Date | null;
   }>({
-    startDate: new Date(2025, 8, 6), // September 6, 2025
-    endDate: new Date(2025, 8, 15), // September 15, 2025
+    startDate: new Date(2025, 8, 6),
+    endDate: new Date(2025, 8, 15),
   });
   const [showCalendar, setShowCalendar] = useState(false);
   const search = useSelector((state: any) => state.globalSearch.searchValue);
@@ -163,7 +163,7 @@ export default function DashboardLayout() {
 
   const [page, setPage] = useState(1);
   const limit = 3;
-  const { data, isLoading, isFetching, refetch } = useGetAllPostQuery({
+  const { data, isFetching, refetch } = useGetAllPostQuery({
     category: selectedCategory,
     // subcategory: selectedCategory,
     // lat: 0,
@@ -178,6 +178,7 @@ export default function DashboardLayout() {
   });
 
   // const posts = allPosts?.data || [];
+  const totalPosts = data?.meta?.total || 0;
 
   // reset posts
   useEffect(() => {
@@ -199,21 +200,21 @@ export default function DashboardLayout() {
         });
       }
 
-      if (data?.data?.length < limit) {
+      if (allPosts.length + data.data.length >= (data.meta?.total || 0)) {
         setHasMore(false);
       }
     }
-  }, [data, page, refetch]);
+  }, [data]);
 
   // Smoothest Infinity Scroll — IntersectionObserver
   useEffect(() => {
     if (!hasMore || isFetching) return;
 
-    const viewport = scrollRef.current?.querySelector(
+    const scrollViewport = scrollRef.current.querySelector(
       "[data-radix-scroll-area-viewport]"
     );
 
-    if (!viewport || !loaderRef.current) return;
+    if (!loaderRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -222,7 +223,7 @@ export default function DashboardLayout() {
         }
       },
       {
-        root: viewport,
+        root: scrollViewport,
         rootMargin: "0px",
         threshold: 0.5,
       }
@@ -252,17 +253,6 @@ export default function DashboardLayout() {
   ) => {
     setDateRange({ startDate, endDate });
     setShowCalendar(false);
-  };
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: rating }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${
-          i < rating ? "fill-[#17CA2A] text-[#17CA2A]" : "text-gray-300"
-        }`}
-      />
-    ));
   };
 
   return (
@@ -320,75 +310,106 @@ export default function DashboardLayout() {
                 </div>
 
                 {/* Date Range Filter */}
-                <div className='flex flex-col gap-3'>
+                <div className='space-y-3 relative'>
                   <Label className='text-sm font-medium text-gray-700'>
                     Date
                   </Label>
-                  <div className='flex items-center gap-3'>
-                    <Checkbox
-                      id='terms'
-                      className='!size-4 border border-gray-500'
-                    />
-                    <Label htmlFor='terms'>Upcoming (Events/Posts)</Label>
-                  </div>
-                </div>
+                  <Button
+                    variant='outline'
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className='w-full justify-start text-left'
+                  >
+                    <Calendar className='w-4 h-4 mr-2 text-gray-500' />
+                    {dateRange.startDate && dateRange.endDate ? (
+                      <span>
+                        {dateRange.startDate.toLocaleDateString("en-US", {
+                          month: "short", // Use "short" for abbreviated month
+                          day: "numeric",
+                          year: "numeric",
+                        })}{" "}
+                        -{" "}
+                        {dateRange.endDate.toLocaleDateString("en-US", {
+                          month: "short", // Use "short" for abbreviated month
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    ) : (
+                      <span className='text-gray-500'>Select date range</span>
+                    )}
+                  </Button>
 
-                {/* Distance Radius */}
-                <div className='space-y-3'>
-                  <Label className='text-sm font-medium text-gray-700'>
-                    Distance Radius (Max: 1500 miles)
-                  </Label>
-                  <div className='px-2'>
-                    <Slider
-                      value={distanceRadius}
-                      onValueChange={setDistanceRadius}
-                      max={1500}
-                      step={5}
-                      className='w-full'
-                    />
-                    <div className='flex justify-between text-xs text-gray-500 mt-1'>
-                      <span>0 miles</span>
-                      <span>{distanceRadius[0]} miles</span>
+                  {/* Calendar Dropdown */}
+                  {showCalendar && (
+                    <div className='absolute top-16 left-0 z-50 mt-1'>
+                      {dateRange.startDate && dateRange.endDate && (
+                        <CalendarDatePicker
+                          startDate={dateRange.startDate}
+                          endDate={dateRange.endDate}
+                          onDateRangeChange={handleDateRangeChange}
+                          onClose={() => setShowCalendar(false)}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Distance Radius */}
+                  <div className='space-y-3'>
+                    <Label className='text-sm font-medium text-gray-700'>
+                      Distance Radius (Max: 1500 miles)
+                    </Label>
+                    <div className='px-2'>
+                      <Slider
+                        value={distanceRadius}
+                        onValueChange={setDistanceRadius}
+                        max={1500}
+                        step={5}
+                        className='w-full'
+                      />
+                      <div className='flex justify-between text-xs text-gray-500 mt-1'>
+                        <span>0 miles</span>
+                        <span>{distanceRadius[0]} miles</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Min Price */}
-                <div className='space-y-3'>
-                  <Label className='text-sm font-medium text-gray-700'>
-                    Min Price
-                  </Label>
-                  <div className='px-2'>
-                    <Slider
-                      value={minPrice}
-                      onValueChange={setMinPrice}
-                      max={500}
-                      step={10}
-                      className='w-full'
-                    />
-                    <div className='flex justify-between text-xs text-gray-500 mt-1'>
-                      <span>$0</span>
-                      <span>${minPrice[0]}</span>
+                  {/* Min Price */}
+                  <div className='space-y-3'>
+                    <Label className='text-sm font-medium text-gray-700'>
+                      Min Price
+                    </Label>
+                    <div className='px-2'>
+                      <Slider
+                        value={minPrice}
+                        onValueChange={setMinPrice}
+                        max={500}
+                        step={10}
+                        className='w-full'
+                      />
+                      <div className='flex justify-between text-xs text-gray-500 mt-1'>
+                        <span>$0</span>
+                        <span>${minPrice[0]}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Max Price */}
-                <div className='space-y-3'>
-                  <Label className='text-sm font-medium text-gray-700'>
-                    Max Price
-                  </Label>
-                  <div className='px-2'>
-                    <Slider
-                      value={maxPrice}
-                      onValueChange={setMaxPrice}
-                      max={500}
-                      step={10}
-                      className='w-full'
-                    />
-                    <div className='flex justify-between text-xs text-gray-500 mt-1'>
-                      <span>$0</span>
-                      <span>${maxPrice[0]}</span>
+                  {/* Max Price */}
+                  <div className='space-y-3'>
+                    <Label className='text-sm font-medium text-gray-700'>
+                      Max Price
+                    </Label>
+                    <div className='px-2'>
+                      <Slider
+                        value={maxPrice}
+                        onValueChange={setMaxPrice}
+                        max={500}
+                        step={10}
+                        className='w-full'
+                      />
+                      <div className='flex justify-between text-xs text-gray-500 mt-1'>
+                        <span>$0</span>
+                        <span>${maxPrice[0]}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -477,9 +498,12 @@ export default function DashboardLayout() {
               ))}
             </div>
 
-            {hasMore && !isFetching && (
-              <div className='p-6 flex items-center justify-center mb-4'>
-                <Loader className='animate-spin' />
+            {isFetching && (
+              <div
+                ref={loaderRef}
+                className='h-12 flex items-center justify-center'
+              >
+                {isFetching && <Loader className='animate-spin' />}
               </div>
             )}
           </ScrollArea>
@@ -585,9 +609,6 @@ export default function DashboardLayout() {
           ))}
         </div>
       </div>
-
-      {/* Invisible Trigger for Smooth Infinite Scroll */}
-      <div ref={loaderRef} className='h-10'></div>
     </div>
   );
 }

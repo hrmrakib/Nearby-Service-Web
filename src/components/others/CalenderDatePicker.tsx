@@ -164,9 +164,9 @@ export default function CalendarDatePicker({
 
       {/* Days of week header */}
       <div className='grid grid-cols-7 gap-1 mb-2'>
-        {daysOfWeek.map((day) => (
+        {daysOfWeek.map((day, index) => (
           <div
-            key={day}
+            key={index}
             className='text-center text-sm font-medium text-gray-500 py-2'
           >
             {day}

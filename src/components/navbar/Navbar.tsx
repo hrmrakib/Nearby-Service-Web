@@ -33,6 +33,8 @@ import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
 import { Skeleton } from "../ui/skeleton";
 import { useDispatch } from "react-redux";
 import { setSearchValue } from "@/redux/features/search/globalSearchSlice";
+import { useGetNotificationsQuery } from "@/redux/features/post/postAPI";
+import { getTimeDifference } from "@/lib/getTimeDifferent";
 
 interface Notification {
   id: number;
@@ -40,59 +42,41 @@ interface Notification {
   timestamp: string;
   isRead: boolean;
 }
+interface INotification {
+  _id: string;
+  content: string;
+  senderId: string;
+  receiverId: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const [page, setPage] = useState(1);
+  const limit = 10;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const { data: profile, isFetching } = useGetProfileQuery(undefined);
   // const {data}  =
-  const [notifications] = useState<Notification[]>([
+  const [notificatio] = useState<Notification[]>([
     {
       id: 1,
       message: "Lorem ipsum dolor sit amet consectetur.",
       timestamp: "Just now",
       isRead: false,
     },
-    {
-      id: 2,
-      message: "Lorem ipsum dolor sit amet consectetur.",
-      timestamp: "Just now",
-      isRead: false,
-    },
-    {
-      id: 3,
-      message: "Lorem ipsum dolor sit amet consectetur.",
-      timestamp: "Just now",
-      isRead: false,
-    },
-    {
-      id: 4,
-      message: "Lorem ipsum dolor sit amet consectetur.",
-      timestamp: "Just now",
-      isRead: false,
-    },
-    {
-      id: 5,
-      message: "Lorem ipsum dolor sit amet consectetur.",
-      timestamp: "Just now",
-      isRead: false,
-    },
-    {
-      id: 6,
-      message: "Lorem ipsum dolor sit amet consectetur.",
-      timestamp: "Just now",
-      isRead: false,
-    },
-    {
-      id: 7,
-      message: "Lorem ipsum dolor sit amet consectetur.",
-      timestamp: "Just now",
-      isRead: false,
-    },
   ]);
+  const { data } = useGetNotificationsQuery({
+    page,
+    limit,
+  });
+  const notifications = data?.data;
+  console.log(data);
 
   const dispatch = useDispatch();
 
@@ -246,39 +230,43 @@ export default function Navbar() {
                   className='max-w-2xl max-h-[400px] overflow-y-auto'
                 >
                   <div className='h-auto bg-gradient-to-br from-gray-50 to-gray-100'>
-                    <div className='max-w-2xl mx-auto px-4 py-6 sm:py-8'>
-                      <div className='px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100'>
+                    <div className='max-w-2xl mx-auto px-4 pb-6 sm:py-8'>
+                      <div className='px-4 py-1 border-b border-gray-100'>
                         <h1 className='text-xl sm:text-2xl font-semibold text-gray-900'>
                           Notifications
                         </h1>
                       </div>
 
                       <div className='divide-y divide-gray-100'>
-                        {notifications.map((notification) => (
+                        {notifications?.map((notification: INotification) => (
                           <div
-                            key={notification.id}
+                            key={notification?._id}
                             className='py-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer'
                           >
-                            <div className='flex items-start gap-3 sm:gap-4'>
-                              <div className='flex-shrink-0 mt-1'>
-                                <div className='w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-md p-1'>
-                                  <Bell className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
+                            <div className='flex flex-col items-start gap-3 sm:gap-4'>
+                              <div className='w-full flex items-center justify-between'>
+                                <div className='mt-1'>
+                                  <div className='w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-md p-1'>
+                                    <Bell className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
+                                  </div>
+                                </div>
+
+                                <div className='flex items-center gap-2 ml-2'>
+                                  <span className='text-xs sm:text-sm text-gray-500 whitespace-nowrap'>
+                                    {getTimeDifference(
+                                      notification?.createdAt?.split("T")[0]
+                                    )}
+                                  </span>
+                                  {!notification?.read && (
+                                    <div className='w-2 h-2 bg-green-500 rounded-full flex-shrink-0' />
+                                  )}
                                 </div>
                               </div>
 
                               <div className='flex-1 min-w-0'>
                                 <p className='text-sm sm:text-base text-gray-900 leading-relaxed'>
-                                  {notification.message}
+                                  {notification?.content}
                                 </p>
-                              </div>
-
-                              <div className='flex-shrink-0 flex items-center gap-2 ml-2'>
-                                <span className='text-xs sm:text-sm text-gray-500 whitespace-nowrap'>
-                                  {notification.timestamp}
-                                </span>
-                                {!notification.isRead && (
-                                  <div className='w-2 h-2 bg-green-500 rounded-full flex-shrink-0' />
-                                )}
                               </div>
                             </div>
                           </div>

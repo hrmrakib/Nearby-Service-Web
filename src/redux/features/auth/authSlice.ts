@@ -1,0 +1,59 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { createSlice } from "@reduxjs/toolkit";
+
+type TUser = {
+  location: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  googleId: string;
+  appleId: string;
+  stripeAccountId: string;
+  isStripeConnected: boolean;
+  _id: string;
+  name: string;
+  email: string;
+  address: string;
+  phone: string;
+  bio: string;
+  post: number;
+  interested: any[];
+  role: "USER" | "ADMIN" | string;
+  image: string;
+  follower: number;
+  following: number;
+  isDeleted: boolean;
+  verified: boolean;
+  paypalAccount: string;
+  income: number;
+};
+
+type TAuthState = {
+  user: TUser | null;
+  token: string | null;
+};
+
+const initialState: TAuthState = {
+  user: null,
+  token: null,
+};
+
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    setUser: (state, action) => {
+      const { user, token } = action.payload;
+      state.user = user;
+      state.token = token;
+    },
+
+    logout: (state) => {
+      state.user = null;
+      state.token = null;
+    },
+  },
+});
+
+export const { setUser, logout } = authSlice.actions;
+export default authSlice.reducer;

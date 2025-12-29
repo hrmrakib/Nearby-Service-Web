@@ -187,6 +187,13 @@ export default function DashboardLayout() {
     setAllPosts([]);
   }, [selectedCategory, search]);
 
+  // useEffect(() => {
+  //   const accessToken = localStorage.getItem("accessToken");
+  //   if (!accessToken) {
+  //     localStorage.setItem("accessToken", "null");
+  //   }
+  // }, []);
+
   useEffect(() => {
     if (data?.data && data?.data?.length > 0) {
       if (page === 1) {
@@ -210,7 +217,7 @@ export default function DashboardLayout() {
   useEffect(() => {
     if (!hasMore || isFetching) return;
 
-    const scrollViewport = scrollRef.current.querySelector(
+    const scrollViewport = scrollRef.current!.querySelector(
       "[data-radix-scroll-area-viewport]"
     );
 

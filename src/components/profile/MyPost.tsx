@@ -53,14 +53,14 @@ const MyPost = () => {
 
   const { data, isLoading, isFetching } = useGetMyPostQuery(
     { page, limit },
-    { refetchOnMountOrArgChange: false }
+    { refetchOnMountOrArgChange: false },
   );
 
   useEffect(() => {
     if (data?.data && data.data.length > 0) {
       setAllPosts((prev) => {
         const newItems = data.data.filter(
-          (post: IPost) => !prev.some((p) => p._id === post._id)
+          (post: IPost) => !prev.some((p) => p._id === post._id),
         );
         return [...prev, ...newItems];
       });
@@ -81,7 +81,7 @@ const MyPost = () => {
         root: null,
         rootMargin: "20px", // preload early
         threshold: 0.1,
-      }
+      },
     );
 
     if (loaderRef.current) observer.observe(loaderRef.current);
@@ -109,7 +109,7 @@ const MyPost = () => {
   }
 
   return (
-    <div className='space-y-8'>
+    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 space-y-8'>
       {allPosts.map((post) => (
         <div key={post._id}>
           <Card className='overflow-hidden py-0'>
@@ -135,7 +135,7 @@ const MyPost = () => {
               </div>
 
               <p className='text-sm text-[#4B5563] leading-relaxed'>
-                {post.description}
+                {post.description?.length > 100 ? post.description?.slice(0, 100) + "..." : post.description}
               </p>
             </CardContent>
           </Card>

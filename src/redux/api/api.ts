@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
 import {
   BaseQueryFn,
   createApi,
@@ -6,20 +8,25 @@ import {
   fetchBaseQuery,
   FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
+import { toast } from "sonner";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL,
+  credentials: "include",
   prepareHeaders: (headers) => {
-    if (typeof window === "undefined") return headers;
+    console.log("Preparing headers for API request", window?.location?.href);
 
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
+    if (typeof window !== "undefined") {
+      const token = localStorage?.getItem("accessToken");
+      if (token) {
+        headers.set("authorization", `Bearer ${token}`);
+      }
     }
-
     return headers;
   },
 });
+
+let isLoggingOut = false;
 
 const customBaseQuery: BaseQueryFn<
   FetchArgs | string,
@@ -28,42 +35,49 @@ const customBaseQuery: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
 
-  const isAuthError =
-    result.error &&
-    (result?.error?.status === 401 ||
-      result?.error?.status === 402 ||
-      result?.error?.status === 403);
-
-  if (isAuthError) {
-    const token = localStorage.getItem("accessToken");
-
-    if (token) {
-      localStorage.removeItem("accessToken");
-      window.location.href = "/login";
-    }
-
+  if (typeof window === "undefined") {
     return result;
+  }
 
-    // const refreshArgs: FetchArgs = {
-    //   url: "/auth/refresh-token",
-    //   method: "POST",
-    //   credentials: "include",
-    // };
+  // const isAuthError =
+  //   result.error &&
+  //   (result?.error?.status === 401 ||
+  //     result?.error?.status === 402 ||
+  //     result?.error?.status === 403 ||
+  //     result?.error?.status === 404);
 
-    // const refreshResult = await baseQuery(refreshArgs, api, extraOptions);
+  // if (isAuthError) {
+  //   const token = localStorage.getItem("accessToken");
 
-    // if (refreshResult?.data) {
-    //   const newAccessToken = (refreshResult?.data as any)?.accessToken;
+  //   if (token) {
+  //     localStorage.removeItem("accessToken");
+  //     window.location.href = "/login";
+  //   }
 
-    //   if (typeof window !== "undefined" && newAccessToken) {
-    //     localStorage.setItem("accessToken", newAccessToken);
-    //     await saveTokens(newAccessToken);
-    //   }
+  //   return result;
+  // }
 
-    //   result = await baseQuery(args, api, extraOptions);
+  const pathname = window?.location?.pathname || "";
 
-    //   return result;
-    // }
+  if (result.error && result.error.status === 401) {
+    if (!isLoggingOut && pathname !== "/login") {
+      isLoggingOut = true;
+      localStorage?.removeItem("accessToken"); // Clear invalid token
+
+      toast.error("Session expired. Please login again.");
+
+      if (window?.location?.replace) {
+        setTimeout(() => {
+          window.location.replace("/login");
+        }, 400);
+      }
+    }
+  } else if (result.error && result.error.status === 403) {
+    alert("You need to verify your email to use this feature.");
+    if (window?.location?.href) window.location.href = "/profile";
+  } else if (result.error && result.error.status === 402) {
+    alert("You need to upgrade your plan to use this feature.");
+    if (window?.location?.href) window.location.href = "/#upgrade-plan";
   }
 
   return result;

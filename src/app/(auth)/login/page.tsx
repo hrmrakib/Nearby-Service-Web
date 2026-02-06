@@ -9,9 +9,10 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { useLoginMutation } from "@/redux/features/auth/authAPI";
 import { useRouter } from "next/navigation";
 import { saveTokens } from "@/service/authService";
+import { userTrack } from "@/redux/features/auth/authSlice";
+import { useDispatch } from "react-redux";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [loginMutation] = useLoginMutation();
+  const dispatch = useDispatch();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,12 +45,20 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const res = await loginMutation({ email, password }).unwrap();
-      console.log(res);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (res?.success) {
-        await saveTokens(res?.data?.accessToken);
-        localStorage.setItem("accessToken", res?.data?.accessToken);
+      if (res?.ok) {
+        const data = await res.json();
+        console.log(data);
+        dispatch(userTrack());
+        await saveTokens(data?.data?.accessToken);
+        localStorage.setItem("accessToken", data?.data?.accessToken);
         router.push("/");
       }
     } catch (err: any) {

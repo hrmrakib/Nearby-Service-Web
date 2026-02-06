@@ -29,11 +29,13 @@ type TUser = {
 };
 
 type TAuthState = {
+  userToggle: boolean;
   user: TUser | null;
   token: string | null;
 };
 
 const initialState: TAuthState = {
+  userToggle: false,
   user: null,
   token: null,
 };
@@ -42,6 +44,10 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    userTrack: (state) => {
+      state.userToggle = !state.userToggle;
+    },
+
     setUser: (state, action) => {
       const { user, token } = action.payload;
       state.user = user;
@@ -55,5 +61,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, logout } = authSlice.actions;
+export const { userTrack, setUser, logout } = authSlice.actions;
 export default authSlice.reducer;

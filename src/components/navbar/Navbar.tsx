@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, Menu, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Popover,
@@ -30,7 +29,6 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
-import { Skeleton } from "../ui/skeleton";
 import { useDispatch } from "react-redux";
 import { setSearchValue } from "@/redux/features/search/globalSearchSlice";
 import { useGetNotificationsQuery } from "@/redux/features/post/postAPI";
@@ -61,16 +59,19 @@ export default function Navbar() {
   const limit = 10;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const { data: profile, isFetching } = useGetProfileQuery(undefined);
-  // const {data}  =
-  const [notificatio] = useState<Notification[]>([
+  const [hasToken, setHasToken] = useState(false);
+
+  useEffect(() => {
+    setHasToken(!!localStorage?.getItem("accessToken"));
+  }, []);
+
+  const { data: profile, isFetching } = useGetProfileQuery(
+    {},
     {
-      id: 1,
-      message: "Lorem ipsum dolor sit amet consectetur.",
-      timestamp: "Just now",
-      isRead: false,
+      skip: !hasToken,
     },
-  ]);
+  );
+
   const { data } = useGetNotificationsQuery({
     page,
     limit,
@@ -254,7 +255,7 @@ export default function Navbar() {
                                 <div className='flex items-center gap-2 ml-2'>
                                   <span className='text-xs sm:text-sm text-gray-500 whitespace-nowrap'>
                                     {getTimeDifference(
-                                      notification?.createdAt?.split("T")[0]
+                                      notification?.createdAt?.split("T")[0],
                                     )}
                                   </span>
                                   {!notification?.read && (

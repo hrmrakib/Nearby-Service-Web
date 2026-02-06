@@ -59,7 +59,7 @@ export interface IFollowing {
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"post" | "attending" | "saved">(
-    "post"
+    "post",
   );
   const [isEditMode, setIsEditMode] = useState(false);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
@@ -264,7 +264,7 @@ export default function ProfilePage() {
 
   return (
     <div className='bg-[#F3F4F6]'>
-      <div className='max-w-3xl mx-auto bg-transparent min-h-screen'>
+      <div className='max-w-3xl mx-auto bg-transparent min-h-'>
         {/* Profile Header */}
         <div className='px-6 pt-8 pb-6 text-center'>
           {/* Profile Image */}
@@ -350,7 +350,8 @@ export default function ProfilePage() {
             Edit Profile
           </Button>
         </div>
-
+      </div>
+      <div className='container mx-auto'>
         {/* Tabs */}
         <div className='px-6 pb-4'>
           <div className='flex gap-4'>
@@ -395,81 +396,80 @@ export default function ProfilePage() {
 
           {activeTab === "saved" && <SavedPost />}
         </div>
-
-        {/* Followers Modal */}
-        <Dialog open={showFollowersModal} onOpenChange={setShowFollowersModal}>
-          <DialogContent className='max-w-sm mx-auto max-h-[80vh] p-0'>
-            <DialogHeader className='p-4 pb-2 border-b'>
-              <div className='flex items-center justify-between'>
-                <DialogTitle className='text-lg font-semibold'>
-                  Followers ({followersCount})
-                </DialogTitle>
-                <button
-                  onClick={() => setShowFollowersModal(false)}
-                  className='p-1 hover:bg-gray-100 rounded-full'
-                >
-                  {/* <X className='w-5 h-5' /> */}
-                </button>
-              </div>
-            </DialogHeader>
-            <div className='overflow-y-auto max-h-96 p-4'>
-              <div className='space-y-3'>
-                {followers?.map((user: IFollow) => (
-                  <div key={user._id} className='flex items-center gap-3'>
-                    <Avatar className='w-10 h-10'>
-                      <AvatarImage
-                        src={user?.follower?.image}
-                        alt={user?.follower?.name}
-                      />
-                      <AvatarFallback>{user?.follower?.name}</AvatarFallback>
-                    </Avatar>
-                    <span className='font-medium text-[#1F2937]'>
-                      {user?.follower?.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Following Modal */}
-        <Dialog open={showFollowingModal} onOpenChange={setShowFollowingModal}>
-          <DialogContent className='max-w-sm mx-auto max-h-[80vh] p-0'>
-            <DialogHeader className='p-4 pb-2 border-b'>
-              <div className='flex items-center justify-between'>
-                <DialogTitle className='text-lg font-semibold'>
-                  Following ({followingCount})
-                </DialogTitle>
-                <button
-                  onClick={() => setShowFollowingModal(false)}
-                  className='p-1 hover:bg-gray-100 rounded-full'
-                >
-                  {/* <X className='w-5 h-5' /> */}
-                </button>
-              </div>
-            </DialogHeader>
-            <div className='overflow-y-auto max-h-96 p-4'>
-              <div className='space-y-3'>
-                {following?.map((user: IFollowing) => (
-                  <div key={user._id} className='flex items-center gap-3'>
-                    <Avatar className='w-10 h-10'>
-                      <AvatarImage
-                        src={user?.follower?.image}
-                        alt={user?.follower?.name}
-                      />
-                      <AvatarFallback>{user?.followed?.name}</AvatarFallback>
-                    </Avatar>
-                    <span className='font-medium text-[#1F2937]'>
-                      {user?.follower?.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
+      {/* Followers Modal */}
+      <Dialog open={showFollowersModal} onOpenChange={setShowFollowersModal}>
+        <DialogContent className='max-w-sm mx-auto max-h-[80vh] p-0'>
+          <DialogHeader className='p-4 pb-2 border-b'>
+            <div className='flex items-center justify-between'>
+              <DialogTitle className='text-lg font-semibold'>
+                Followers ({followersCount})
+              </DialogTitle>
+              <button
+                onClick={() => setShowFollowersModal(false)}
+                className='p-1 hover:bg-gray-100 rounded-full'
+              >
+                {/* <X className='w-5 h-5' /> */}
+              </button>
+            </div>
+          </DialogHeader>
+          <div className='overflow-y-auto max-h-96 p-4'>
+            <div className='space-y-3'>
+              {followers?.map((user: IFollow) => (
+                <div key={user._id} className='flex items-center gap-3'>
+                  <Avatar className='w-10 h-10'>
+                    <AvatarImage
+                      src={user?.follower?.image}
+                      alt={user?.follower?.name}
+                    />
+                    <AvatarFallback>{user?.follower?.name}</AvatarFallback>
+                  </Avatar>
+                  <span className='font-medium text-[#1F2937]'>
+                    {user?.follower?.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Following Modal */}
+      <Dialog open={showFollowingModal} onOpenChange={setShowFollowingModal}>
+        <DialogContent className='max-w-sm mx-auto max-h-[80vh] p-0'>
+          <DialogHeader className='p-4 pb-2 border-b'>
+            <div className='flex items-center justify-between'>
+              <DialogTitle className='text-lg font-semibold'>
+                Following ({followingCount})
+              </DialogTitle>
+              <button
+                onClick={() => setShowFollowingModal(false)}
+                className='p-1 hover:bg-gray-100 rounded-full'
+              >
+                {/* <X className='w-5 h-5' /> */}
+              </button>
+            </div>
+          </DialogHeader>
+          <div className='overflow-y-auto max-h-96 p-4'>
+            <div className='space-y-3'>
+              {following?.map((user: IFollowing) => (
+                <div key={user._id} className='flex items-center gap-3'>
+                  <Avatar className='w-10 h-10'>
+                    <AvatarImage
+                      src={user?.follower?.image}
+                      alt={user?.follower?.name}
+                    />
+                    <AvatarFallback>{user?.followed?.name}</AvatarFallback>
+                  </Avatar>
+                  <span className='font-medium text-[#1F2937]'>
+                    {user?.follower?.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

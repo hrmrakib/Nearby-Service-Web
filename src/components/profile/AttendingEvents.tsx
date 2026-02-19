@@ -74,7 +74,7 @@ const AttendingEvents = () => {
 
     {
       refetchOnMountOrArgChange: false,
-    }
+    },
   );
   const attending = attendingEvents?.data;
 
@@ -97,7 +97,7 @@ const AttendingEvents = () => {
         root: null,
         rootMargin: "0px",
         threshold: 0,
-      }
+      },
     );
 
     if (loaderRef.current) {
@@ -126,7 +126,7 @@ const AttendingEvents = () => {
   }
 
   return (
-    <div>
+    <div className='bg-[#F3F4F6]'>
       <div className='space-y-8'>
         {allAttending?.length === 0 && (
           <div className='text-center text-xl text-gray-500'>

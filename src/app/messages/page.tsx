@@ -1,183 +1,220 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type React from "react";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Search, Send } from "lucide-react";
+import { ArrowLeft, Search, Send, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useSocket } from "@/provider/SocketProvider";
+import { useParams, useRouter } from "next/navigation";
+import {
+  useGetInboxChatsQuery,
+  useGetMessagesQuery,
+  useNewChatMutation,
+} from "@/redux/features/chat/chatAPI";
+import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
-interface Conversation {
+dayjs.extend(relativeTime);
+
+interface IChat {
   id: string;
   name: string;
+  user_id: string;
   avatar: string;
-  lastMessage: string;
+  last_message: string;
   timestamp: string;
-  unread?: number;
-  online?: boolean;
-  typing?: boolean;
+  unread: boolean;
+  unread_count: number;
 }
 
-interface Message {
+interface IMessage {
   id: string;
+  created_at: string;
+  updated_at: string;
+  chat_id: string;
+  parent_id: string | null;
+  user_id: string;
   text: string;
-  sender: "user" | "other";
-  timestamp: string;
-  status?: "sent" | "delivered" | "read";
-  conversationId: string;
+  media_urls: string[];
+  isDeleted: boolean;
+  seen_by: string[];
+  isOwner: boolean;
 }
-
-const conversations: Conversation[] = [
-  {
-    id: "1",
-    name: "Jennifer Markus",
-    avatar: "/professional-woman.png",
-    lastMessage:
-      "Hey! Did you finish the Hi-Fi wireframes for flora app design?",
-    timestamp: "Today | 05:30 PM",
-    unread: 2,
-    online: true,
-  },
-  {
-    id: "2",
-    name: "Iva Ryan",
-    avatar: "/woman-designer.png",
-    lastMessage: "Thanks for the quick turnaround on the project!",
-    timestamp: "Today | 04:15 PM",
-    online: false,
-  },
-  {
-    id: "3",
-    name: "Jerry Helfer",
-    avatar: "/man-developer.png",
-    lastMessage: "Can we schedule a call for tomorrow?",
-    timestamp: "Yesterday | 11:20 AM",
-    unread: 1,
-    online: true,
-  },
-  {
-    id: "4",
-    name: "David Elson",
-    avatar: "/business-man.png",
-    lastMessage: "The client approved the final designs",
-    timestamp: "Yesterday | 09:45 AM",
-    online: false,
-  },
-  {
-    id: "5",
-    name: "Mary Freund",
-    avatar: "/woman-manager.png",
-    lastMessage: "Let's discuss the budget allocation",
-    timestamp: "Monday | 03:30 PM",
-    online: true,
-  },
-];
-
-const initialMessages: Record<string, Message[]> = {
-  "1": [
-    {
-      id: "1",
-      text: "Hey! Did you finish the Hi-Fi wireframes for flora app design?",
-      sender: "other",
-      timestamp: "05:25 PM",
-      status: "read",
-      conversationId: "1",
-    },
-    {
-      id: "2",
-      text: "Oh, hello! All perfectly. I will check it and get back to you soon",
-      sender: "user",
-      timestamp: "05:27 PM",
-      status: "delivered",
-      conversationId: "1",
-    },
-    {
-      id: "3",
-      text: "Great! Also, could you review the color palette?",
-      sender: "other",
-      timestamp: "05:30 PM",
-      status: "sent",
-      conversationId: "1",
-    },
-  ],
-};
 
 export default function MessagesPage() {
-  const [selectedConversation, setSelectedConversation] = useState("1");
+  const { socket, onlineUsers } = useSocket();
+  const { id: chat_id } = useParams<{ id: string }>();
+  const router = useRouter();
+
+  const [hasToken, setHasToken] = useState(false);
+  useEffect(() => {
+    setHasToken(!!localStorage?.getItem("access_token"));
+  }, []);
+
+  const { data: profile } = useGetProfileQuery(undefined, {
+    skip: !hasToken,
+  });
+
+  const [selectedContact, setSelectedContact] = useState<IChat | null>(null);
   const [messageText, setMessageText] = useState("");
-  const [messages, setMessages] =
-    useState<Record<string, Message[]>>(initialMessages);
+  const [messages, setMessages] = useState<IMessage[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [conversationList, setConversationList] =
-    useState<Conversation[]>(conversations);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<boolean>(false);
+  const [showChat, setShowChat] = useState(false);
+  const [page, setPage] = useState(1);
+  const limit = 15;
 
-  const [showChat, setShowChat] = useState(false); // ✅ mobile toggle
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
+  const prevLengthRef = useRef(0);
 
-  const currentConversation = conversationList.find(
-    (c) => c.id === selectedConversation,
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data: inboxChats, refetch: inboxRefetch } = useGetInboxChatsQuery({
+    page: 1,
+    limit: 10,
+    search: debouncedSearch,
+    unread: activeTab,
+  });
+
+  console.log({ inboxChats });
+
+  const {
+    data: messagesResponse,
+    refetch: refetchMessages,
+    isFetching: isFetchingMessages,
+  } = useGetMessagesQuery(
+    { page, limit, chat_id, search: undefined },
+    { skip: !chat_id },
   );
 
-  const currentMessages = messages[selectedConversation] || [];
+  const messagesData = messagesResponse?.data || [];
+  const totalPages = messagesResponse?.meta?.pagination?.totalPages;
 
+  // Merge paginated messages (no duplicates)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages]);
+    if (!messagesData?.length) return;
+    setMessages((prev) => {
+      const newItems = messagesData.filter(
+        (msg: any) => !prev.some((p) => p.id === msg.id),
+      );
+      return [...newItems, ...prev];
+    });
+  }, [messagesData]);
+
+  // Sync selected contact from URL
+  useEffect(() => {
+    if (!inboxChats?.data || !chat_id) return;
+    const contact = inboxChats.data.find((c: IChat) => c.id === chat_id);
+    if (contact) {
+      setSelectedContact(contact);
+      if (window.innerWidth < 768) setShowChat(true);
+    }
+  }, [chat_id, inboxChats]);
+
+  // Scroll to bottom on new message
+  useEffect(() => {
+    if (messages.length > prevLengthRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevLengthRef.current = messages.length;
+  }, [messages]);
+
+  // Infinite scroll via IntersectionObserver
+  useEffect(() => {
+    if (isFetchingMessages) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && page < totalPages) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { rootMargin: "20px", threshold: 0.1 },
+    );
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [isFetchingMessages, messages]);
+
+  // Socket: receive new messages
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (payload: any) => {
+      const message = JSON.parse(payload).data;
+      if (message.chat_id !== chat_id) return;
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === message.id)) return prev;
+        return [...prev, message];
+      });
+    };
+    socket.on("new_message", handler);
+    return () => {
+      socket.off("new_message", handler);
+    };
+  }, [socket, chat_id]);
+
+  const [newChat] = useNewChatMutation();
+
+  const handleConversationSelect = async (contact: IChat) => {
+    if (window.innerWidth < 768) setShowChat(true);
+    const data = await newChat({ user_id: contact.user_id }).unwrap();
+    const chatId = data?.data?.id;
+    if (!chatId) return;
+    if (chatId !== chat_id) {
+      setSelectedContact(contact);
+      setMessages([]); // reset messages for new chat
+      setPage(1);
+      router.replace(`/dashboard/message/${chatId}`);
+      inboxRefetch();
+      refetchMessages();
+    }
+  };
 
   const handleSendMessage = () => {
-    if (!messageText.trim()) return;
+    if (!messageText.trim() || !socket || !chat_id) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
+    const tempMessage: IMessage = {
+      id: crypto.randomUUID(),
+      chat_id: String(chat_id),
       text: messageText,
-      sender: "user",
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      status: "sent",
-      conversationId: selectedConversation,
+      user_id: profile?.data?.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      parent_id: null,
+      media_urls: [],
+      isDeleted: false,
+      seen_by: [],
+      isOwner: true,
     };
 
-    setMessages((prev) => ({
-      ...prev,
-      [selectedConversation]: [
-        ...(prev[selectedConversation] || []),
-        newMessage,
-      ],
-    }));
-
-    setConversationList((prev) =>
-      prev.map((conv) =>
-        conv.id === selectedConversation
-          ? { ...conv, lastMessage: messageText, timestamp: "Now" }
-          : conv,
-      ),
-    );
-
+    setMessages((prev) => [...prev, tempMessage]);
+    socket.emit("send_message", {
+      chat_id: String(chat_id),
+      text: messageText,
+    });
     setMessageText("");
-    setIsTyping(true);
-
-    setTimeout(() => {
-      setIsTyping(false);
-    }, 2000);
   };
 
-  const handleConversationSelect = (id: string) => {
-    setSelectedConversation(id);
-    setShowChat(true);
-    setConversationList((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)),
-    );
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
-  const filteredConversations = conversationList.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const formatTime = (ts?: string) => {
+    if (!ts) return "";
+    return ts.split("T")[1]?.split(".")[0] || "";
+  };
 
   return (
     <div className='flex min-h-[calc(100vh-90px)] bg-gray-50'>
@@ -201,31 +238,69 @@ export default function MessagesPage() {
           </div>
         </div>
 
+        {/* Unread / All tabs */}
+        <div className='px-4 py-2 border-b flex gap-6'>
+          <button
+            onClick={() => setActiveTab(false)}
+            className={`text-sm pb-2 border-b-2 ${
+              !activeTab
+                ? "text-[#0A5512] border-[#0A5512]"
+                : "text-gray-500 border-transparent"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setActiveTab(true)}
+            className={`text-sm pb-2 border-b-2 ${
+              activeTab
+                ? "text-[#0A5512] border-[#0A5512]"
+                : "text-gray-500 border-transparent"
+            }`}
+          >
+            Unread
+          </button>
+        </div>
+
         <div className='flex-1 overflow-y-auto'>
-          {filteredConversations.map((c) => (
+          {inboxChats?.data?.map((contact: IChat) => (
             <div
-              key={c.id}
-              onClick={() => handleConversationSelect(c.id)}
+              key={contact.id}
+              onClick={() => handleConversationSelect(contact)}
               className={cn(
                 "flex gap-3 p-4 cursor-pointer hover:bg-gray-50",
-                selectedConversation === c.id && "bg-green-50",
+                selectedContact?.id === contact.id && "bg-green-50",
               )}
             >
-              <Avatar className='w-10 h-10'>
-                <AvatarImage src={c.avatar} />
-                <AvatarFallback>{c.name[0]}</AvatarFallback>
-              </Avatar>
-              <div className='flex-1'>
-                <div className='flex justify-between'>
-                  <p className='font-medium'>{c.name}</p>
-                  {c.unread && (
-                    <span className='text-xs bg-[#0A5512] text-white px-2 rounded-full'>
-                      {c.unread}
+              {/* Avatar with online indicator */}
+              <div className='relative'>
+                <Avatar className='w-10 h-10'>
+                  <AvatarImage
+                    src={process.env.NEXT_PUBLIC_IMAGE_URL + contact.avatar}
+                  />
+                  <AvatarFallback>
+                    {contact?.name
+                      ?.split(" ")
+                      ?.map((n) => n[0])
+                      ?.join("")}
+                  </AvatarFallback>
+                </Avatar>
+                {onlineUsers.includes(contact.user_id) && (
+                  <div className='absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full' />
+                )}
+              </div>
+
+              <div className='flex-1 min-w-0'>
+                <div className='flex justify-between items-center'>
+                  <p className='font-medium truncate'>{contact?.name}</p>
+                  {contact.unread_count > 0 && (
+                    <span className='text-xs bg-[#0A5512] text-white px-2 rounded-full ml-1'>
+                      {contact.unread_count}
                     </span>
                   )}
                 </div>
                 <p className='text-sm text-gray-600 line-clamp-1'>
-                  {c.lastMessage}
+                  {contact?.last_message?.slice(0, 40)}
                 </p>
               </div>
             </div>
@@ -233,75 +308,118 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* Chat */}
+      {/* Chat Panel */}
       <div
         className={cn(
           "flex-1 flex flex-col",
           !showChat ? "hidden md:flex" : "flex",
         )}
       >
-        <div className='p-4 bg-white border-b flex items-center justify-between gap-3'>
-          <button
-            onClick={() => setShowChat(false)}
-            className='md:hidden flex items-center gap-2 text-green-700 font-medium'
-          >
-            <ArrowLeft className='w-4 h-4' /> Back
-          </button>
-
-          <div className='flex items-center gap-3'>
-            <Avatar className='w-8 h-8'>
-              <AvatarImage src={currentConversation?.avatar} />
-              <AvatarFallback>{currentConversation?.name[0]}</AvatarFallback>
-            </Avatar>
-
-            <div>
-              <p className='font-medium'>{currentConversation?.name}</p>
-              <p className='text-xs text-gray-500'>
-                {currentConversation?.online ? "Active now" : "Offline"}
-              </p>
-            </div>
+        {!selectedContact ? (
+          <div className='flex flex-1 items-center justify-center text-gray-500'>
+            Select a conversation to start messaging
           </div>
-        </div>
-
-        <div className='flex-1 overflow-y-auto p-4 space-y-4'>
-          {currentMessages.map((m) => (
-            <div
-              key={m.id}
-              className={cn(
-                "flex",
-                m.sender === "user" ? "justify-end" : "justify-start",
-              )}
-            >
-              <div
-                className={cn(
-                  "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
-                  m.sender === "user"
-                    ? "bg-[#0A5512] text-white"
-                    : "bg-gray-100",
-                )}
+        ) : (
+          <>
+            {/* Header */}
+            <div className='p-4 bg-white border-b flex items-center gap-3'>
+              <button
+                onClick={() => setShowChat(false)}
+                className='md:hidden flex items-center gap-2 text-green-700 font-medium'
               >
-                <p className='text-sm'>{m.text}</p>
-                <p className='text-xs mt-1 opacity-70'>{m.timestamp}</p>
+                <ArrowLeft className='w-4 h-4' /> Back
+              </button>
+
+              <div className='flex items-center gap-3'>
+                <div className='relative'>
+                  <Avatar className='w-8 h-8'>
+                    <AvatarImage
+                      src={
+                        process.env.NEXT_PUBLIC_IMAGE_URL +
+                        selectedContact.avatar
+                      }
+                    />
+                    <AvatarFallback>
+                      {selectedContact?.name
+                        ?.split(" ")
+                        ?.map((n) => n[0])
+                        ?.join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  {onlineUsers.includes(selectedContact.user_id) && (
+                    <div className='absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full' />
+                  )}
+                </div>
+
+                <div>
+                  <p className='font-medium'>{selectedContact?.name}</p>
+                  <p className='text-xs text-gray-500'>
+                    {onlineUsers.includes(selectedContact.user_id)
+                      ? "Active now"
+                      : `Last seen ${formatTime(selectedContact.timestamp)}`}
+                  </p>
+                </div>
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
 
-        <div className='p-4 bg-white border-t flex gap-2'>
-          <Input
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            placeholder='Type your message...'
-            className='h-12'
-          />
-          <Button
-            onClick={handleSendMessage}
-            className='rounded-full w-10 h-10 p-0 bg-[#0A5512]'
-          >
-            <Send className='w-4 h-4' />
-          </Button>
-        </div>
+            {/* Messages */}
+            <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+              {/* Infinite scroll loader at top */}
+              <div ref={loaderRef} className='h-4' />
+
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={cn(
+                    "flex",
+                    msg.isOwner ? "justify-end" : "justify-start",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
+                      msg.isOwner
+                        ? "bg-[#0A5512] text-white"
+                        : "bg-gray-100 text-gray-900",
+                    )}
+                  >
+                    <p className='text-sm'>{msg.text}</p>
+                    <div
+                      className={cn(
+                        "flex items-center gap-1 mt-1 text-xs opacity-70",
+                        msg.isOwner ? "justify-end" : "justify-start",
+                      )}
+                    >
+                      {dayjs(msg.updated_at || msg.created_at).fromNow()}
+                      {msg.isOwner && msg.seen_by.length > 1 && (
+                        <CheckCheck className='w-3 h-3 text-blue-200' />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className='p-4 bg-white border-t flex gap-2'>
+              <Input
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder='Type your message...'
+                className='h-12'
+              />
+              <Button
+                onClick={handleSendMessage}
+                className='rounded-full w-10 h-10 p-0 bg-[#0A5512]'
+              >
+                <Send className='w-4 h-4' />
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -311,11 +429,12 @@ export default function MessagesPage() {
 
 // import type React from "react";
 // import { useState, useEffect, useRef } from "react";
-// import { Search, Send } from "lucide-react";
+// import { ArrowLeft, Search, Send } from "lucide-react";
 // import { Button } from "@/components/ui/button";
 // import { Input } from "@/components/ui/input";
 // import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 // import { cn } from "@/lib/utils";
+// import { SocketProvider } from "@/provider/SocketProvider";
 
 // interface Conversation {
 //   id: string;
@@ -383,7 +502,7 @@ export default function MessagesPage() {
 //   },
 // ];
 
-// const initialMessages: { [key: string]: Message[] } = {
+// const initialMessages: Record<string, Message[]> = {
 //   "1": [
 //     {
 //       id: "1",
@@ -410,80 +529,30 @@ export default function MessagesPage() {
 //       conversationId: "1",
 //     },
 //   ],
-//   "2": [
-//     {
-//       id: "4",
-//       text: "Thanks for the quick turnaround on the project!",
-//       sender: "other",
-//       timestamp: "04:15 PM",
-//       status: "read",
-//       conversationId: "2",
-//     },
-//   ],
-//   "3": [
-//     {
-//       id: "5",
-//       text: "Can we schedule a call for tomorrow?",
-//       sender: "other",
-//       timestamp: "11:20 AM",
-//       status: "sent",
-//       conversationId: "3",
-//     },
-//   ],
-//   "4": [
-//     {
-//       id: "6",
-//       text: "The client approved the final designs",
-//       sender: "other",
-//       timestamp: "09:45 AM",
-//       status: "read",
-//       conversationId: "4",
-//     },
-//   ],
-//   "5": [
-//     {
-//       id: "7",
-//       text: "Let's discuss the budget allocation",
-//       sender: "other",
-//       timestamp: "03:30 PM",
-//       status: "read",
-//       conversationId: "5",
-//     },
-//   ],
 // };
 
 // export default function MessagesPage() {
 //   const [selectedConversation, setSelectedConversation] = useState("1");
 //   const [messageText, setMessageText] = useState("");
-//   const [messages, setMessages] = useState<{ [key: string]: Message[] }>(
-//     initialMessages,
-//   );
+//   const [messages, setMessages] =
+//     useState<Record<string, Message[]>>(initialMessages);
 //   const [searchQuery, setSearchQuery] = useState("");
 //   const [isTyping, setIsTyping] = useState(false);
-//   const [conversationList, setConversationList] = useState(conversations);
+//   const [conversationList, setConversationList] =
+//     useState<Conversation[]>(conversations);
+
+//   const [showChat, setShowChat] = useState(false); // ✅ mobile toggle
 //   const messagesEndRef = useRef<HTMLDivElement>(null);
 
 //   const currentConversation = conversationList.find(
 //     (c) => c.id === selectedConversation,
 //   );
+
 //   const currentMessages = messages[selectedConversation] || [];
 
-//   const scrollToBottom = () => {
+//   useEffect(() => {
 //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-//   };
-
-//   useEffect(() => {
-//     scrollToBottom();
 //   }, [currentMessages]);
-
-//   useEffect(() => {
-//     if (isTyping) {
-//       const timer = setTimeout(() => {
-//         setIsTyping(false);
-//       }, 3000);
-//       return () => clearTimeout(timer);
-//     }
-//   }, [isTyping]);
 
 //   const handleSendMessage = () => {
 //     if (!messageText.trim()) return;
@@ -508,15 +577,10 @@ export default function MessagesPage() {
 //       ],
 //     }));
 
-//     // Update conversation list with new last message
 //     setConversationList((prev) =>
 //       prev.map((conv) =>
 //         conv.id === selectedConversation
-//           ? {
-//               ...conv,
-//               lastMessage: messageText,
-//               timestamp: "Now",
-//             }
+//           ? { ...conv, lastMessage: messageText, timestamp: "Now" }
 //           : conv,
 //       ),
 //     );
@@ -525,249 +589,150 @@ export default function MessagesPage() {
 //     setIsTyping(true);
 
 //     setTimeout(() => {
-//       const autoReply: Message = {
-//         id: (Date.now() + 1).toString(),
-//         text: "Thanks for your message! I'll get back to you soon.",
-//         sender: "other",
-//         timestamp: new Date().toLocaleTimeString([], {
-//           hour: "2-digit",
-//           minute: "2-digit",
-//         }),
-//         status: "sent",
-//         conversationId: selectedConversation,
-//       };
-
-//       setMessages((prev) => ({
-//         ...prev,
-//         [selectedConversation]: [
-//           ...(prev[selectedConversation] || []),
-//           autoReply,
-//         ],
-//       }));
 //       setIsTyping(false);
 //     }, 2000);
 //   };
 
-//   const handleKeyPress = (e: React.KeyboardEvent) => {
-//     if (e.key === "Enter" && !e.shiftKey) {
-//       e.preventDefault();
-//       handleSendMessage();
-//     }
-//   };
-
-//   const filteredConversations = conversationList.filter(
-//     (conv) =>
-//       conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//       conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
-//   );
-
-//   const handleConversationSelect = (conversationId: string) => {
-//     setSelectedConversation(conversationId);
+//   const handleConversationSelect = (id: string) => {
+//     setSelectedConversation(id);
+//     setShowChat(true);
 //     setConversationList((prev) =>
-//       prev.map((conv) =>
-//         conv.id === conversationId ? { ...conv, unread: 0 } : conv,
-//       ),
+//       prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)),
 //     );
 //   };
 
+//   const filteredConversations = conversationList.filter(
+//     (c) =>
+//       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+//       c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
+//   );
+
 //   return (
-//     <div className='flex min-h-[calc(100vh-90px)] bg-gray-50'>
-//       {/* Left Sidebar - Conversations */}
-//       <div className='w-80 bg-white border-r border-gray-200 flex flex-col'>
-//         {/* Sidebar Header */}
-//         <div className='p-4 border-b border-gray-200'>
-//           <h1 className='text-lg font-semibold text-gray-900 mb-3'>
-//             All Messages
-//           </h1>
-//           <div className='relative'>
-//             <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4' />
-//             <Input
-//               placeholder='Search'
-//               value={searchQuery}
-//               onChange={(e) => setSearchQuery(e.target.value)}
-//               className='pl-10 bg-gray-100 border-0 focus-visible:ring-1 focus-visible:ring-gray-300'
-//             />
-//           </div>
-//         </div>
-
-//         {/* Conversations List */}
-//         <div className='flex-1 overflow-y-auto'>
-//           {filteredConversations.map((conversation) => (
-//             <div
-//               key={conversation.id}
-//               onClick={() => handleConversationSelect(conversation.id)}
-//               className={cn(
-//                 "flex items-start gap-3 p-4 cursor-pointer hover:bg-gray-50 transition-colors relative",
-//                 selectedConversation === conversation.id && "bg-green-50",
-//               )}
-//             >
-//               <div className='relative'>
-//                 <Avatar className='w-10 h-10 flex-shrink-0'>
-//                   <AvatarImage
-//                     src={conversation.avatar || "/placeholder.svg"}
-//                     alt={conversation.name}
-//                   />
-//                   <AvatarFallback>
-//                     {conversation.name
-//                       .split(" ")
-//                       .map((n) => n[0])
-//                       .join("")}
-//                   </AvatarFallback>
-//                 </Avatar>
-//                 {conversation.online && (
-//                   <div className='absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full'></div>
-//                 )}
-//               </div>
-
-//               <div className='flex-1 min-w-0'>
-//                 <div className='flex items-center justify-between mb-1'>
-//                   <h3 className='font-medium text-gray-900 truncate'>
-//                     {conversation.name}
-//                   </h3>
-//                   {conversation.unread && conversation.unread > 0 && (
-//                     <span className='bg-[#0A5512] text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center'>
-//                       {conversation.unread}
-//                     </span>
-//                   )}
-//                 </div>
-//                 <p className='text-sm text-gray-600 line-clamp-2 mb-2'>
-//                   {conversation.lastMessage}
-//                 </p>
-//                 <div className='flex items-center justify-between text-xs text-gray-400'>
-//                   <span>{conversation.timestamp}</span>
-//                   {conversation.typing && (
-//                     <span className='text-[#0A5512] font-medium'>
-//                       typing...
-//                     </span>
-//                   )}
-//                 </div>
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-
-//       {/* Right Chat Area */}
-//       <div className='flex-1 flex flex-col'>
-//         {/* Chat Header */}
-//         <div className='bg-white border-b border-gray-200 p-4 flex items-center justify-between'>
-//           <div className='flex items-center gap-3'>
-//             <div className='relative'>
-//               <Avatar className='w-8 h-8'>
-//                 <AvatarImage
-//                   src={currentConversation?.avatar || "/placeholder.svg"}
-//                   alt={currentConversation?.name}
-//                 />
-//                 <AvatarFallback>
-//                   {currentConversation?.name
-//                     .split(" ")
-//                     .map((n) => n[0])
-//                     .join("")}
-//                 </AvatarFallback>
-//               </Avatar>
-//               {currentConversation?.online && (
-//                 <div className='absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border border-white rounded-full'></div>
-//               )}
-//             </div>
-//             <div>
-//               <h2 className='font-medium text-gray-900'>
-//                 {currentConversation?.name}
-//               </h2>
-//               <p className='text-xs text-gray-500'>
-//                 {currentConversation?.online
-//                   ? "Active now"
-//                   : "Last seen recently"}
-//               </p>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Messages Area */}
-//         <div className='flex-1 overflow-y-auto p-4 space-y-4'>
-//           {currentMessages.map((message) => (
-//             <div
-//               key={message.id}
-//               className={cn(
-//                 "flex",
-//                 message.sender === "user" ? "justify-end" : "justify-start",
-//               )}
-//             >
-//               <div
-//                 className={cn(
-//                   "max-w-xs lg:max-w-md px-4 py-2 rounded-2xl",
-//                   message.sender === "user"
-//                     ? "bg-[#0A5512] text-white"
-//                     : "bg-gray-100 text-gray-900",
-//                 )}
-//               >
-//                 <p className='text-sm'>{message.text}</p>
-//                 <div className='flex items-center justify-between mt-1'>
-//                   <p
-//                     className={cn(
-//                       "text-xs",
-//                       message.sender === "user"
-//                         ? "text-green-100"
-//                         : "text-gray-500",
-//                     )}
-//                   >
-//                     {message.timestamp}
-//                   </p>
-//                   {message.sender === "user" && (
-//                     <span className='text-xs text-green-100 ml-2'>
-//                       {message.status === "sent" && "✓"}
-//                       {message.status === "delivered" && "✓✓"}
-//                       {message.status === "read" && "✓✓"}
-//                     </span>
-//                   )}
-//                 </div>
-//               </div>
-//             </div>
-//           ))}
-
-//           {isTyping && (
-//             <div className='flex justify-start'>
-//               <div className='bg-gray-100 text-gray-900 px-4 py-2 rounded-2xl'>
-//                 <div className='flex space-x-1'>
-//                   <div className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'></div>
-//                   <div
-//                     className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
-//                     style={{ animationDelay: "0.1s" }}
-//                   ></div>
-//                   <div
-//                     className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
-//                     style={{ animationDelay: "0.2s" }}
-//                   ></div>
-//                 </div>
-//               </div>
-//             </div>
+//     <SocketProvider>
+//       <div className='flex min-h-[calc(100vh-90px)] bg-gray-50'>
+//         {/* Sidebar */}
+//         <div
+//           className={cn(
+//             "w-full md:w-80 bg-white border-r border-gray-200 flex-col",
+//             showChat ? "hidden md:flex" : "flex",
 //           )}
-
-//           <div ref={messagesEndRef} />
-//         </div>
-
-//         {/* Message Input */}
-//         <div className='bg-white border-t border-gray-200 p-4'>
-//           <div className='flex items-center gap-2'>
-//             <div className='flex-1 relative'>
+//         >
+//           <div className='p-4 border-b'>
+//             <h1 className='text-lg font-semibold mb-3'>All Messages</h1>
+//             <div className='relative'>
+//               <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
 //               <Input
-//                 value={messageText}
-//                 onChange={(e) => setMessageText(e.target.value)}
-//                 onKeyPress={handleKeyPress}
-//                 placeholder='Type your message here...'
-//                 className='pr-12 h-12 border-gray-300 focus-visible:ring-green-500 focus-visible:border-green-500'
+//                 className='pl-10 bg-gray-100 border-0'
+//                 placeholder='Search'
+//                 value={searchQuery}
+//                 onChange={(e) => setSearchQuery(e.target.value)}
 //               />
 //             </div>
+//           </div>
+
+//           <div className='flex-1 overflow-y-auto'>
+//             {filteredConversations.map((c) => (
+//               <div
+//                 key={c.id}
+//                 onClick={() => handleConversationSelect(c.id)}
+//                 className={cn(
+//                   "flex gap-3 p-4 cursor-pointer hover:bg-gray-50",
+//                   selectedConversation === c.id && "bg-green-50",
+//                 )}
+//               >
+//                 <Avatar className='w-10 h-10'>
+//                   <AvatarImage src={c.avatar} />
+//                   <AvatarFallback>{c.name[0]}</AvatarFallback>
+//                 </Avatar>
+//                 <div className='flex-1'>
+//                   <div className='flex justify-between'>
+//                     <p className='font-medium'>{c.name}</p>
+//                     {c.unread && (
+//                       <span className='text-xs bg-[#0A5512] text-white px-2 rounded-full'>
+//                         {c.unread}
+//                       </span>
+//                     )}
+//                   </div>
+//                   <p className='text-sm text-gray-600 line-clamp-1'>
+//                     {c.lastMessage}
+//                   </p>
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* Chat */}
+//         <div
+//           className={cn(
+//             "flex-1 flex flex-col",
+//             !showChat ? "hidden md:flex" : "flex",
+//           )}
+//         >
+//           <div className='p-4 bg-white border-b flex items-center justify-between gap-3'>
+//             <button
+//               onClick={() => setShowChat(false)}
+//               className='md:hidden flex items-center gap-2 text-green-700 font-medium'
+//             >
+//               <ArrowLeft className='w-4 h-4' /> Back
+//             </button>
+
+//             <div className='flex items-center gap-3'>
+//               <Avatar className='w-8 h-8'>
+//                 <AvatarImage src={currentConversation?.avatar} />
+//                 <AvatarFallback>{currentConversation?.name[0]}</AvatarFallback>
+//               </Avatar>
+
+//               <div>
+//                 <p className='font-medium'>{currentConversation?.name}</p>
+//                 <p className='text-xs text-gray-500'>
+//                   {currentConversation?.online ? "Active now" : "Offline"}
+//                 </p>
+//               </div>
+//             </div>
+//           </div>
+
+//           <div className='flex-1 overflow-y-auto p-4 space-y-4'>
+//             {currentMessages.map((m) => (
+//               <div
+//                 key={m.id}
+//                 className={cn(
+//                   "flex",
+//                   m.sender === "user" ? "justify-end" : "justify-start",
+//                 )}
+//               >
+//                 <div
+//                   className={cn(
+//                     "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
+//                     m.sender === "user"
+//                       ? "bg-[#0A5512] text-white"
+//                       : "bg-gray-100",
+//                   )}
+//                 >
+//                   <p className='text-sm'>{m.text}</p>
+//                   <p className='text-xs mt-1 opacity-70'>{m.timestamp}</p>
+//                 </div>
+//               </div>
+//             ))}
+//             <div ref={messagesEndRef} />
+//           </div>
+
+//           <div className='p-4 bg-white border-t flex gap-2'>
+//             <Input
+//               value={messageText}
+//               onChange={(e) => setMessageText(e.target.value)}
+//               placeholder='Type your message...'
+//               className='h-12'
+//             />
 //             <Button
 //               onClick={handleSendMessage}
-//               disabled={!messageText.trim()}
-//               size='sm'
-//               className='bg-[#0A5512] hover:bg-green-700 text-white rounded-full w-10 h-10 p-0'
+//               className='rounded-full w-10 h-10 p-0 bg-[#0A5512]'
 //             >
 //               <Send className='w-4 h-4' />
 //             </Button>
 //           </div>
 //         </div>
 //       </div>
-//     </div>
+//     </SocketProvider>
 //   );
 // }

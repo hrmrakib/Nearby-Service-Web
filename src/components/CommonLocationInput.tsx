@@ -16,9 +16,15 @@ interface LocationValue {
 
 interface Props {
   onChange: (value: LocationValue) => void;
+  className?: string;
+  currentLocation?: string;
 }
 
-const CommonLocationInput = ({ onChange }: Props) => {
+const CommonLocationInput = ({
+  onChange,
+  className,
+  currentLocation,
+}: Props) => {
   // Google Autocomplete Ref
   const locationRef = useRef<google.maps.places.Autocomplete | null>(null);
   // Load Google Maps script
@@ -49,20 +55,20 @@ const CommonLocationInput = ({ onChange }: Props) => {
           onPlaceChanged={onPlaceChanged}
         >
           <div className='space-y-2'>
-            <Label
+            {/* <Label
               htmlFor='location'
               className='text-sm font-medium text-muted-foreground'
             >
               Location / Address
-            </Label>
+            </Label> */}
             <Input
               id='location'
               type='text'
               placeholder='Enter Your Location / Address'
-              //   value={location ?? ""}
+              value={currentLocation ?? ""}
               //   onChange={(e) => setLocation(e.target.value)}
               required
-              className='h-12'
+              className={className ? className : "h-12"}
             />
           </div>
         </Autocomplete>

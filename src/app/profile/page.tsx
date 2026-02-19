@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import AttendingEvents from "@/components/profile/AttendingEvents";
 import SavedPost from "@/components/profile/SavedPost";
 import MyPost from "@/components/profile/MyPost";
+import CommonLocationInput from "@/components/CommonLocationInput";
 
 export interface IFollow {
   _id: string;
@@ -57,6 +58,16 @@ export interface IFollowing {
   updatedAt: string;
 }
 
+interface IUser {
+  name: string;
+  location: string;
+  lat: number | null;
+  lng: number | null;
+  image: string;
+  bio: string;
+  paypalAccount: string;
+}
+
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"post" | "attending" | "saved">(
     "post",
@@ -67,9 +78,11 @@ export default function ProfilePage() {
   const [image, setImage] = useState();
   const [imagePreview, setImagePreview] = useState<string | null>();
 
-  const [user, setUser] = useState({
+  const [user, setUser] = useState<IUser>({
     name: "",
     location: "",
+    lat: null as number | null,
+    lng: null as number | null,
     image: "",
     bio: "",
     paypalAccount: "",
@@ -95,6 +108,8 @@ export default function ProfilePage() {
     setUser({
       name: profile?.name,
       location: profile?.address,
+      lat: profile?.location?.coordinates[0],
+      lng: profile?.location?.coordinates[1],
       image: profile?.image,
       bio: profile?.bio,
       paypalAccount: profile?.paypalAccount,
@@ -217,12 +232,18 @@ export default function ProfilePage() {
                 <label className='block text-lg font-bold text-[#030712] mb-2'>
                   Location
                 </label>
-                <Input
-                  value={user?.location}
-                  onChange={(e) =>
-                    setUser({ ...user, location: e.target.value })
+
+                <CommonLocationInput
+                  onChange={(location) =>
+                    setUser({
+                      ...user,
+                      location: location.location,
+                      lat: location.lat,
+                      lng: location.lng,
+                    })
                   }
-                  className='w-full h-12 bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-lg'
+                  className='bg-white!'
+                  currentLocation={user?.location}
                 />
               </div>
 
@@ -263,7 +284,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className='bg-[#F3F4F6]'>
+    <div className='bg-[#F3F4F6]! min-h-screen'>
       <div className='max-w-3xl mx-auto bg-transparent min-h-'>
         {/* Profile Header */}
         <div className='px-6 pt-8 pb-6 text-center'>
@@ -351,6 +372,7 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
+
       <div className='container mx-auto'>
         {/* Tabs */}
         <div className='px-6 pb-4'>
@@ -360,7 +382,7 @@ export default function ProfilePage() {
               className={`px-6 py-2 rounded-full font-medium transition-colors ${
                 activeTab === "post"
                   ? "bg-green-500 text-white"
-                  : "text-[#4B5563] hover:text-[#1F2937]"
+                  : "text-[#4B5563] hover:text-[#1F2937] bg-white"
               }`}
             >
               Post
@@ -370,7 +392,7 @@ export default function ProfilePage() {
               className={`px-6 py-2 rounded-full font-medium transition-colors ${
                 activeTab === "attending"
                   ? "bg-green-500 text-white"
-                  : "text-[#4B5563] hover:text-[#1F2937]"
+                  : "text-[#4B5563] hover:text-[#1F2937] bg-white"
               }`}
             >
               Attending
@@ -380,7 +402,7 @@ export default function ProfilePage() {
               className={`px-6 py-2 rounded-full font-medium transition-colors ${
                 activeTab === "saved"
                   ? "bg-green-500 text-white"
-                  : "text-[#4B5563] hover:text-[#1F2937]"
+                  : "text-[#4B5563] hover:text-[#1F2937] bg-white"
               }`}
             >
               Saved
@@ -389,7 +411,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Content */}
-        <div className='px-6 pb-6'>
+        <div className='bg-[#F3F4F6] px-6 pb-6'>
           {activeTab === "post" && <MyPost />}
 
           {activeTab === "attending" && <AttendingEvents />}
@@ -397,6 +419,7 @@ export default function ProfilePage() {
           {activeTab === "saved" && <SavedPost />}
         </div>
       </div>
+
       {/* Followers Modal */}
       <Dialog open={showFollowersModal} onOpenChange={setShowFollowersModal}>
         <DialogContent className='max-w-sm mx-auto max-h-[80vh] p-0'>

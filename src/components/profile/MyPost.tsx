@@ -109,7 +109,7 @@ const MyPost = () => {
   }
 
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 space-y-8'>
+    <div className='bg-[#F3F4F6] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 space-y-8'>
       {allPosts.map((post) => (
         <div key={post._id}>
           <Card className='overflow-hidden py-0'>
@@ -135,7 +135,9 @@ const MyPost = () => {
               </div>
 
               <p className='text-sm text-[#4B5563] leading-relaxed'>
-                {post.description?.length > 100 ? post.description?.slice(0, 100) + "..." : post.description}
+                {post.description?.length > 100
+                  ? post.description?.slice(0, 100) + "..."
+                  : post.description}
               </p>
             </CardContent>
           </Card>

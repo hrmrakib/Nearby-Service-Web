@@ -84,7 +84,7 @@ export default function SavedPost() {
   }
 
   return (
-    <div>
+    <div className='bg-[#F3F4F6]'>
       <div className='space-y-8'>
         {posts?.length > 0 ? (
           posts.map((event: ISaved) => (

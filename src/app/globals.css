@@ -129,7 +129,7 @@
     background: transparent;
   }
   .scrollbar::-webkit-scrollbar-thumb {
-    background: #15B826;
+    background: #15b826;
     border-radius: 9999px;
   }
   .scrollbar::-webkit-scrollbar-thumb:hover {

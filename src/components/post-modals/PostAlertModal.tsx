@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Upload, MapPin, Video, Loader } from "lucide-react";
 import Image from "next/image";
-import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import {
   useCreateAlertMissingPersonPostMutation,
   useCreateAlertPostMutation,
@@ -28,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import CommonLocationInput from "../CommonLocationInput";
 
 interface PostEventModalProps {
   isOpen: boolean;
@@ -49,10 +49,10 @@ export default function PostEventModal({
   onBack,
 }: PostEventModalProps) {
   const [coverVideoPreview, setCoverVideoPreview] = useState<string | null>(
-    null
+    null,
   );
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
-    null
+    null,
   );
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverVideo, setCoverVideo] = useState<File | null>(null);
@@ -66,15 +66,14 @@ export default function PostEventModal({
   const [contact, setContact] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [locationQuery, setLocationQuery] = useState("");
-  const [locationResults, setLocationResults] = useState<any[]>([]);
+  const [location, setLocation] = useState("");
 
   const [missingPLocationResults, setMissingLocationResults] = useState<any[]>(
-    []
+    [],
   );
 
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
+  const [lat, setLat] = useState<number | null>();
+  const [lng, setLng] = useState<number | null>();
   const [missingLat, setMissingLat] = useState("");
   const [missingLng, setMissingLng] = useState("");
 
@@ -122,25 +121,6 @@ export default function PostEventModal({
     setVideos((prev: File[]) => [...prev, ...videoFiles]);
   };
 
-  const handleLocationSearch = (value: string) => {
-    setLocationQuery(value);
-
-    if (locationTimeout.current) clearTimeout(locationTimeout.current);
-
-    locationTimeout.current = setTimeout(async () => {
-      if (!value.trim()) {
-        setLocationResults([]);
-        return;
-      }
-
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${value}`
-      );
-      const data = await res.json();
-      setLocationResults(data);
-    }, 400);
-  };
-
   const handleLocationSearchMissing = (value: string) => {
     setMissingPersonInfo({
       ...missingPersonInfo,
@@ -156,18 +136,11 @@ export default function PostEventModal({
       }
 
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${value}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${value}`,
       );
       const data = await res.json();
       setMissingLocationResults(data);
     }, 400);
-  };
-
-  const selectLocation = (place: any) => {
-    setLocationQuery(place.display_name);
-    setLat(place.lat);
-    setLng(place.lon);
-    setLocationResults([]);
   };
 
   const selectLocation2 = (place: any) => {
@@ -200,10 +173,10 @@ export default function PostEventModal({
       title,
       description,
       category: selectedCategory,
-      address: locationQuery,
+      address: location,
       location: {
         type: "Point",
-        coordinates: [parseFloat(lng), parseFloat(lat)],
+        coordinates: [lng, lat],
       },
       hasTag: hashtags,
       contactInfo: contact,
@@ -216,10 +189,10 @@ export default function PostEventModal({
     description,
     category: selectedCategory,
     subcategory: selectedCategory,
-    address: locationQuery,
+    address: location,
     location: {
       type: "Point",
-      coordinates: [parseFloat(lng), parseFloat(lat)],
+      coordinates: [lng, lat],
     },
     hasTag: hashtags,
     contactInfo: contact,
@@ -231,10 +204,10 @@ export default function PostEventModal({
     description,
     category: selectedCategory,
     subcategory: "Missing Person",
-    address: locationQuery,
+    address: location,
     location: {
       type: "Point",
-      coordinates: [parseFloat(lng), parseFloat(lat)],
+      coordinates: [lng, lat],
     },
     lastSeenLocation: {
       type: "Point",
@@ -266,9 +239,8 @@ export default function PostEventModal({
       videos.forEach((file) => formData.append("media", file));
 
       if (selectedCategory === "Missing Person") {
-        const res = await createAlertMissingPersonPostMutation(
-          formData
-        ).unwrap();
+        const res =
+          await createAlertMissingPersonPostMutation(formData).unwrap();
         if (res?.success) toast.success(res.message);
         onClose();
       } else {
@@ -282,9 +254,27 @@ export default function PostEventModal({
     }
   };
 
+  const handleLocationChange = ({
+    location,
+    lat,
+    lng,
+  }: {
+    location: string;
+    lat: number | null;
+    lng: number | null;
+  }) => {
+    setLocation(location);
+    setLat(lat);
+    setLng(lng);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className='sm:max-w-lg p-0 max-h-[90vh] overflow-y-auto scrollbar'>
+      <DialogContent
+        className='sm:max-w-lg p-0 max-h-[90vh] overflow-y-auto scrollbar'
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader className='flex flex-row items-center justify-between p-4 border-b'>
           <DialogTitle className='text-lg font-semibold'>
             Post Alert
@@ -460,36 +450,13 @@ export default function PostEventModal({
             />
           </div>
 
-          {/* //? location task - pending */}
-          {/* <AutoCompleteLocation /> */}
-
-          <div className='relative'>
+          {/* location  */}
+          <div className='w-full'>
             <label className='text-sm font-bold mb-2 block'>
               Location (Type your full address)
             </label>
-            <div className='relative'>
-              <Input
-                placeholder='Search location'
-                value={locationQuery}
-                onChange={(e) => handleLocationSearch(e.target.value)}
-                required
-              />
-              <MapPin className='absolute right-3 top-1/2 -translate-y-1/2 text-green-600 w-4 h-4' />
-            </div>
 
-            {locationResults.length > 0 && (
-              <ul className='absolute z-20 bg-white shadow rounded w-full border mt-1 max-h-60 overflow-y-auto'>
-                {locationResults.map((loc) => (
-                  <li
-                    key={loc.place_id}
-                    className='p-2 hover:bg-gray-100 cursor-pointer text-sm'
-                    onClick={() => selectLocation(loc)}
-                  >
-                    {loc.display_name}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <CommonLocationInput onChange={handleLocationChange} />
           </div>
 
           {/* Category */}
@@ -636,13 +603,13 @@ export default function PostEventModal({
             <div className='grid grid-cols-2 gap-3'>
               <div>
                 <label className='text-sm font-bold mb-2 block'>Latitude</label>
-                <Input value={lat} readOnly className='bg-gray-100' />
+                <Input value={lat ?? ""} readOnly className='bg-gray-100' />
               </div>
               <div>
                 <label className='text-sm font-bold mb-2 block'>
                   Longitude
                 </label>
-                <Input value={lng} readOnly className='bg-gray-100' />
+                <Input value={lng ?? ""} readOnly className='bg-gray-100' />
               </div>
             </div>
           )}
@@ -713,7 +680,7 @@ export default function PostEventModal({
             type='submit'
             onClick={handlePublish}
             disabled={isLoadingMissing || isLoading}
-            className='w-full bg-[#15B826] hover:bg-green-600 text-white'
+            className='w-full bg-[#15B826] hover:bg-green-600 text-white mt-3'
           >
             Publish{" "}
             {(isLoadingMissing || isLoading) && (

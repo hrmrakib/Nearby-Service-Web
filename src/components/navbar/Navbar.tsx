@@ -28,10 +28,9 @@ import {
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
+import { useGetNotificationsQuery, useGetProfileQuery } from "@/redux/features/profile/profileAPI";
 import { useDispatch } from "react-redux";
 import { setSearchValue } from "@/redux/features/search/globalSearchSlice";
-import { useGetNotificationsQuery } from "@/redux/features/post/postAPI";
 import { getTimeDifference } from "@/lib/getTimeDifferent";
 
 interface Notification {

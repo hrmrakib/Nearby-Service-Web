@@ -71,4 +71,5 @@ export const {
   useGetFollowersQuery,
   useGetFollowingQuery,
 } = profileAPI;
+
 export default profileAPI;

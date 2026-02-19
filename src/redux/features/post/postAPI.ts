@@ -36,13 +36,6 @@ const postAPI = baseAPI.injectEndpoints({
       },
     }),
 
-    getNotifications: builder.query({
-      query: ({ page, limit }) => ({
-        url: `/notification?page=${page}&limit=${limit}`,
-        method: "GET",
-      }),
-    }),
-
     createEventPost: builder.mutation({
       query: (body) => ({
         url: "/post/event",
@@ -121,7 +114,6 @@ const postAPI = baseAPI.injectEndpoints({
 
 export const {
   useGetAllPostQuery,
-  useGetNotificationsQuery,
   useCreateEventPostMutation,
   useCreateDealPostMutation,
   useCreateAlertPostMutation,

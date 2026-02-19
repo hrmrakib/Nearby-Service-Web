@@ -4,13 +4,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +17,7 @@ import { toast } from "sonner";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import Link from "next/link";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
+import CommonLocationInput from "@/components/CommonLocationInput";
 
 const categories = [
   { id: "all", label: "All", icon: "🌟" },
@@ -152,6 +146,7 @@ export default function DashboardLayout() {
     startDate: new Date(2025, 8, 6),
     endDate: new Date(2025, 8, 15),
   });
+  const [location, setLocation] = useState<string>("");
   const [showCalendar, setShowCalendar] = useState(false);
   const search = useSelector((state: any) => state.globalSearch.searchValue);
   const [toggleSaveMutation] = useToggleSaveMutation();
@@ -161,13 +156,18 @@ export default function DashboardLayout() {
   const [allPosts, setAllPosts] = useState<IPost[]>([]);
   const [hasMore, setHasMore] = useState(true);
 
+  // google places auto-suggest
+  // Add new state variablesj
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+
   const [page, setPage] = useState(1);
   const limit = 3;
   const { data, isFetching, refetch } = useGetAllPostQuery({
     category: selectedCategory,
     // subcategory: selectedCategory,
-    // lat: 0,
-    // lng: 0,
+    lat: lat,
+    lng: lng,
     // maxDistance: distanceRadius[0],
     // minPrice: minPrice[0],
     // maxPrice: maxPrice[0],
@@ -201,7 +201,7 @@ export default function DashboardLayout() {
       } else {
         setAllPosts((prev) => {
           const newItems = data?.data?.filter(
-            (post: any) => !prev.some((p) => p._id === post._id)
+            (post: any) => !prev.some((p) => p._id === post._id),
           );
           return [...prev, ...newItems];
         });
@@ -218,7 +218,7 @@ export default function DashboardLayout() {
     if (!hasMore || isFetching) return;
 
     const scrollViewport = scrollRef.current!.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     );
 
     if (!loaderRef.current) return;
@@ -233,7 +233,7 @@ export default function DashboardLayout() {
         root: scrollViewport,
         rootMargin: "0px",
         threshold: 0.5,
-      }
+      },
     );
 
     observer.observe(loaderRef.current);
@@ -256,10 +256,24 @@ export default function DashboardLayout() {
 
   const handleDateRangeChange = (
     startDate: Date | null,
-    endDate: Date | null
+    endDate: Date | null,
   ) => {
     setDateRange({ startDate, endDate });
     setShowCalendar(false);
+  };
+
+  const handleLocationChange = ({
+    location,
+    lat,
+    lng,
+  }: {
+    location: string;
+    lat: number | null;
+    lng: number | null;
+  }) => {
+    setLocation(location);
+    setLat(lat);
+    setLng(lng);
   };
 
   return (
@@ -301,19 +315,8 @@ export default function DashboardLayout() {
                   <Label className='text-sm font-medium text-gray-700'>
                     City
                   </Label>
-                  <Select defaultValue='new-york'>
-                    <SelectTrigger className='w-full'>
-                      <div className='flex items-center'>
-                        <MapPin className='w-4 h-4 mr-2 text-gray-500' />
-                        <SelectValue />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='new-york'>New York</SelectItem>
-                      <SelectItem value='los-angeles'>Los Angeles</SelectItem>
-                      <SelectItem value='chicago'>Chicago</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                  <CommonLocationInput onChange={handleLocationChange} />
                 </div>
 
                 {/* Date Range Filter */}

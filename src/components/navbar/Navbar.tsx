@@ -308,7 +308,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className='sticky top-0 z-30 bg-white backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border px-4 py-3'>
+      <nav className='sticky top-0 z-30 bg-white backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b border-border px-4 py-3 z-[999]'>
         <div className='container mx-auto'>
           <div className='flex items-center justify-between h-16'>
             {/* Logo + Search */}

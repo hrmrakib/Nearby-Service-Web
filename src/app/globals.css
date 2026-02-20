@@ -136,3 +136,7 @@
     background: #ca38be;
   }
 }
+
+button {
+  cursor: pointer !important;
+}

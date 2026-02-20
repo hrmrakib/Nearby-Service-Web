@@ -475,20 +475,20 @@ export default function ProfilePage() {
           </DialogHeader>
           <div className='overflow-y-auto max-h-96 p-4'>
             <div className='space-y-3'>
-              {following?.map((user: IFollowing) => (
+              {/* {following?.map((user: IFollowing) => (
                 <div key={user._id} className='flex items-center gap-3'>
                   <Avatar className='w-10 h-10'>
                     <AvatarImage
                       src={user?.follower?.image}
                       alt={user?.follower?.name}
                     />
-                    <AvatarFallback>{user?.followed?.name}</AvatarFallback>
+                    <AvatarFallback>{user?.follower?.name}</AvatarFallback>
                   </Avatar>
                   <span className='font-medium text-[#1F2937]'>
                     {user?.follower?.name}
                   </span>
                 </div>
-              ))}
+              ))} */}
             </div>
           </div>
         </DialogContent>

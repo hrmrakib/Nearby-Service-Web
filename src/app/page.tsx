@@ -18,6 +18,7 @@ import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import Link from "next/link";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import CommonLocationInput from "@/components/CommonLocationInput";
+import MinStarRating from "@/components/home/Minstarrating";
 
 const categories = [
   { id: "all", label: "All", icon: "🌟" },
@@ -276,6 +277,10 @@ export default function DashboardLayout() {
     setLng(lng);
   };
 
+  const handleMinStarRatingChange = (minStarRating: number[]) => {
+    console.log(minStarRating);
+  };
+
   return (
     <div className='min-h-[calc(100vh-60px)] bg-[#F3F4F6]'>
       <HeroSection />
@@ -423,6 +428,8 @@ export default function DashboardLayout() {
                     </div>
                   </div>
                 </div>
+
+                <MinStarRating onChange={handleMinStarRatingChange} />
               </div>
             </div>
           </ScrollArea>

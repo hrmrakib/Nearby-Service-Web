@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 interface Review {
@@ -19,12 +20,11 @@ const INITIAL_REVIEWS: Review[] = [
   {
     id: 1,
     author: "Jacob Jones",
-    avatar: "https://api.dicebear.com/7.x/personas/svg?seed=JacobJones",
+    avatar: "/event/1.jpg",
     rating: 4.5,
     date: "Jan 18, 2026",
     text: "Amazing experience! The DJ kept the energy high all night long. We had a blast, and the venue was perfect for our group size. Highly recommend!",
-    image:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
+    image: "/event/1.jpg",
     helpful: 14,
     notHelpful: 2,
     userVote: null,
@@ -32,7 +32,7 @@ const INITIAL_REVIEWS: Review[] = [
   {
     id: 2,
     author: "Brooklyn Simmons",
-    avatar: "https://api.dicebear.com/7.x/personas/svg?seed=BrooklynSimmons",
+    avatar: "/event/2.jpg",
     rating: 4.5,
     date: "Jan 18, 2026",
     text: "Great event! The food was delicious, and the atmosphere was vibrant. Can't wait for the next one!",
@@ -43,7 +43,7 @@ const INITIAL_REVIEWS: Review[] = [
   {
     id: 3,
     author: "Jerome Bell",
-    avatar: "https://api.dicebear.com/7.x/personas/svg?seed=JeromeBell",
+    avatar: "/event/3.jpg",
     rating: 4.5,
     date: "Jan 18, 2026",
     text: "Great event! The food was delicious, and the atmosphere was vibrant. Can't wait for the next one!",
@@ -54,7 +54,7 @@ const INITIAL_REVIEWS: Review[] = [
   {
     id: 4,
     author: "Leslie Alexander",
-    avatar: "https://api.dicebear.com/7.x/personas/svg?seed=LeslieAlexander",
+    avatar: "/event/4.jpg",
     rating: 5,
     date: "Jan 15, 2026",
     text: "Absolutely stellar! Every detail was on point. The staff was incredibly attentive and made sure everyone had a wonderful time.",
@@ -65,7 +65,7 @@ const INITIAL_REVIEWS: Review[] = [
   {
     id: 5,
     author: "Marvin McKinney",
-    avatar: "https://api.dicebear.com/7.x/personas/svg?seed=MarvinMcKinney",
+    avatar: "/event/1.jpg",
     rating: 3,
     date: "Jan 10, 2026",
     text: "Decent event overall, but the sound system had some issues in the first hour. It improved later in the evening, but the initial problems were noticeable.",
@@ -167,7 +167,7 @@ function ReviewCard({
   onVote,
 }: {
   review: Review;
-  onVote: (id: number, vote: "helpful" | "notHelpful") => void;
+  onVote?: (id: number, vote: "helpful" | "notHelpful") => void;
 }) {
   const [lightbox, setLightbox] = useState<string | null>(null);
 
@@ -180,14 +180,14 @@ function ReviewCard({
       <div className='py-6 first:pt-0 last:pb-0 border-b last:border-b-0 border-gray-100 flex flex-col gap-3 animate-fadeIn'>
         {/* Header row */}
         <div className='flex items-start justify-between gap-3'>
-          <div className='flex flex-col gap-1.5'>
+          <div className='flex gap-1.5'>
             <StarRating rating={review.rating} />
-            <span className='text-xs text-gray-400'>{review.date}</span>
+            <span className='text-xs text-[#6B7280]'>{review.date}</span>
           </div>
         </div>
 
         {/* Review text */}
-        <p className='text-sm text-gray-700 leading-relaxed'>{review.text}</p>
+        <p className='text-sm text-[#1F2937] leading-relaxed'>{review.text}</p>
 
         {/* Optional image */}
         {review.image && (
@@ -196,10 +196,12 @@ function ReviewCard({
             onClick={() => setLightbox(review.image!)}
             aria-label='View full image'
           >
-            <img
+            <Image
               src={review.image}
               alt='Review attachment'
               className='w-full h-40 sm:h-48 object-cover'
+              width={640}
+              height={480}
               loading='lazy'
             />
           </button>
@@ -209,65 +211,16 @@ function ReviewCard({
         <div className='flex items-center justify-between gap-4 flex-wrap'>
           {/* Avatar */}
           <div className='flex items-center gap-2.5'>
-            <img
+            <Image
               src={review.avatar}
               alt={review.author}
               className='w-8 h-8 rounded-full bg-gray-100 object-cover border border-gray-200'
+              width={32}
+              height={32}
             />
             <span className='text-sm font-semibold text-gray-800'>
               {review.author}
             </span>
-          </div>
-
-          {/* Helpfulness voting */}
-          <div className='flex items-center gap-2 text-xs text-gray-400'>
-            <span>Helpful?</span>
-            <button
-              onClick={() => onVote(review.id, "helpful")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
-                review.userVote === "helpful"
-                  ? "border-emerald-400 text-emerald-600 bg-emerald-50"
-                  : "border-gray-200 hover:border-emerald-300 hover:text-emerald-500"
-              }`}
-            >
-              <svg
-                className='w-3.5 h-3.5'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M14 9V5a3 3 0 00-3-3l-4 10v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z'
-                />
-              </svg>
-              {review.helpful}
-            </button>
-            <button
-              onClick={() => onVote(review.id, "notHelpful")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-full border transition-all active:scale-95 ${
-                review.userVote === "notHelpful"
-                  ? "border-red-400 text-red-500 bg-red-50"
-                  : "border-gray-200 hover:border-red-300 hover:text-red-400"
-              }`}
-            >
-              <svg
-                className='w-3.5 h-3.5 rotate-180'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M14 9V5a3 3 0 00-3-3l-4 10v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z'
-                />
-              </svg>
-              {review.notHelpful}
-            </button>
           </div>
         </div>
       </div>

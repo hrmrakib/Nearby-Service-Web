@@ -1,7 +1,12 @@
 "use client";
 
 import AboutEvent from "@/components/event/AboutEvent";
+import CommentsSection from "@/components/event/Comments";
+import LocationCard from "@/components/event/LocationCard";
 import MomentsSection from "@/components/event/Moments";
+import RelatedCard from "@/components/event/RelatedCard";
+import ReviewSection from "@/components/event/ReviewSection";
+import UnlockNextJurnee from "@/components/event/UnlockNextJurnee";
 import {
   Bookmark,
   Calendar,
@@ -326,12 +331,14 @@ export default function EventDetailPage() {
       </div>
 
       <div className='container mx-auto px-4 py-6 md:py-8'>
-        <div className='grid grid-cols-1 lg:grid-cols-6 gap-6 md:gap-8 lg:gap-36'>
+        <div className='grid grid-cols-1 lg:grid-cols-7 gap-6 md:gap-8 lg:gap-36'>
           {/* Left Column */}
-          <div className='lg:col-span-3 space-y-6'>
+          <div className='lg:col-span-4 space-y-6'>
             {/* Event Details */}
             <AboutEvent />
             <MomentsSection />
+            {/* <CommentsSection /> */}
+            <ReviewSection />
 
             {/* Deal Details */}
             {/* Service Details */}
@@ -339,8 +346,14 @@ export default function EventDetailPage() {
           </div>
 
           {/* Right Sidebar */}
-          <div className='space-y-4 items-end'>
-            <h2>fkfdgjfh</h2>
+          <div className='lg:col-span-3 space-y-4'>
+            <LocationCard
+              lat={23.7761516}
+              lng={90.4068457}
+              googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_API_KEY!}
+            />
+            <RelatedCard />
+            <UnlockNextJurnee />
           </div>
         </div>
       </div>

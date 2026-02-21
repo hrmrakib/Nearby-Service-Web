@@ -100,7 +100,7 @@ export default function MomentsSection() {
 
   return (
     <div className='bg-gray-100 flex items-center justify-center'>
-      <div className='w-full max-w-2xl bg-white rounded-2xl shadow-sm p-5 sm:p-6'>
+      <div className='w-full bg-white rounded-2xl shadow-sm p-5 sm:p-6'>
         {/* Header */}
         <div className='flex items-start justify-between mb-1'>
           <div>

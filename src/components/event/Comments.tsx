@@ -342,7 +342,7 @@ function MediaPreview({ media }: { media: MediaAttachment }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────────
-export default function CommentsSection() {
+export default function CommentsSection({ id }: { id: string }) {
   const [comments, setComments] = useState<Comment[]>(INITIAL_COMMENTS);
   const [newComment, setNewComment] = useState("");
   const [newCommentMedia, setNewCommentMedia] = useState<
@@ -499,7 +499,7 @@ export default function CommentsSection() {
   const totalCount = comments.reduce((acc, c) => acc + 1 + c.replies.length, 0);
 
   return (
-    <div className='bg-gray-100 flex items-start justify-center'>
+    <div id='see-all' className='bg-gray-100 flex items-start justify-center'>
       <div className='w-full bg-white rounded-2xl shadow-sm p-4 sm:p-5'>
         {/* Header */}
         <h2 className='text-base font-bold text-gray-900 mb-3'>

@@ -228,7 +228,7 @@ function ReviewCard({
   );
 }
 
-export default function ReviewSection() {
+export default function ReviewSection({ id }: { id: string }) {
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
 
   const handleVote = (id: number, vote: "helpful" | "notHelpful") => {
@@ -268,7 +268,10 @@ export default function ReviewSection() {
 
   return (
     <>
-      <div className='min-h-screen bg-gray-50 flex items-start justify-center'>
+      <div
+        id='see-all'
+        className='min-h-screen bg-gray-50 flex items-start justify-center'
+      >
         <div className='w-full bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 flex flex-col gap-6'>
           {/* Review list */}
           <div className='flex flex-col'>

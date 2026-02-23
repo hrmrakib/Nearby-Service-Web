@@ -7,6 +7,14 @@ import MomentsSection from "@/components/event/Moments";
 import RelatedCard from "@/components/event/RelatedCard";
 import ReviewSection from "@/components/event/ReviewSection";
 import UnlockNextJurnee from "@/components/event/UnlockNextJurnee";
+import AddressDisplay from "@/components/share/AddressDisplay";
+import { useGetCommentsByPostIdQuery } from "@/redux/features/comment/commentAPI";
+import { useGetPostDetailByIdQuery } from "@/redux/features/post/postAPI";
+import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
+import { useGetReviewsByPostIdQuery } from "@/redux/features/review/reviewAPI";
+import formatDate from "@/utils/formatDate";
+import getDistanceKm from "@/utils/getDistanceMiles";
+
 import {
   Bookmark,
   Calendar,
@@ -15,21 +23,39 @@ import {
   MessageSquareText,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
-const thumbnails = [
-  "/event/1.jpg",
-  "/event/2.jpg",
-  "/event/3.jpg",
-  "/event/4.jpg",
-];
 type ToastMessage = {
   id: number;
   text: string;
 };
 
+function LoadingSpinner() {
+  return (
+    <div className='min-h-[90vh] bg-[#F3F4F6] flex items-center justify-center'>
+      <div className='flex flex-col items-center gap-4'>
+        {/* Outer track */}
+        <div className='relative w-16 h-16'>
+          <div className='absolute inset-0 rounded-full border-4 border-green-100' />
+          {/* Spinning arc */}
+          <div className='absolute inset-0 rounded-full border-4 border-transparent border-t-green-500 animate-spin' />
+          {/* Inner pulsing dot */}
+          <div className='absolute inset-0 flex items-center justify-center'>
+            <div className='w-3 h-3 rounded-full bg-green-500 animate-pulse' />
+          </div>
+        </div>
+        <p className='text-sm font-medium text-green-600 tracking-wide animate-pulse'>
+          Loading event...
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function EventDetailPage() {
-  const [currentSelectImage, setCurrentSelectImage] = useState(0);
+  const { id } = useParams();
+  const [imagePreview, setImagePreview] = useState("");
 
   const [attended, setAttended] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -38,6 +64,27 @@ export default function EventDetailPage() {
   const [saveCount, setSaveCount] = useState(91);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const { data, isLoading } = useGetPostDetailByIdQuery(id);
+  const { data: comments } = useGetCommentsByPostIdQuery(id);
+  const { data: reviews } = useGetReviewsByPostIdQuery(id);
+  const { data: profile } = useGetProfileQuery(undefined);
+
+  const postDetail = data?.data?.detail;
+  const relevantPosts = data?.data?.relevantPosts;
+
+  const userLat = profile?.data?.location?.coordinates[0];
+  const userLng = profile?.data?.location?.coordinates[1];
+
+  const thumbnails = postDetail?.media?.filter((m: string) =>
+    /\.(jpg|jpeg|png|webp)(\?.*)?$/i.test(m),
+  );
+
+  useEffect(() => {
+    if (postDetail?.image) {
+      setImagePreview(postDetail?.image);
+    }
+  }, [postDetail]);
 
   const showToast = (text: string) => {
     const id = Date.now();
@@ -88,17 +135,24 @@ export default function EventDetailPage() {
     { label: "Hide event", icon: "✕", action: () => showToast("Event hidden") },
   ];
 
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  console.log(
+    userLat,
+    userLng,
+    postDetail?.location?.coordinates[1],
+    postDetail?.location?.coordinates[0],
+  );
+
   return (
     <div className='min-h-screen bg-[#F3F4F6]'>
       <div className='relative w-full'>
         {/* Hero Section */}
         <div className='relative w-full h-56 md:h-110 overflow-hidden bg-card'>
           <Image
-            src={
-              currentSelectImage
-                ? thumbnails[currentSelectImage]
-                : "/event/1.jpg"
-            }
+            src={imagePreview}
             alt='Night at Casa Verde'
             fill
             className='object-cover'
@@ -109,45 +163,67 @@ export default function EventDetailPage() {
           {/* Title */}
           <div className='absolute bottom-6 left-6 md:left-8'>
             <h1 className='text-3xl md:text-4xl font-bold text-white mb-2'>
-              Night at Casa Verde
+              {postDetail?.title || "No title"}
             </h1>
-            <h1 className='text-base md:text-xl font-medium text-white mb-2'>
-              Event
+            <h1 className='text-base md:text-xl font-medium text-white mb-2 capitalize'>
+              {postDetail?.category || "No category"}
             </h1>
             <div className='flex flex-wrap gap-2 text-white text-xs md:text-sm'>
               <div className='flex items-center gap-2'>
                 <MessageSquareText className='w-5 h-5' />
-                <span className='font-semibold'>120 comments</span>
+                <span className='font-semibold'>
+                  {postDetail?.category === "event"
+                    ? postDetail?.reviewsCount + " comments"
+                    : postDetail?.reviewsCount + " reviews"}
+                </span>
                 <span>•</span>
-                <button className='hover:underline'>See all</button>
+                <a href='#see-all' className='hover:underline'>
+                  See all
+                </a>
               </div>
 
               <div className='flex items-center gap-2'>
                 <MapPin className='w-5 h-5' />
-                <span className='font-semibold'>0.8 mi</span>
+                <span className='font-semibold'>
+                  {" "}
+                  {getDistanceKm(
+                    userLng,
+                    userLat,
+                    postDetail?.location?.coordinates[1],
+                    postDetail?.location?.coordinates[0],
+                  ).toFixed(1)}{" "}
+                  km
+                </span>
                 <span>•</span>
-                <button className='hover:underline'>2118 Thornridge Cir</button>
+                <AddressDisplay
+                  key={postDetail?.address}
+                  address={postDetail?.address ?? ""}
+                />
               </div>
 
               <div className='flex items-center gap-2'>
                 <Calendar className='w-5 h-5' />
-                <span className='font-semibold'>12/26 Wed 6:00 PM</span>
+                <span className='font-semibold'>
+                  {formatDate(postDetail?.createdAt)}
+                </span>
               </div>
               <div className='flex items-center gap-2'>
                 <Eye className='w-5 h-5' />
-                <span className='font-semibold'>20+ Views</span>
+                <span className='font-semibold'>
+                  {postDetail?.views}+ Views
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Thumbnail Photos Bottom Right — outside overflow-hidden, on top of all */}
-        <div className='absolute -bottom-8 right-6 flex gap-5 z-[500]'>
-          {thumbnails.map((thumb, idx) => (
+        <div className='absolute -bottom-4 md:-bottom-8 right-6 flex gap-5 z-[500]'>
+          {thumbnails?.map((thumb: string, idx: number) => (
             <div
               key={idx}
               className='w-12 lg:w-24 h-12 lg:h-24 rounded-lg overflow-hidden shadow-lg'
-              onClick={() => setCurrentSelectImage(idx)}
+              onClick={() => setImagePreview(thumb)}
             >
               <Image
                 src={thumb}
@@ -166,21 +242,9 @@ export default function EventDetailPage() {
         style={{ boxShadow: "0 5px 6px rgba(0, 0, 0, 0.1)" }}
       >
         <div className='container mx-auto bg-white flex flex-col items-start justify-center p-4 font-sans'>
-          {/* Toast notifications */}
-          <div className='fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none'>
-            {toasts.map((t) => (
-              <div
-                key={t.id}
-                className='bg-gray-900 text-white text-sm px-4 py-2 rounded-full shadow-lg animate-fade-in-down whitespace-nowrap'
-              >
-                {t.text}
-              </div>
-            ))}
-          </div>
-
           {/* Action Bar */}
           <div className='w-full max-w-2xl bg-white rounded-2xl px-4 py-3'>
-            <div className='flex items-center gap-2 sm:gap-3'>
+            <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
               {/* Attend Button */}
               <button
                 onClick={handleAttend}
@@ -337,8 +401,8 @@ export default function EventDetailPage() {
             {/* Event Details */}
             <AboutEvent />
             <MomentsSection />
-            {/* <CommentsSection /> */}
-            <ReviewSection />
+            <CommentsSection id='see-all' />
+            <ReviewSection id='see-all' />
 
             {/* Deal Details */}
             {/* Service Details */}
@@ -348,11 +412,18 @@ export default function EventDetailPage() {
           {/* Right Sidebar */}
           <div className='lg:col-span-3 space-y-4'>
             <LocationCard
-              lat={23.7761516}
-              lng={90.4068457}
+              // lat={postDetail?.location?.coordinates[0]}
+              // lng={postDetail?.location?.coordinates[1]}
+              address={postDetail?.address}
+              lat={90.39064309999999}
+              lng={23.7511665}
               googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_API_KEY!}
             />
-            <RelatedCard />
+            <RelatedCard
+              userLng={userLng}
+              userLat={userLat}
+              relevantPosts={relevantPosts}
+            />
             <UnlockNextJurnee />
           </div>
         </div>

@@ -36,6 +36,14 @@ const postAPI = baseAPI.injectEndpoints({
       },
     }),
 
+    getPostDetailById: builder.query({
+      query: (id) => ({
+        url: `/post/relevant/${id}`,
+        method: "GET",
+      }),
+      providesTags: ["Post"],
+    }),
+
     createEventPost: builder.mutation({
       query: (body) => ({
         url: "/post/event",
@@ -114,6 +122,7 @@ const postAPI = baseAPI.injectEndpoints({
 
 export const {
   useGetAllPostQuery,
+  useGetPostDetailByIdQuery,
   useCreateEventPostMutation,
   useCreateDealPostMutation,
   useCreateAlertPostMutation,

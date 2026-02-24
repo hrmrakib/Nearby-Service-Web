@@ -7,9 +7,18 @@ const commentAPI = baseAPI.injectEndpoints({
         url: `/comments/${postId}`,
       }),
     }),
+
+    createComment: builder.mutation({
+      query: (body) => ({
+        url: "/comments",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useGetCommentsByPostIdQuery } = commentAPI;
+export const { useGetCommentsByPostIdQuery, useCreateCommentMutation } =
+  commentAPI;
 
 export default commentAPI;

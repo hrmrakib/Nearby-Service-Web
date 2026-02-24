@@ -8,7 +8,7 @@ import Image from "next/image";
 export default function RelatedCard({ userLng, userLat, relevantPosts }: any) {
   return (
     <div className='flex flex-col items-end justify-end gap-6 lg:gap-10 pt-5 font-sans'>
-      {relevantPosts.map((post: any) => (
+      {relevantPosts?.map((post: any) => (
         <div
           key={post._id}
           className='card-font w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl card-shine relative'
@@ -52,14 +52,14 @@ export default function RelatedCard({ userLng, userLat, relevantPosts }: any) {
               <div className='flex items-center gap-1'>
                 <Star className='w-4 h-4 text-[#108F1E]' fill='#108F1E' />
                 <span className='flex items-center gap-1 text-sm text-[#374151] font-medium'>
-                  4.9
+                  {post?.averageRating || "N/A"}
                 </span>
               </div>
 
               {/* Tag */}
               <span className='flex items-center gap-1 text-[#030712] text-sm'>
                 <Tag className='w-4 h-4 text-[#108F1E]' />
-                Service
+                {post?.category}
               </span>
             </div>
           </div>

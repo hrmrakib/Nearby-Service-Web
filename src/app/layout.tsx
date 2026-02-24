@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Lato } from "next/font/google";
+// @ts/ignore
 import "./globals.css";
 import Navbar from "@/components/navbar/Navbar";
 import Providers from "@/redux/features/Providers";
 import { Toaster } from "sonner";
+import AppInitializer from "@/components/AppInitializer/AppInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,9 +40,11 @@ export default function RootLayout({
         style={{ fontFamily: lato.style.fontFamily }}
       >
         <Providers>
-          <Toaster />
-          <Navbar />
-          {children}
+          <AppInitializer>
+            <Toaster />
+            <Navbar />
+            {children}
+          </AppInitializer>
         </Providers>
       </body>
     </html>

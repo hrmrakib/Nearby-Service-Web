@@ -39,24 +39,6 @@ const customBaseQuery: BaseQueryFn<
     return result;
   }
 
-  // const isAuthError =
-  //   result.error &&
-  //   (result?.error?.status === 401 ||
-  //     result?.error?.status === 402 ||
-  //     result?.error?.status === 403 ||
-  //     result?.error?.status === 404);
-
-  // if (isAuthError) {
-  //   const token = localStorage.getItem("accessToken");
-
-  //   if (token) {
-  //     localStorage.removeItem("accessToken");
-  //     window.location.href = "/login";
-  //   }
-
-  //   return result;
-  // }
-
   const pathname = window?.location?.pathname || "";
 
   if (result.error && result.error.status === 401) {

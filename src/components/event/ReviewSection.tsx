@@ -1,79 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import formatDate from "@/utils/formatDate";
 import Image from "next/image";
 import { useState } from "react";
 
-interface Review {
-  id: number;
-  author: string;
-  avatar: string;
+type Review = {
+  _id: string;
+  userId: {
+    name: string;
+    image: string;
+  };
+  postId: string;
+  image: string;
+  video: string;
   rating: number;
-  date: string;
-  text: string;
-  image?: string;
-  helpful: number;
-  notHelpful: number;
-  userVote?: "helpful" | "notHelpful" | null;
-}
-
-const INITIAL_REVIEWS: Review[] = [
-  {
-    id: 1,
-    author: "Jacob Jones",
-    avatar: "/event/1.jpg",
-    rating: 4.5,
-    date: "Jan 18, 2026",
-    text: "Amazing experience! The DJ kept the energy high all night long. We had a blast, and the venue was perfect for our group size. Highly recommend!",
-    image: "/event/1.jpg",
-    helpful: 14,
-    notHelpful: 2,
-    userVote: null,
-  },
-  {
-    id: 2,
-    author: "Brooklyn Simmons",
-    avatar: "/event/2.jpg",
-    rating: 4.5,
-    date: "Jan 18, 2026",
-    text: "Great event! The food was delicious, and the atmosphere was vibrant. Can't wait for the next one!",
-    helpful: 9,
-    notHelpful: 1,
-    userVote: null,
-  },
-  {
-    id: 3,
-    author: "Jerome Bell",
-    avatar: "/event/3.jpg",
-    rating: 4.5,
-    date: "Jan 18, 2026",
-    text: "Great event! The food was delicious, and the atmosphere was vibrant. Can't wait for the next one!",
-    helpful: 6,
-    notHelpful: 0,
-    userVote: null,
-  },
-  {
-    id: 4,
-    author: "Leslie Alexander",
-    avatar: "/event/4.jpg",
-    rating: 5,
-    date: "Jan 15, 2026",
-    text: "Absolutely stellar! Every detail was on point. The staff was incredibly attentive and made sure everyone had a wonderful time.",
-    helpful: 21,
-    notHelpful: 0,
-    userVote: null,
-  },
-  {
-    id: 5,
-    author: "Marvin McKinney",
-    avatar: "/event/1.jpg",
-    rating: 3,
-    date: "Jan 10, 2026",
-    text: "Decent event overall, but the sound system had some issues in the first hour. It improved later in the evening, but the initial problems were noticeable.",
-    helpful: 4,
-    notHelpful: 3,
-    userVote: null,
-  },
-];
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 function StarRating({
   rating,
@@ -162,13 +107,7 @@ function Lightbox({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
-function ReviewCard({
-  review,
-  onVote,
-}: {
-  review: Review;
-  onVote?: (id: number, vote: "helpful" | "notHelpful") => void;
-}) {
+function ReviewCard({ review }: { review: Review }) {
   const [lightbox, setLightbox] = useState<string | null>(null);
 
   return (
@@ -182,12 +121,16 @@ function ReviewCard({
         <div className='flex items-start justify-between gap-3'>
           <div className='flex gap-1.5'>
             <StarRating rating={review.rating} />
-            <span className='text-xs text-[#6B7280]'>{review.date}</span>
+            <span className='text-xs text-[#6B7280]'>
+              {formatDate(review.createdAt)}
+            </span>
           </div>
         </div>
 
         {/* Review text */}
-        <p className='text-sm text-[#1F2937] leading-relaxed'>{review.text}</p>
+        <p className='text-sm text-[#1F2937] leading-relaxed'>
+          {review?.content}
+        </p>
 
         {/* Optional image */}
         {review.image && (
@@ -212,14 +155,14 @@ function ReviewCard({
           {/* Avatar */}
           <div className='flex items-center gap-2.5'>
             <Image
-              src={review.avatar}
-              alt={review.author}
+              src={review?.userId?.image}
+              alt={review?.userId?.name}
               className='w-8 h-8 rounded-full bg-gray-100 object-cover border border-gray-200'
               width={32}
               height={32}
             />
             <span className='text-sm font-semibold text-gray-800'>
-              {review.author}
+              {review?.userId?.name}
             </span>
           </div>
         </div>
@@ -228,44 +171,7 @@ function ReviewCard({
   );
 }
 
-export default function ReviewSection({ id }: { id: string }) {
-  const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
-
-  const handleVote = (id: number, vote: "helpful" | "notHelpful") => {
-    setReviews((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
-        if (r.userVote === vote) {
-          // undo
-          return {
-            ...r,
-            userVote: null,
-            helpful: vote === "helpful" ? r.helpful - 1 : r.helpful,
-            notHelpful: vote === "notHelpful" ? r.notHelpful - 1 : r.notHelpful,
-          };
-        }
-        const wasHelpful = r.userVote === "helpful";
-        const wasNotHelpful = r.userVote === "notHelpful";
-        return {
-          ...r,
-          userVote: vote,
-          helpful:
-            vote === "helpful"
-              ? r.helpful + 1
-              : wasHelpful
-                ? r.helpful - 1
-                : r.helpful,
-          notHelpful:
-            vote === "notHelpful"
-              ? r.notHelpful + 1
-              : wasNotHelpful
-                ? r.notHelpful - 1
-                : r.notHelpful,
-        };
-      }),
-    );
-  };
-
+export default function ReviewSection({ reviews }: { reviews: Review[] }) {
   return (
     <>
       <div
@@ -275,8 +181,8 @@ export default function ReviewSection({ id }: { id: string }) {
         <div className='w-full bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 flex flex-col gap-6'>
           {/* Review list */}
           <div className='flex flex-col'>
-            {reviews.map((r) => (
-              <ReviewCard key={r.id} review={r} onVote={handleVote} />
+            {reviews?.map((review: Review) => (
+              <ReviewCard key={review._id} review={review} />
             ))}
           </div>
         </div>

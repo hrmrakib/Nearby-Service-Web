@@ -1,4 +1,5 @@
 import baseAPI from "@/redux/api/api";
+import { logout, setUser } from "../auth/authSlice";
 
 const profileAPI = baseAPI.injectEndpoints({
   endpoints: (builder) => ({
@@ -7,6 +8,16 @@ const profileAPI = baseAPI.injectEndpoints({
         url: "/user/profile",
         method: "GET",
       }),
+
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          console.log(data);
+          dispatch(setUser({ user: data?.data, token: null }));
+        } catch {
+          dispatch(logout());
+        }
+      },
     }),
 
     getNotifications: builder.query({

@@ -19,6 +19,8 @@ import Link from "next/link";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import CommonLocationInput from "@/components/CommonLocationInput";
 import MinStarRating from "@/components/home/Minstarrating";
+import getDistanceKm from "@/utils/getDistanceMiles";
+import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
 
 const categories = [
   {
@@ -323,6 +325,9 @@ export default function DashboardLayout() {
   const [showCalendar, setShowCalendar] = useState(false);
   const search = useSelector((state: any) => state.globalSearch.searchValue);
   const [toggleSaveMutation] = useToggleSaveMutation();
+  const { data: profile } = useGetProfileQuery(undefined);
+  const userLat = profile?.data?.location?.coordinates[0];
+  const userLng = profile?.data?.location?.coordinates[1];
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
@@ -334,7 +339,7 @@ export default function DashboardLayout() {
   const [lng, setLng] = useState<number | null>(null);
 
   const [page, setPage] = useState(1);
-  const limit = 3;
+  const limit = 10;
 
   const { data, isFetching, refetch } = useGetAllPostQuery({
     category: selectedCategory,
@@ -606,16 +611,17 @@ export default function DashboardLayout() {
 
         {/* Middle Column - Content Feed */}
         <div className='min-w-0 min-h-0'>
-          <ScrollArea className='h-auto' ref={scrollRef}>
-            <Link
-              href={`/event/${allPosts?.[0]?._id}`}
-              className='p-6 space-y-6'
-            >
-              {allPosts?.map((item: IPost) => (
-                <Card
-                  key={item._id}
-                  className='overflow-hidden !border-none p-0'
-                >
+          <ScrollArea
+            className='h-auto [&>[data-radix-scroll-area-scrollbar]]:hidden'
+            ref={scrollRef}
+          >
+            {allPosts?.map((item: IPost) => (
+              <Link
+                key={item._id}
+                href={`/event/${item?._id}`}
+                className='p-6 space-y-6'
+              >
+                <Card className='overflow-hidden !border-none p-0'>
                   <div className='aspect-vide relative'>
                     {item?.image && (
                       <Image
@@ -633,13 +639,6 @@ export default function DashboardLayout() {
                         <h3 className='text-xl font-semibold text-gray-900'>
                           {item.title}
                         </h3>
-                        {/* <Button
-                          onClick={() => handleLikeToggle(item?._id)}
-                          variant='ghost'
-                          size='sm'
-                        >
-                          <Heart className='w-4 h-4' />
-                        </Button> */}
                       </div>
 
                       <div className='flex items-center space-x-4'>
@@ -647,7 +646,14 @@ export default function DashboardLayout() {
                           <div className='w-6 h-6'>
                             <MapPin className='w-4 h-4 text-[#15B826]' />
                           </div>
-                          <p>{item.address}</p>
+                          <p>
+                            {getDistanceKm(
+                              userLng,
+                              userLat,
+                              item?.location?.coordinates[1],
+                              item?.location?.coordinates[0],
+                            )}
+                          </p>
                         </div>
                       </div>
 
@@ -684,8 +690,8 @@ export default function DashboardLayout() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </Link>
+              </Link>
+            ))}
 
             {isFetching && (
               <div

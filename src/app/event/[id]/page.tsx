@@ -7,11 +7,14 @@ import MomentsSection from "@/components/event/Moments";
 import RelatedCard from "@/components/event/RelatedCard";
 import ReviewSection from "@/components/event/ReviewSection";
 import UnlockNextJurnee from "@/components/event/UnlockNextJurnee";
+import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import AddressDisplay from "@/components/share/AddressDisplay";
+import { useAuth } from "@/hooks/useAuth.ts";
 import { useGetCommentsByPostIdQuery } from "@/redux/features/comment/commentAPI";
+import { useToggleLikeMutation } from "@/redux/features/like/likeAPI";
 import { useGetPostDetailByIdQuery } from "@/redux/features/post/postAPI";
-import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
 import { useGetReviewsByPostIdQuery } from "@/redux/features/review/reviewAPI";
+import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import formatDate from "@/utils/formatDate";
 import getDistanceKm from "@/utils/getDistanceMiles";
 
@@ -25,59 +28,34 @@ import {
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-
-type ToastMessage = {
-  id: number;
-  text: string;
-};
-
-function LoadingSpinner() {
-  return (
-    <div className='min-h-[90vh] bg-[#F3F4F6] flex items-center justify-center'>
-      <div className='flex flex-col items-center gap-4'>
-        {/* Outer track */}
-        <div className='relative w-16 h-16'>
-          <div className='absolute inset-0 rounded-full border-4 border-green-100' />
-          {/* Spinning arc */}
-          <div className='absolute inset-0 rounded-full border-4 border-transparent border-t-green-500 animate-spin' />
-          {/* Inner pulsing dot */}
-          <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='w-3 h-3 rounded-full bg-green-500 animate-pulse' />
-          </div>
-        </div>
-        <p className='text-sm font-medium text-green-600 tracking-wide animate-pulse'>
-          Loading event...
-        </p>
-      </div>
-    </div>
-  );
-}
+import { toast } from "sonner";
 
 export default function EventDetailPage() {
-  const { id } = useParams();
+  const { userLat, userLng } = useAuth();
+
+  const id = useParams().id as string;
   const [imagePreview, setImagePreview] = useState("");
 
   const [attended, setAttended] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(284);
-  const [saveCount, setSaveCount] = useState(91);
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [menuOpen, setMenuOpen] = useState(false);
 
-  const { data, isLoading } = useGetPostDetailByIdQuery(id);
-  const { data: comments } = useGetCommentsByPostIdQuery(id);
-  const { data: reviews } = useGetReviewsByPostIdQuery(id);
-  const { data: profile } = useGetProfileQuery(undefined);
+  const [toggleSaveMutation] = useToggleSaveMutation();
+  const [toggleLikeMutation] = useToggleLikeMutation();
+
+  const { data, isLoading, refetch } = useGetPostDetailByIdQuery(id);
+  const { data: commentsData } = useGetCommentsByPostIdQuery(id);
+  const { data: reviewsData } = useGetReviewsByPostIdQuery(id);
+
+  const reviews = reviewsData?.data;
+  const comments = commentsData?.data;
+
+  console.log({ comments });
 
   const postDetail = data?.data?.detail;
   const relevantPosts = data?.data?.relevantPosts;
 
-  const userLat = profile?.data?.location?.coordinates[0];
-  const userLng = profile?.data?.location?.coordinates[1];
-
   const thumbnails = postDetail?.media?.filter((m: string) =>
-    /\.(jpg|jpeg|png|webp)(\?.*)?$/i.test(m),
+    /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
   );
 
   useEffect(() => {
@@ -86,65 +64,49 @@ export default function EventDetailPage() {
     }
   }, [postDetail]);
 
-  const showToast = (text: string) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, text }]);
-    setTimeout(
-      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      2500,
-    );
-  };
-
   const handleAttend = () => {
     setAttended((prev) => {
       const next = !prev;
-      showToast(next ? "🎉 You're attending!" : "Removed from attending");
+
       return next;
     });
   };
 
-  const handleSave = () => {
-    setSaved((prev) => {
-      const next = !prev;
-      setSaveCount((c) => (next ? c + 1 : c - 1));
-      showToast(next ? "🔖 Event saved!" : "Removed from saved");
-      return next;
-    });
+  const handleSave = async () => {
+    try {
+      const res = await toggleSaveMutation({
+        postId: id,
+      }).unwrap();
+
+      if (res?.success) {
+        refetch();
+        toast.success(res?.message);
+      }
+      console.log(res, res?.message);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleLike = () => {
-    setLiked((prev) => {
-      const next = !prev;
-      setLikeCount((c) => (next ? c + 1 : c - 1));
-      showToast(next ? "❤️ You liked this!" : "Like removed");
-      return next;
-    });
-  };
+  const handleLike = async () => {
+    try {
+      const res = await toggleLikeMutation({
+        postId: id,
+      }).unwrap();
 
-  const menuOptions = [
-    {
-      label: "Share event",
-      icon: "↗",
-      action: () => showToast("Link copied!"),
-    },
-    {
-      label: "Report event",
-      icon: "⚑",
-      action: () => showToast("Thanks for reporting"),
-    },
-    { label: "Hide event", icon: "✕", action: () => showToast("Event hidden") },
-  ];
+      if (res?.success) {
+        refetch();
+        toast.success(res?.message);
+      }
+      console.log(res, res?.message);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner text='event' />;
   }
-
-  console.log(
-    userLat,
-    userLng,
-    postDetail?.location?.coordinates[1],
-    postDetail?.location?.coordinates[0],
-  );
 
   return (
     <div className='min-h-screen bg-[#F3F4F6]'>
@@ -187,8 +149,8 @@ export default function EventDetailPage() {
                 <span className='font-semibold'>
                   {" "}
                   {getDistanceKm(
-                    userLng,
-                    userLat,
+                    userLng!,
+                    userLat!,
                     postDetail?.location?.coordinates[1],
                     postDetail?.location?.coordinates[0],
                   ).toFixed(1)}{" "}
@@ -270,13 +232,13 @@ export default function EventDetailPage() {
               </button>
 
               {/* Comment Button */}
-              <button
-                onClick={() => showToast("💬 Comments coming soon!")}
+              <a
+                href='#comments'
                 className='flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-50 active:scale-95 transition-all duration-200'
                 aria-label='Comments'
               >
                 <MessageSquareText />
-              </button>
+              </a>
 
               {/* Save Button */}
               <button
@@ -286,15 +248,19 @@ export default function EventDetailPage() {
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
               transition-all duration-200 active:scale-95 select-none
               ${
-                saved
-                  ? "border-green-500 bg-green-50 text-green-600"
+                postDetail?.isSaved
+                  ? "border-green-500 bg-green-100 text-green-600"
                   : "border-green-500 text-green-500 hover:bg-green-50"
               }
             `}
               >
                 <Bookmark />
-                <span className='hidden sm:inline'>Save</span>
-                <span className='text-xs text-green-400'>{saveCount}</span>
+                <span className='hidden sm:inline'>
+                  {postDetail?.isSaved ? "Saved" : "Save"}
+                </span>
+                <span className='text-xs text-green-400'>
+                  {postDetail?.totalSaved > 0 ? postDetail?.totalSaved : 0}
+                </span>
               </button>
 
               {/* Like Button */}
@@ -325,13 +291,15 @@ export default function EventDetailPage() {
                   <path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' />
                 </svg>
                 <span className='hidden sm:inline'>Like</span>
-                <span className='text-xs text-green-400'>{likeCount}</span>
+                <span className='text-xs text-green-400'>
+                  {postDetail?.likes > 0 ? postDetail?.likes : 0}
+                </span>
               </button>
 
               {/* More Options */}
               <div className='relative flex-shrink-0'>
                 <button
-                  onClick={() => setMenuOpen((p) => !p)}
+                  // onClick={() => setMenuOpen((p) => !p)}
                   className='flex items-center justify-center w-8 h-11 sm:h-12 text-gray-400 hover:text-gray-600 active:scale-95 transition-all duration-200'
                   aria-label='More options'
                 >
@@ -346,36 +314,11 @@ export default function EventDetailPage() {
                     <circle cx='2' cy='16' r='2' />
                   </svg>
                 </button>
-
-                {menuOpen && (
-                  <>
-                    <div
-                      className='fixed inset-0 z-10'
-                      onClick={() => setMenuOpen(false)}
-                    />
-                    <div className='absolute right-0 bottom-full mb-2 z-20 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden min-w-[160px]'>
-                      {menuOptions.map((opt) => (
-                        <button
-                          key={opt.label}
-                          onClick={() => {
-                            opt.action();
-                            setMenuOpen(false);
-                          }}
-                          className='w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left'
-                        >
-                          <span className='text-gray-400'>{opt.icon}</span>
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           </div>
 
           {/* Demo label */}
-
           <style jsx global>{`
             @keyframes fade-in-down {
               from {
@@ -401,12 +344,12 @@ export default function EventDetailPage() {
             {/* Event Details */}
             <AboutEvent />
             <MomentsSection />
-            <CommentsSection id='see-all' />
-            <ReviewSection id='see-all' />
 
-            {/* Deal Details */}
-            {/* Service Details */}
-            {/* Missing Person Details */}
+            {postDetail?.type === "service" ? (
+              <ReviewSection reviews={reviews} />
+            ) : (
+              <CommentsSection id='comments' comments={comments} postId={id} />
+            )}
           </div>
 
           {/* Right Sidebar */}

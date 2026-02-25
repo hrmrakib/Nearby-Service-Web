@@ -8,7 +8,14 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, MessageCircle, Phone, Loader, Calendar } from "lucide-react";
+import {
+  MapPin,
+  MessageCircle,
+  Phone,
+  Loader,
+  Calendar,
+  Tag,
+} from "lucide-react";
 import Image from "next/image";
 import { HeroSection } from "@/components/home/HeroSection";
 import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
@@ -20,7 +27,7 @@ import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import CommonLocationInput from "@/components/CommonLocationInput";
 import MinStarRating from "@/components/home/Minstarrating";
 import getDistanceKm from "@/utils/getDistanceMiles";
-import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
+import { useAuth } from "@/hooks/useAuth.ts";
 
 const categories = [
   {
@@ -270,46 +277,91 @@ const contacts = [
   },
 ];
 
-export interface IPost {
+type TAuthor = {
   _id: string;
-  author: string;
-  image: string | null;
-  media: string | null;
+  name: string;
+  email: string;
+  image: string;
+  stripeAccountId: string;
+  isStripeConnected: boolean;
+};
+
+type TSchedule = {
+  _id: string;
+  day: string;
+  startTime: string;
+  endTime: string;
+  timeSlots: any[];
+};
+
+type TLocation = {
+  type: "Point";
+  coordinates: number[];
+};
+
+type IPost = {
+  _id: string;
+  author: TAuthor;
+  image: string;
+  media: string[];
   title: string;
   description: string;
-  startDate: string;
+  startDate: string | null;
   startTime: string | null;
   address: string;
-  location: { type: string; coordinates: [number, number] };
+  location: TLocation;
   hasTag: string[];
   views: number;
   likes: number;
   endDate: string | null;
-  price: string | null;
+  couponCode: string;
+  price: number | null;
+  schedule: TSchedule[];
   category: string;
   subcategory: string | null;
   serviceType: string | null;
   missingName: string | null;
   missingAge: string | null;
   clothingDescription: string | null;
-  lastSeenLocation: { type: string; coordinates: [number, number] };
+  lastSeenLocation: TLocation;
   lastSeenDate: string | null;
   contactInfo: string | null;
   expireLimit: string | null;
   capacity: number | null;
   amenities: string | null;
   licenses: string | null;
-  status: string;
+  status: "PUBLISHED" | "DRAFT" | string;
   boost: boolean;
   attenders: any[];
   isSaved: boolean;
   totalSaved: number;
-  schedule: any[];
   createdAt: string;
   updatedAt: string;
-}
+  distance: number;
+  boostPriority: number;
+  averageRating: number;
+  reviewsCount: number;
+};
+
+const renderStars = (count: number) => {
+  return Array.from({ length: 5 }, (_, i) => (
+    <svg
+      key={i}
+      width='14'
+      height='14'
+      viewBox='0 0 24 24'
+      fill={i < count ? "#FBBF24" : "none"}
+      stroke={i < count ? "#FBBF24" : "#D1D5DB"}
+      strokeWidth='1.5'
+    >
+      <path d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' />
+    </svg>
+  ));
+};
 
 export default function DashboardLayout() {
+  const { userLat, userLng } = useAuth();
+
   const [selectedCategory, setSelectedCategory] = useState("");
   const [distanceRadius, setDistanceRadius] = useState([50]);
   const [minPrice, setMinPrice] = useState([150]);
@@ -325,9 +377,6 @@ export default function DashboardLayout() {
   const [showCalendar, setShowCalendar] = useState(false);
   const search = useSelector((state: any) => state.globalSearch.searchValue);
   const [toggleSaveMutation] = useToggleSaveMutation();
-  const { data: profile } = useGetProfileQuery(undefined);
-  const userLat = profile?.data?.location?.coordinates[0];
-  const userLng = profile?.data?.location?.coordinates[1];
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
@@ -642,29 +691,37 @@ export default function DashboardLayout() {
                       </div>
 
                       <div className='flex items-center space-x-4'>
-                        <div className='flex items-center space-x-1 text-base text-gray-600'>
-                          <div className='w-6 h-6'>
-                            <MapPin className='w-4 h-4 text-[#15B826]' />
+                        <div className='flex items-center gap-5 text-base text-gray-600'>
+                          <div className='flex items-center gap-1'>
+                            <MapPin className='w-4 h-4 text-[#15B826] flex-shrink-0' />
+                            <p className='text-sm'>
+                              {getDistanceKm(
+                                userLng!,
+                                userLat!,
+                                item?.location?.coordinates[1],
+                                item?.location?.coordinates[0],
+                              ).toFixed(1)}{" "}
+                              km
+                            </p>
                           </div>
-                          <p>
-                            {getDistanceKm(
-                              userLng,
-                              userLat,
-                              item?.location?.coordinates[1],
-                              item?.location?.coordinates[0],
-                            )}
-                          </p>
+
+                          {item?.averageRating > 0 && (
+                            <div className='flex items-center gap-1'>
+                              {renderStars(
+                                Math.floor(item?.averageRating || 0),
+                              )}
+                              <span className='text-sm font-medium text-gray-900'>
+                                {item?.averageRating}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className='flex items-center gap-1 text-[#030712] text-sm'>
+                            <Tag className='w-4 h-4 text-[#108F1E]' />
+                            {item?.category}
+                          </div>
                         </div>
                       </div>
-
-                      {/* {item?.reviewsCount > 0 && (
-                        <div className='flex items-center space-x-1'>
-                          {renderStars(Math.floor(item?.reviewsCount || 0))}
-                          <span className='text-sm font-medium text-gray-900 ml-1'>
-                            {item.averageRating}
-                          </span>
-                        </div>
-                      )} */}
 
                       <p className='text-[#374151] text-base leading-relaxed'>
                         {item.description}

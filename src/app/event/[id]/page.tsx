@@ -43,13 +43,10 @@ export default function EventDetailPage() {
   const [toggleLikeMutation] = useToggleLikeMutation();
 
   const { data, isLoading, refetch } = useGetPostDetailByIdQuery(id);
-  const { data: commentsData } = useGetCommentsByPostIdQuery(id);
+
   const { data: reviewsData } = useGetReviewsByPostIdQuery(id);
 
   const reviews = reviewsData?.data;
-  const comments = commentsData?.data;
-
-  console.log({ comments });
 
   const postDetail = data?.data?.detail;
   const relevantPosts = data?.data?.relevantPosts;
@@ -345,10 +342,10 @@ export default function EventDetailPage() {
             <AboutEvent />
             <MomentsSection />
 
-            {postDetail?.type === "service" ? (
+            {postDetail?.category === "service" ? (
               <ReviewSection reviews={reviews} />
             ) : (
-              <CommentsSection id='comments' comments={comments} postId={id} />
+              <CommentsSection id='comments' postId={id} />
             )}
           </div>
 

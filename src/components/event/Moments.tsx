@@ -1,101 +1,56 @@
 "use client";
 
+import { useGetMomentsQuery } from "@/redux/features/moments/momentsAPI";
 import Image from "next/image";
-import { useState, useRef } from "react";
-
-type MediaItem = {
-  id: number;
-  src: string;
-  type: "photo" | "video";
-  author: "owner" | "community";
-  alt: string;
-};
+import { useState } from "react";
 
 type FilterType = "all" | "owner" | "community";
 
-const MOCK_MEDIA: MediaItem[] = [
-  {
-    id: 1,
-    src: "/event/1.jpg",
-    type: "photo",
-    author: "owner",
-    alt: "Guitarist performing on stage with blue lights",
-  },
-  {
-    id: 2,
-    src: "/event/2.jpg",
-    type: "photo",
-    author: "community",
-    alt: "Guitarist in pink neon lights",
-  },
-  {
-    id: 3,
-    src: "/event/3.jpg",
-    type: "photo",
-    author: "community",
-    alt: "Singer on stage with smoke",
-  },
-  {
-    id: 4,
-    src: "/event/4.jpg",
-    type: "photo",
-    author: "owner",
-    alt: "Guitarist under red lights",
-  },
-  {
-    id: 5,
-    src: "/event/1.jpg",
-    type: "photo",
-    author: "community",
-    alt: "Concert crowd",
-  },
-  {
-    id: 6,
-    src: "/event/2.jpg",
-    type: "photo",
-    author: "community",
-    alt: "Stage lights",
-  },
-  {
-    id: 7,
-    src: "/event/3.jpg",
-    type: "photo",
-    author: "owner",
-    alt: "Band performing live",
-  },
-];
-
-const HASHTAGS = [
-  "#hashtag",
-  "#hashtag",
-  "#hashtag",
-  "#livemusic",
-  "#concert",
-  "#vibes",
-  "#neon",
-];
 const VISIBLE_TAGS = 3;
+
+function isVideoUrl(url: string) {
+  return (
+    url.includes("/video/") ||
+    url.endsWith(".mp4") ||
+    url.endsWith(".mov") ||
+    url.endsWith(".webm")
+  );
+}
 
 export default function MomentsSection() {
   const [filter, setFilter] = useState<FilterType>("all");
-  const [lightbox, setLightbox] = useState<MediaItem | null>(null);
+  const [lightbox, setLightbox] = useState<{
+    url: string;
+    index: number;
+  } | null>(null);
   const [showAllTags, setShowAllTags] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState("all");
 
-  const filtered =
-    filter === "all"
-      ? MOCK_MEDIA
-      : MOCK_MEDIA.filter((m) => m.author === filter);
+  const { data, isFetching } = useGetMomentsQuery({
+    id: "699c1df44bdd6c4865a77fa2",
+    params: tab,
+  });
 
-  const visibleTags = showAllTags ? HASHTAGS : HASHTAGS.slice(0, VISIBLE_TAGS);
-  const hiddenCount = HASHTAGS.length - VISIBLE_TAGS;
+  const moments = data?.data;
+  const media: string[] = moments?.media ?? [];
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.length) {
-      setUploadSuccess(true);
-      setTimeout(() => setUploadSuccess(false), 2500);
-    }
+  const hashtags = data?.data?.postInfo?.hasTag ?? [];
+
+  const visibleTags = showAllTags ? hashtags : hashtags.slice(0, VISIBLE_TAGS);
+  const hiddenCount = hashtags.length - VISIBLE_TAGS;
+
+  const openLightbox = (index: number) =>
+    setLightbox({ url: media[index], index });
+  const closeLightbox = () => setLightbox(null);
+  const goPrev = () => {
+    if (!lightbox) return;
+    const prevIndex = (lightbox.index - 1 + media.length) % media.length;
+    setLightbox({ url: media[prevIndex], index: prevIndex });
+  };
+  const goNext = () => {
+    if (!lightbox) return;
+    const nextIndex = (lightbox.index + 1) % media.length;
+    setLightbox({ url: media[nextIndex], index: nextIndex });
   };
 
   return (
@@ -111,50 +66,18 @@ export default function MomentsSection() {
               Photos & Videos From this Event
             </p>
           </div>
-          {/* Upload button */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className='flex items-center gap-1.5 text-sm text-green-600 font-medium hover:text-green-700 transition-colors active:scale-95'
-          >
-            <svg
-              width='16'
-              height='16'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='currentColor'
-              strokeWidth='2'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-            >
-              <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' />
-              <polyline points='17 8 12 3 7 8' />
-              <line x1='12' y1='3' x2='12' y2='15' />
-            </svg>
-            <span className='hidden sm:inline'>Upload</span>
-          </button>
-          <input
-            ref={fileInputRef}
-            type='file'
-            accept='image/*,video/*'
-            multiple
-            className='hidden'
-            onChange={handleUpload}
-          />
         </div>
-
-        {/* Upload success toast */}
-        {uploadSuccess && (
-          <div className='mt-2 mb-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 animate-fade-in'>
-            ✓ Media uploaded successfully!
-          </div>
-        )}
 
         {/* Filter tabs */}
         <div className='flex gap-2 mt-4 mb-5'>
           {(["all", "owner", "community"] as FilterType[]).map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              disabled={isFetching}
+              onClick={() => {
+                setFilter(f);
+                setTab(f);
+              }}
               className={`px-4 py-1.5 rounded-full text-sm font-medium capitalize transition-all duration-150 active:scale-95 border
                 ${
                   filter === f
@@ -167,8 +90,26 @@ export default function MomentsSection() {
           ))}
         </div>
 
-        {/* Media grid */}
-        {filtered.length === 0 ? (
+        {/* Loading */}
+        {isFetching && (
+          <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
+            <svg
+              className='animate-spin'
+              width='32'
+              height='32'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='1.5'
+            >
+              <path d='M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83' />
+            </svg>
+            <p className='mt-3 text-sm'>Loading media...</p>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isFetching && media.length === 0 && (
           <div className='flex flex-col items-center justify-center py-12 text-gray-400'>
             <svg
               width='40'
@@ -184,40 +125,64 @@ export default function MomentsSection() {
             </svg>
             <p className='mt-3 text-sm'>No media found</p>
           </div>
-        ) : (
+        )}
+
+        {/* Media grid */}
+        {!isFetching && media.length > 0 && (
           <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3'>
-            {filtered.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setLightbox(item)}
-                className='relative aspect-square rounded-xl overflow-hidden group focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
-              >
-                <Image
-                  src={item.src}
-                  alt={item.alt}
-                  className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
-                  fill
-                />
-                {/* Owner badge */}
-                {item.author === "owner" && (
-                  <span className='absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full'>
-                    ★
-                  </span>
-                )}
-                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-xl' />
-              </button>
-            ))}
+            {media.map((url, index) => {
+              const isVideo = isVideoUrl(url);
+              return (
+                <button
+                  key={index}
+                  onClick={() => openLightbox(index)}
+                  className='relative aspect-square rounded-xl overflow-hidden group focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2'
+                >
+                  {isVideo ? (
+                    <>
+                      <video
+                        src={url}
+                        className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
+                        muted
+                        playsInline
+                        preload='metadata'
+                      />
+                      <div className='absolute inset-0 flex items-center justify-center pointer-events-none'>
+                        <div className='bg-black/50 rounded-full p-2.5'>
+                          <svg
+                            width='18'
+                            height='18'
+                            viewBox='0 0 24 24'
+                            fill='white'
+                          >
+                            <polygon points='5 3 19 12 5 21 5 3' />
+                          </svg>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <Image
+                      src={url}
+                      alt={`Media ${index + 1}`}
+                      className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
+                      fill
+                    />
+                  )}
+                  <div className='absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-xl' />
+                </button>
+              );
+            })}
           </div>
         )}
 
         {/* Hashtags */}
         <div className='flex flex-wrap gap-2 mt-5'>
-          {visibleTags.map((tag, i) => (
+          {visibleTags.map((tag: string, i: number) => (
             <span
               key={i}
               className='px-3 py-1 rounded-full border border-green-200 bg-green-50 text-green-700 text-sm font-medium cursor-pointer hover:bg-green-100 transition-colors'
             >
-              {tag}
+              #{tag}
             </span>
           ))}
           {!showAllTags && hiddenCount > 0 && (
@@ -234,68 +199,72 @@ export default function MomentsSection() {
       {/* Lightbox */}
       {lightbox && (
         <div
-          className='fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm'
-          onClick={() => setLightbox(null)}
+          className='fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm'
+          onClick={closeLightbox}
         >
           <div
-            className='relative max-w-2xl w-full max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl'
+            className='relative w-full max-w-3xl max-h-[90vh] flex items-center justify-center'
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
-              src={lightbox.src}
-              alt={lightbox.alt}
-              className='w-full h-full object-contain'
-              fill
-            />
+            {/* Close */}
             <button
-              onClick={() => setLightbox(null)}
-              className='absolute top-3 right-3 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors'
+              onClick={closeLightbox}
+              className='absolute top-3 right-3 z-10 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors'
               aria-label='Close'
             >
               ✕
             </button>
-            {/* Nav arrows */}
-            <button
-              onClick={() => {
-                const idx = filtered.findIndex((m) => m.id === lightbox.id);
-                setLightbox(
-                  filtered[(idx - 1 + filtered.length) % filtered.length],
-                );
-              }}
-              className='absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors'
-              aria-label='Previous'
-            >
-              ‹
-            </button>
-            <button
-              onClick={() => {
-                const idx = filtered.findIndex((m) => m.id === lightbox.id);
-                setLightbox(filtered[(idx + 1) % filtered.length]);
-              }}
-              className='absolute right-12 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors'
-              aria-label='Next'
-            >
-              ›
-            </button>
+
+            {/* Media */}
+            {isVideoUrl(lightbox.url) ? (
+              <video
+                key={lightbox.url}
+                src={lightbox.url}
+                className='max-w-full max-h-[80vh] rounded-xl object-contain'
+                controls
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <div className='relative w-full h-[80vh] rounded-xl overflow-hidden'>
+                <Image
+                  src={lightbox.url}
+                  alt={`Media ${lightbox.index + 1}`}
+                  className='object-contain'
+                  fill
+                />
+              </div>
+            )}
+
+            {/* Prev */}
+            {media.length > 1 && (
+              <button
+                onClick={goPrev}
+                className='absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors text-lg'
+                aria-label='Previous'
+              >
+                ‹
+              </button>
+            )}
+
+            {/* Next */}
+            {media.length > 1 && (
+              <button
+                onClick={goNext}
+                className='absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors text-lg'
+                aria-label='Next'
+              >
+                ›
+              </button>
+            )}
+
+            {/* Counter */}
+            <div className='absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full'>
+              {lightbox.index + 1} / {media.length}
+            </div>
           </div>
         </div>
       )}
-
-      <style jsx global>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-4px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

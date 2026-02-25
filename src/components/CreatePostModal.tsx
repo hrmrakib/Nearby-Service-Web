@@ -77,7 +77,7 @@ export default function CreatePostModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleModalClose}>
-      <DialogContent className='sm:max-w-md p-0 top-64'>
+      <DialogContent className='sm:max-w-md p-0 top-70'>
         <div className='p-6'>
           <h2 className='text-xl font-semibold text-center text-[#1F2937] mb-8'>
             Create Post

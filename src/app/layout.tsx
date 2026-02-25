@@ -41,7 +41,7 @@ export default function RootLayout({
       >
         <Providers>
           <AppInitializer>
-            <Toaster />
+            <Toaster  />
             <Navbar />
             {children}
           </AppInitializer>

@@ -15,10 +15,39 @@ const commentAPI = baseAPI.injectEndpoints({
         body,
       }),
     }),
+
+    createReply: builder.mutation({
+      query: (body) => ({
+        url: "/comments/reply",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    likeComment: builder.mutation({
+      query: (body) => ({
+        url: `/like/comment`,
+        method: "POST",
+        body,
+      }),
+    }),
+
+    likeReply: builder.mutation({
+      query: (body) => ({
+        url: `/like/reply`,
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useGetCommentsByPostIdQuery, useCreateCommentMutation } =
-  commentAPI;
+export const {
+  useGetCommentsByPostIdQuery,
+  useCreateCommentMutation,
+  useCreateReplyMutation,
+  useLikeCommentMutation,
+  useLikeReplyMutation,
+} = commentAPI;
 
 export default commentAPI;

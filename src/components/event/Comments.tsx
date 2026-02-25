@@ -1,8 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import {
   useCreateCommentMutation,
+  useCreateReplyMutation,
   useGetCommentsByPostIdQuery,
+  useLikeCommentMutation,
+  useLikeReplyMutation,
 } from "@/redux/features/comment/commentAPI";
 import React, { useState, useRef } from "react";
 import { toast } from "sonner";
@@ -202,9 +207,14 @@ function MediaDisplay({ image, video }: { image: string; video: string }) {
 
 interface CommentInputProps {
   postId?: string;
+
   placeholder?: string;
   type: "comment" | "reply";
-  onPost: (content: string, image: string, video: string) => void;
+  onPost: (
+    content: string,
+    file: File | null,
+    mediaType: "image" | "video" | null,
+  ) => Promise<void>;
   autoFocus?: boolean;
 }
 
@@ -219,11 +229,11 @@ function CommentInput({
   const [mediaPreview, setMediaPreview] = useState<string>("");
   const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [createCommentMutation, { isLoading }] = useCreateCommentMutation();
 
-  console.log({ type });
+  const [createCommentMutation, { isLoading }] = useCreateCommentMutation();
 
   React.useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
@@ -233,54 +243,57 @@ function CommentInput({
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadedFile(file);
-    const type = file.type.startsWith("video") ? "video" : "image";
+    const detectedType = file.type.startsWith("video") ? "video" : "image";
     setMediaPreview(URL.createObjectURL(file));
-    setMediaType(type);
+    setMediaType(detectedType);
   };
 
   const removeMedia = () => {
     setMediaPreview("");
     setMediaType(null);
+    setUploadedFile(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const handlePost = async () => {
-    if (!text.trim() && !mediaPreview) return;
+    if (!text.trim() && !uploadedFile) return;
+    setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      const data = {
-        postId,
-        like: 1,
-        content: text,
-      };
+      if (type === "comment") {
+        // Handle comment submission internally
+        const formData = new FormData();
+        formData.append(
+          "data",
+          JSON.stringify({ postId, like: 0, content: text }),
+        );
+        if (uploadedFile && mediaType === "image")
+          formData.append("image", uploadedFile);
+        if (uploadedFile && mediaType === "video")
+          formData.append("video", uploadedFile);
 
-      formData.append("data", JSON.stringify(data));
-
-      if (uploadedFile) {
-        formData.append("image", uploadedFile);
-      }
-
-      const res = await createCommentMutation(formData).unwrap();
-
-      if (res?.success) {
-        toast.success(res?.message);
+        const res = await createCommentMutation(formData).unwrap();
+        if (res?.success) toast.success(res?.message ?? "Comment posted!");
+      } else {
+        // For replies, bubble the raw file up to the parent
+        await onPost(text, uploadedFile, mediaType);
       }
     } catch (error) {
       console.error(error);
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setText("");
-      setUploadedFile(null);
       removeMedia();
+      setIsSubmitting(false);
     }
-    // const imageUrl = mediaType === "image" ? mediaPreview : "";
-    // const videoUrl = mediaType === "video" ? mediaPreview : "";
   };
 
-  const canPost = text.trim().length > 0 || Boolean(mediaPreview);
+  const canPost = text.trim().length > 0 || Boolean(uploadedFile);
+  const loading = isLoading || isSubmitting;
 
   return (
     <div className='flex flex-col gap-2'>
+      {/* Media preview thumbnail */}
       {mediaPreview && (
         <div className='relative inline-block self-start'>
           <div className='relative rounded-xl overflow-hidden border border-gray-200 w-20 h-16'>
@@ -306,6 +319,7 @@ function CommentInput({
           </button>
         </div>
       )}
+
       <div className='flex items-center gap-2'>
         <div className='flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl px-3.5 py-2.5 focus-within:border-green-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-green-100 transition-all duration-200'>
           <input
@@ -338,16 +352,34 @@ function CommentInput({
         </div>
         <button
           onClick={handlePost}
-          disabled={!canPost || isLoading}
+          disabled={!canPost || loading}
           className='flex items-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:bg-gray-200 disabled:cursor-not-allowed text-white disabled:text-gray-400 font-semibold text-sm px-4 py-2.5 rounded-2xl transition-all duration-150 flex-shrink-0 active:scale-95'
         >
-          <SendIcon />
-          <span className='hidden sm:inline'>Post</span>
+          {loading ? (
+            <svg
+              className='animate-spin'
+              width='16'
+              height='16'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+            >
+              <path d='M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83' />
+            </svg>
+          ) : (
+            <SendIcon />
+          )}
+          <span className='hidden sm:inline'>
+            {loading ? "Posting..." : "Post"}
+          </span>
         </button>
       </div>
     </div>
   );
 }
+
+// ─── ReplyCard ───────────────────────────────────────────────────────────────
 
 interface ReplyCardProps {
   reply: Reply;
@@ -355,13 +387,10 @@ interface ReplyCardProps {
 }
 
 function ReplyCard({ reply, onLike }: ReplyCardProps) {
-  // console.log({ reply });
-
   const likeCount = reply.liked ? reply.like + 1 : reply.like;
 
   return (
     <div className='flex gap-2.5 mt-3 pl-3 sm:pl-4'>
-      {/* Thread indicator line */}
       <div className='relative flex-shrink-0' style={{ width: 2 }}>
         <div className='absolute inset-0 bg-gray-200 rounded-full' />
       </div>
@@ -392,7 +421,6 @@ function ReplyCard({ reply, onLike }: ReplyCardProps) {
           )}
           <MediaDisplay image={reply.image} video={reply.video} />
         </div>
-        {/* Like only — Reply button intentionally hidden at this level */}
         <div className='flex items-center gap-3 mt-1 pl-1'>
           <button
             onClick={() => onLike(reply._id)}
@@ -407,6 +435,8 @@ function ReplyCard({ reply, onLike }: ReplyCardProps) {
   );
 }
 
+// ─── CommentCard ─────────────────────────────────────────────────────────────
+
 interface CommentCardProps {
   comment: Comment;
   onLike: (commentId: string) => void;
@@ -414,9 +444,9 @@ interface CommentCardProps {
   onReply: (
     commentId: string,
     content: string,
-    image: string,
-    video: string,
-  ) => void;
+    file: File | null,
+    mediaType: "image" | "video" | null,
+  ) => Promise<void>;
 }
 
 function CommentCard({
@@ -441,8 +471,7 @@ function CommentCard({
         }}
       />
       <div className='flex-1 min-w-0'>
-        {/* Bubble */}
-        <div className='bg-gray- rounded-2xl rounded-tl-sm px-4'>
+        <div className='rounded-2xl rounded-tl-sm px-4'>
           <div className='flex items-center gap-2 mb-1'>
             <span className='font-semibold text-gray-900 text-sm'>
               {comment.user.name}
@@ -468,7 +497,6 @@ function CommentCard({
             <HeartIcon filled={comment.liked} />
             {likeCount > 0 && <span>{likeCount}</span>}
           </button>
-          {/* Reply button shown only at top-level (comment), hidden in replies */}
           <button
             onClick={() => setShowReplyInput((v) => !v)}
             className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${showReplyInput ? "text-green-600" : "text-gray-500 hover:text-green-600"}`}
@@ -500,15 +528,12 @@ function CommentCard({
         {showReplyInput && (
           <div className='mt-3'>
             <CommentInput
-              // postId={postId}
               placeholder={`Reply to ${comment.user.name}...`}
               type='reply'
               autoFocus
-              onPost={(content, image, video) => {
-                if (!content && !image && !video) return;
-                onReply(comment._id, content, image, video);
+              onPost={async (content, file, mediaType) => {
+                await onReply(comment._id, content, file, mediaType);
                 setShowReplyInput(false);
-                console.log("replied", { content, image, video });
               }}
             />
           </div>
@@ -521,30 +546,83 @@ function CommentCard({
 interface CommentSectionProps {
   id?: string;
   postId?: string;
-  /** Pass your API response data here */
-  initialData?: ApiComment[];
 }
 
-export default function CommentSection({
-  id,
-  postId = "699c1df44bdd6c4865a77fa2",
-}: CommentSectionProps) {
-  const { data: commentData, isLoading } = useGetCommentsByPostIdQuery(postId);
+export default function CommentSection({ id, postId }: CommentSectionProps) {
+  const {
+    data: commentData,
+    isLoading,
+    refetch,
+  } = useGetCommentsByPostIdQuery(postId);
+  const [createReplyMutation] = useCreateReplyMutation();
+  const [likeCommentMutation] = useLikeCommentMutation();
+  const [likeReplyMutation] = useLikeReplyMutation();
+  const comments: ApiComment[] = commentData?.data ?? [];
 
-  const comments = commentData?.data || [];
+  const handleLikeComment = async (commentId: string) => {
+    try {
+      const res = await likeCommentMutation({
+        commentId,
+      }).unwrap();
 
-  const handleLikeComment = (commentId: string) => {};
+      if (res?.success) {
+        refetch();
+        toast.success("❤️ Liked!");
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.data?.message ?? "Something went wrong. Please try again.",
+      );
+    }
+  };
 
-  const handleLikeReply = (commentId: string, replyId: string) => {};
+  const handleLikeReply = async (commentId: string, replyId: string) => {
+    try {
+      const res = await likeReplyMutation({
+        replyId,
+      }).unwrap();
 
-  const handleReply = (
+      if (res?.success) {
+        refetch();
+        toast.success("❤️ Liked!");
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.data?.message ?? "Something went wrong. Please try again.",
+      );
+    }
+  };
+
+  const handleReply = async (
     commentId: string,
     content: string,
-    image: string,
-    video: string,
-  ) => {};
+    file: File | null,
+    mediaType: "image" | "video" | null,
+  ) => {
+    console.log({ commentId, content, file, mediaType });
 
-  const handlePostComment = () => {};
+    try {
+      const formData = new FormData();
+
+      formData.append("data", JSON.stringify({ commentId, like: 0, content }));
+      if (file && mediaType === "image") formData.append("image", file);
+      if (file && mediaType === "video") formData.append("video", file);
+
+      const res = await createReplyMutation(formData).unwrap();
+      if (res?.success) toast.success(res?.message ?? "Reply posted!");
+
+      // ── Remove the two console.logs below once mutation is wired up ──
+      console.log("reply formData", { commentId, content, file, mediaType });
+      toast.success("Reply posted! (wire up mutation to persist)");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to post reply.");
+    }
+  };
+
+  const handlePostComment = async () => {
+    // Handled internally by CommentInput for type="comment"
+  };
 
   return (
     <div className='min-h-screen flex items-start justify-center'>
@@ -568,9 +646,24 @@ export default function CommentSection({
             />
           </div>
 
-          {/* Comments */}
+          {/* Comments list */}
           <div className='divide-y divide-gray-50'>
-            {comments.length === 0 ? (
+            {isLoading ? (
+              <div className='flex items-center justify-center py-12 text-gray-400 gap-2'>
+                <svg
+                  className='animate-spin'
+                  width='20'
+                  height='20'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                >
+                  <path d='M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83' />
+                </svg>
+                <span className='text-sm'>Loading comments...</span>
+              </div>
+            ) : comments.length === 0 ? (
               <p className='py-12 text-center text-sm text-gray-400'>
                 No comments yet — be the first!
               </p>

@@ -8,9 +8,9 @@ import RelatedCard from "@/components/event/RelatedCard";
 import ReviewSection from "@/components/event/ReviewSection";
 import UnlockNextJurnee from "@/components/event/UnlockNextJurnee";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
+import ReportModal from "@/components/modal/ReportModal";
 import AddressDisplay from "@/components/share/AddressDisplay";
 import { useAuth } from "@/hooks/useAuth.ts";
-import { useGetCommentsByPostIdQuery } from "@/redux/features/comment/commentAPI";
 import { useToggleLikeMutation } from "@/redux/features/like/likeAPI";
 import { useGetPostDetailByIdQuery } from "@/redux/features/post/postAPI";
 import { useGetReviewsByPostIdQuery } from "@/redux/features/review/reviewAPI";
@@ -24,6 +24,7 @@ import {
   Eye,
   MapPin,
   MessageSquareText,
+  MessageSquareWarning,
 } from "lucide-react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -37,7 +38,8 @@ export default function EventDetailPage() {
   const [imagePreview, setImagePreview] = useState("");
 
   const [attended, setAttended] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [showReportBtn, setShowReportBtn] = useState(false);
 
   const [toggleSaveMutation] = useToggleSaveMutation();
   const [toggleLikeMutation] = useToggleLikeMutation();
@@ -101,6 +103,10 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleReport = () => {
+    setReportOpen(true);
+  };
+
   if (isLoading) {
     return <LoadingSpinner text='event' />;
   }
@@ -146,8 +152,8 @@ export default function EventDetailPage() {
                 <span className='font-semibold'>
                   {" "}
                   {getDistanceKm(
-                    userLng!,
                     userLat!,
+                    userLng!,
                     postDetail?.location?.coordinates[1],
                     postDetail?.location?.coordinates[0],
                   ).toFixed(1)}{" "}
@@ -228,19 +234,21 @@ export default function EventDetailPage() {
                 </span>
               </button>
 
-              {/* Comment Button */}
-              <a
-                href='#comments'
-                className='flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-50 active:scale-95 transition-all duration-200'
-                aria-label='Comments'
-              >
-                <MessageSquareText />
-              </a>
+              {!showReportBtn ? (
+                <div className='flex items-center gap-2'>
+                  {/* Comment Button */}
+                  <a
+                    href='#comments'
+                    className='flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-50 active:scale-95 transition-all duration-200'
+                    aria-label='Comments'
+                  >
+                    <MessageSquareText />
+                  </a>
 
-              {/* Save Button */}
-              <button
-                onClick={handleSave}
-                className={`
+                  {/* Save Button */}
+                  <button
+                    onClick={handleSave}
+                    className={`
               flex-shrink-0 flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
               transition-all duration-200 active:scale-95 select-none
@@ -250,53 +258,69 @@ export default function EventDetailPage() {
                   : "border-green-500 text-green-500 hover:bg-green-50"
               }
             `}
-              >
-                <Bookmark />
-                <span className='hidden sm:inline'>
-                  {postDetail?.isSaved ? "Saved" : "Save"}
-                </span>
-                <span className='text-xs text-green-400'>
-                  {postDetail?.totalSaved > 0 ? postDetail?.totalSaved : 0}
-                </span>
-              </button>
+                  >
+                    <Bookmark />
+                    <span className='hidden sm:inline'>
+                      {postDetail?.isSaved ? "Saved" : "Save"}
+                    </span>
+                    <span className='text-xs text-green-400'>
+                      {postDetail?.totalSaved > 0 ? postDetail?.totalSaved : 0}
+                    </span>
+                  </button>
 
-              {/* Like Button */}
-              <button
-                onClick={handleLike}
-                className={`
+                  {/* Like Button */}
+                  <button
+                    onClick={handleLike}
+                    className={`
               flex-shrink-0 flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
               transition-all duration-200 active:scale-95 select-none
               ${
-                liked
+                postDetail?.liked
                   ? "border-green-500 bg-green-50 text-green-600"
                   : "border-green-500 text-green-500 hover:bg-green-50"
               }
             `}
-              >
-                <svg
-                  width='16'
-                  height='16'
-                  viewBox='0 0 24 24'
-                  fill={liked ? "currentColor" : "none"}
-                  stroke='currentColor'
-                  strokeWidth='2'
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  className={`transition-all duration-200 ${liked ? "scale-110" : ""}`}
-                >
-                  <path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' />
-                </svg>
-                <span className='hidden sm:inline'>Like</span>
-                <span className='text-xs text-green-400'>
-                  {postDetail?.likes > 0 ? postDetail?.likes : 0}
-                </span>
-              </button>
+                  >
+                    <svg
+                      width='16'
+                      height='16'
+                      viewBox='0 0 24 24'
+                      fill={postDetail?.liked ? "currentColor" : "none"}
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      className={`transition-all duration-200 ${postDetail?.liked ? "scale-110" : ""}`}
+                    >
+                      <path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' />
+                    </svg>
+                    <span className='hidden sm:inline'>Like</span>
+                    <span className='text-xs text-green-400'>
+                      {postDetail?.likes > 0 ? postDetail?.likes : 0}
+                    </span>
+                  </button>
+                </div>
+              ) : (
+                <div className='flex-1'>
+                  {/* Report Button */}
+                  <button
+                    onClick={() => setReportOpen(true)}
+                    className={`flex-1 w-full flex items-center justify-center gap-1.5
+              px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm sm:text-base
+              transition-all duration-200 active:scale-95 select-none
+              border-green-500 text-green-500 hover:bg-green-50`}
+                  >
+                    <MessageSquareWarning size={16} />
+                    <span className=''>Report</span>
+                  </button>
+                </div>
+              )}
 
               {/* More Options */}
               <div className='relative flex-shrink-0'>
                 <button
-                  // onClick={() => setMenuOpen((p) => !p)}
+                  onClick={() => setShowReportBtn((p) => !p)}
                   className='flex items-center justify-center w-8 h-11 sm:h-12 text-gray-400 hover:text-gray-600 active:scale-95 transition-all duration-200'
                   aria-label='More options'
                 >
@@ -368,6 +392,14 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* report modal */}
+      <ReportModal
+        postId={id}
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        onSubmit={handleReport}
+      />
     </div>
   );
 }

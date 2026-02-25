@@ -362,6 +362,8 @@ const renderStars = (count: number) => {
 export default function DashboardLayout() {
   const { userLat, userLng } = useAuth();
 
+  console.log({ userLat, userLng });
+
   const [selectedCategory, setSelectedCategory] = useState("");
   const [distanceRadius, setDistanceRadius] = useState([50]);
   const [minPrice, setMinPrice] = useState([150]);
@@ -696,12 +698,12 @@ export default function DashboardLayout() {
                             <MapPin className='w-4 h-4 text-[#15B826] flex-shrink-0' />
                             <p className='text-sm'>
                               {getDistanceKm(
-                                userLng!,
                                 userLat!,
+                                userLng!,
                                 item?.location?.coordinates[1],
                                 item?.location?.coordinates[0],
                               ).toFixed(1)}{" "}
-                              km
+                              km 
                             </p>
                           </div>
 

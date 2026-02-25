@@ -40,8 +40,8 @@ export default function RelatedCard({ userLng, userLat, relevantPosts }: any) {
               <span className='flex items-center gap-1 text-[#374151] text-sm'>
                 <MapPin className='w-4 h-4 text-[#108F1E]' />
                 {getDistanceKm(
-                  userLng,
                   userLat,
+                  userLng,
                   post?.location?.coordinates[1],
                   post?.location?.coordinates[0],
                 ).toFixed(1)}{" "}

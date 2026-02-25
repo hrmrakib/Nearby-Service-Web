@@ -12,7 +12,6 @@ const profileAPI = baseAPI.injectEndpoints({
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
-          console.log(data);
           dispatch(setUser({ user: data?.data, token: null }));
         } catch {
           dispatch(logout());

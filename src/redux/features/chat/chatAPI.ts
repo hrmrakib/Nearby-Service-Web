@@ -26,23 +26,28 @@ const chatAPI = baseAPI.injectEndpoints({
 
     getInboxChats: builder.query({
       keepUnusedDataFor: 0,
-      query: ({ page, limit, search, unread }: TList & { unread: boolean }) => {
+      query: ({
+        page,
+        limit,
+        search,
+        unread,
+      }: TList & { unread?: boolean }) => {
         const query = new URLSearchParams({});
 
         if (page) query.set("page", page.toString());
         if (limit) query.set("limit", limit.toString());
         if (search) query.set("search", search);
-        if (unread) query.set("unread", unread.toString());
+        // if (unread) query.set("unread", unread.toString());
 
         return {
-          url: `/inbox?${query.toString()}`,
+          url: `/chat?${query.toString()}`,
         };
       },
     }),
 
     newChat: builder.mutation({
       query: (data: { user_id: string }) => ({
-        url: `/inbox/new-chat`,
+        url: `/chat/create`,
         method: "POST",
         body: data,
       }),

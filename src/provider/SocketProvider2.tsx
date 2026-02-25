@@ -24,39 +24,38 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const router = useRouter();
 
-  //? get token
   useEffect(() => {
-    const token = localStorage?.getItem("accessToken");
-    if (token) {
-      setToken(token);
+    const stored = localStorage?.getItem("accessToken");
+    if (stored) {
+      setToken(stored);
     } else {
       router.push("/login");
     }
   }, [router]);
 
   useEffect(() => {
-    //? token is not ready
     if (!token) return;
 
-    const socket_url = process.env.NEXT_PUBLIC_SOCKET_URL;
+    const socket_url = process.env.NEXT_PUBLIC_SOCKET_URL; // e.g. "http://10.10.12.98:3001"
 
+    // ✅ No namespace — connect to root "/"
     const newSocket = io(`${socket_url}`, {
       withCredentials: true,
       transports: ["websocket", "polling"],
-      reconnectionAttempts: Number.MAX_SAFE_INTEGER, //? infinite
-      reconnectionDelay: 3_000, //? 3 seconds
-      auth: { token }, //? 1st try
+      reconnectionAttempts: Number.MAX_SAFE_INTEGER,
+      reconnectionDelay: 3_000,
+      auth: { token },
       extraHeaders: {
-        Authorization: `Bearer ${token}`, //? 2nd try
+        Authorization: `Bearer ${token}`,
       },
     });
 
     newSocket.on("connect", () => {
       console.log("Socket connected:", newSocket.id);
+    });
 
-      newSocket.on("online_users", (users: string[]) => {
-        setOnlineUsers(users);
-      });
+    newSocket.on("online_users", (users: string[]) => {
+      setOnlineUsers(users);
     });
 
     newSocket.on("disconnect", () => {
@@ -64,15 +63,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     setSocket(newSocket);
-  }, [token]);
 
-  //? clean up
-  useEffect(
-    () => () => {
-      socket?.disconnect();
-    },
-    [socket],
-  );
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [token]);
 
   return (
     <SocketContext.Provider value={{ socket, onlineUsers }}>

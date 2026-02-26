@@ -40,6 +40,10 @@ import {
 } from "@/redux/features/chat/chatAPI";
 import { toast } from "sonner";
 import { SocketProvider, useSocket } from "@/provider/SocketProvider";
+import { useMyProvidedServicesQuery } from "@/redux/features/post/postAPI";
+import { useCreateOfferMutation } from "@/redux/features/offer/offerAPI";
+import { IServiceForOfferCreation } from "./message.type";
+import { useAuth } from "@/hooks/useAuth.ts";
 
 interface ConversationMember {
   _id: string;
@@ -71,7 +75,7 @@ interface ServiceItem {
 }
 
 interface OfferData {
-  service: string;
+  service: { _id: string; title: string } | null; // ✅ was: string
   serviceDetails: string;
   date: string;
   fromTime: string;
@@ -182,6 +186,7 @@ function GreenButton({
   );
 }
 
+// modal for creating offer
 function CreateOfferView({
   offerData,
   setOfferData,
@@ -196,6 +201,12 @@ function CreateOfferView({
   const serviceTotal = calcServiceTotal(offerData.items);
   const discount = parseFloat(offerData.discount) || 0;
   const total = serviceTotal - discount;
+  const { data: servicesList, isLoading } = useMyProvidedServicesQuery({
+    page: 1,
+    limit: 22,
+  });
+
+  const services = servicesList?.data;
 
   const inputClass =
     "w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:border-green-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-100 transition-all";
@@ -247,22 +258,35 @@ function CreateOfferView({
         <div>
           <FieldLabel>Select Service</FieldLabel>
           <Select
-            value={offerData.service}
-            onValueChange={(val) =>
-              setOfferData((prev) => ({ ...prev, service: val }))
-            }
+            value={offerData.service?._id ?? ""}
+            onValueChange={(val) => {
+              const selected = services?.find(
+                (s: IServiceForOfferCreation) => s._id === val,
+              );
+              if (selected) {
+                setOfferData((prev) => ({
+                  ...prev,
+                  service: { _id: selected._id, title: selected.title },
+                }));
+              }
+            }}
           >
             <SelectTrigger className='w-full rounded-xl border-gray-200 bg-gray-50 h-11 text-sm focus:ring-green-100 focus:border-green-400 data-[placeholder]:text-gray-400'>
               <SelectValue placeholder='Select service' />
             </SelectTrigger>
+
+            {isLoading && (
+              <SelectContent>
+                <SelectItem disabled value='Loading ...' className='text-sm'>
+                  Loading...
+                </SelectItem>
+              </SelectContent>
+            )}
+
             <SelectContent className='rounded-xl'>
-              {SERVICE_OPTIONS.map((opt) => (
-                <SelectItem
-                  key={opt.value}
-                  value={opt.value}
-                  className='text-sm'
-                >
-                  {opt.label}
+              {services?.map((opt: IServiceForOfferCreation) => (
+                <SelectItem key={opt._id} value={opt._id} className='text-sm'>
+                  {opt.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -514,7 +538,7 @@ function PreviewOfferView({
   const discount = parseFloat(offerData.discount) || 0;
   const total = Math.max(0, serviceTotal - discount);
   const selectedService = SERVICE_OPTIONS.find(
-    (s) => s.value === offerData.service,
+    (s) => s.value === offerData.service?.title,
   );
 
   const description =
@@ -701,7 +725,7 @@ function AcceptRejectView({
   const discount = parseFloat(offerData.discount) || 0;
   const total = Math.max(0, serviceTotal - discount);
   const selectedService = SERVICE_OPTIONS.find(
-    (s) => s.value === offerData.service,
+    (s) => s.value === offerData.service?.title,
   );
 
   const description =
@@ -879,7 +903,10 @@ function ResultBanner({
 
 function defaultOfferData(): OfferData {
   return {
-    service: "",
+    service: {
+      _id: "",
+      title: "",
+    },
     serviceDetails: "",
     date: "",
     fromTime: "",
@@ -1009,6 +1036,7 @@ function MessagesPageInner() {
   const [inboxUserLists, setInboxUserLists] = useState([]);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const debouncedSearchMessageQuery = useDebounce(searchMessageQuery, 500);
+  const [createOfferMutation] = useCreateOfferMutation();
 
   const { socket, onlineUsers } = useSocket();
 
@@ -1019,6 +1047,9 @@ function MessagesPageInner() {
     "accepted" | "rejected" | null
   >(null);
   const [inboxPage, setInboxPage] = useState(1);
+  const { user } = useAuth();
+
+  console.log({ offerData });
 
   const { data: inboxChats, isFetching: inboxChatsFetching } =
     useGetInboxChatsQuery({
@@ -1096,7 +1127,7 @@ function MessagesPageInner() {
     };
 
     socket.emit("send-message", {
-      chat: "6932c1bc933f5528d63c0330",
+      chat: chatId,
       sender: selectedUser?._id,
       message: messageText,
       isOwner: true,
@@ -1112,6 +1143,7 @@ function MessagesPageInner() {
     setMessages([]);
     setSelectedUser(user);
     setShowChat(true);
+    setChatId(user?._id);
   };
 
   // Offer modal handlers
@@ -1120,8 +1152,38 @@ function MessagesPageInner() {
     setModalView("create");
   };
 
-  const handleOfferSend = () => {
-    setModalView("sent");
+  const handleOfferSend = async () => {
+    console.log("submitting offer ............", offerData);
+
+    const formattedItems = offerData.items.map(
+      ({ title, quantity, unitPrice }) => ({
+        title,
+        quantity: Number(quantity),
+        unitPrice: Number(unitPrice),
+      }),
+    );
+
+    console.log({ formattedItems });
+
+    const data = {
+      chat: chatId,
+      provider: "69994dbcbfda51ba50ba764a",
+      customer: user?._id,
+      service: offerData?.service?._id,
+      description: offerData?.serviceDetails,
+      date: offerData?.date,
+      from: offerData?.fromTime,
+      to: offerData?.toTime,
+      items: formattedItems,
+      discount: offerData?.discount,
+    };
+
+    // try {
+    //   const res = await createOfferMutation(offerData).unwrap();
+    // } catch (error) {}
+
+    // setModalView("sent");
+    setModalView(null);
   };
 
   const handleAcceptReject = (result: "accepted" | "rejected" | "closed") => {

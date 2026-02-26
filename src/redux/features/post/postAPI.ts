@@ -117,6 +117,13 @@ const postAPI = baseAPI.injectEndpoints({
       }),
       invalidatesTags: ["Post"],
     }),
+
+    myProvidedServices: builder.query({
+      query: ({ page, limit }) => ({
+        url: `/post/my-service?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -132,5 +139,7 @@ export const {
   useCreateServicePostForEntertainmentMutation,
   useCreateServicePostForPersonalHomeMutation,
   useCreateServicePostForVenuesMutation,
+
+  useMyProvidedServicesQuery,
 } = postAPI;
 export default postAPI;

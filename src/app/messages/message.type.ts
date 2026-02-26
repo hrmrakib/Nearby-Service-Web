@@ -70,3 +70,18 @@ export interface IMessageResponse {
   meta: IMessageMeta;
   data: IMessage[];
 }
+
+// ? service interface for offer creation
+interface ServiceAuthor {
+  _id: string;
+  name: string;
+  image: string;
+}
+
+export interface IServiceForOfferCreation {
+  _id: string;
+  author: ServiceAuthor;
+  title: string;
+  category: string;
+  subcategory: string;
+}

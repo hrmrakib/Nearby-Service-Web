@@ -9,7 +9,9 @@ const chatAPI = baseAPI.injectEndpoints({
         limit,
         search,
         chat_id,
-      }: TList & { chat_id: string }) => {
+      }: TList & {
+        chat_id: string;
+      }) => {
         const query = new URLSearchParams({
           chat_id,
         });
@@ -19,7 +21,7 @@ const chatAPI = baseAPI.injectEndpoints({
         if (search) query.set("search", search);
 
         return {
-          url: `/messages?${query.toString()}`,
+          url: `/chat/inbox/${chat_id}?${query.toString()}`,
         };
       },
     }),
@@ -46,7 +48,7 @@ const chatAPI = baseAPI.injectEndpoints({
     }),
 
     newChat: builder.mutation({
-      query: (data: { user_id: string }) => ({
+      query: (data: { member: string }) => ({
         url: `/chat/create`,
         method: "POST",
         body: data,

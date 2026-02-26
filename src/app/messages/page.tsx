@@ -1,7 +1,10 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import type React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -13,6 +16,9 @@ import {
   X,
   CheckCircle2,
   XCircle,
+  MapPin,
+  Star,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,8 +34,12 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { SocketProvider } from "@/provider/SocketProvider";
-import { useGetInboxChatsQuery } from "@/redux/features/chat/chatAPI";
+import {
+  useGetInboxChatsQuery,
+  useGetMessagesQuery,
+} from "@/redux/features/chat/chatAPI";
+import { toast } from "sonner";
+import { SocketProvider, useSocket } from "@/provider/SocketProvider";
 
 interface ConversationMember {
   _id: string;
@@ -51,15 +61,6 @@ interface Conversation {
   __v: number;
   lastMessage: LastMessage;
   unread: number;
-}
-
-interface Message {
-  id: string;
-  text: string;
-  sender: "user" | "other";
-  timestamp: string;
-  status?: "sent" | "delivered" | "read";
-  conversationId: string;
 }
 
 interface ServiceItem {
@@ -101,34 +102,14 @@ const SERVICE_OPTIONS = [
   { value: "dev", label: "Web Development", category: "Digital Services" },
 ];
 
-const initialMessages: Record<string, Message[]> = {
-  "1": [
-    {
-      id: "1",
-      text: "Hey! Did you finish the Hi-Fi wireframes for flora app design?",
-      sender: "other",
-      timestamp: "05:25 PM",
-      status: "read",
-      conversationId: "1",
-    },
-    {
-      id: "2",
-      text: "Oh, hello! All perfectly. I will check it and get back to you soon",
-      sender: "user",
-      timestamp: "05:27 PM",
-      status: "delivered",
-      conversationId: "1",
-    },
-    {
-      id: "3",
-      text: "Great! Also, could you review the color palette?",
-      sender: "other",
-      timestamp: "05:30 PM",
-      status: "sent",
-      conversationId: "1",
-    },
-  ],
-};
+function useDebounce<T>(value: T, delay = 400): T {
+  const [debounced, setDebounced] = useState<T>(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
 
 function generateId() {
   return Math.random().toString(36).slice(2, 9);
@@ -908,18 +889,128 @@ function defaultOfferData(): OfferData {
   };
 }
 
-export default function MessagesPage() {
-  const [selectedConversation, setSelectedConversation] = useState("1");
+function OfferCard({ offer }: { offer: any }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const subtotal = offer.items.reduce(
+    (acc: number, item: any) => acc + item.quantity * item.unitPrice,
+    0,
+  );
+  const discountAmount = (subtotal * offer.discount) / 100;
+  const total = subtotal - discountAmount;
+
+  const date = new Date(offer.date);
+  const dateStr = date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+  return (
+    <div className='bg-white rounded-2xl shadow-md overflow-hidden w-[260px] sm:w-[280px]'>
+      {offer.service?.image && (
+        <img
+          src={offer.service.image}
+          alt={offer.service.title}
+          className='w-full h-[140px] object-cover'
+        />
+      )}
+
+      <div className='p-3'>
+        <h3 className='font-semibold text-gray-900 text-base'>
+          {offer.service?.title ?? "Service Offer"}
+        </h3>
+
+        <div className='flex items-center gap-3 mt-1 text-xs text-gray-500'>
+          <span className='flex items-center gap-0.5'>
+            <MapPin className='w-3 h-3 text-green-600' />
+            {offer.service?.subcategory ?? "Service"}
+          </span>
+          <span className='flex items-center gap-0.5'>
+            <Star className='w-3 h-3 fill-yellow-400 text-yellow-400' />
+            {offer.discount}% off
+          </span>
+        </div>
+
+        <div className='flex items-center gap-1 mt-1.5 text-xs text-gray-500'>
+          <Calendar className='w-3 h-3 text-green-600' />
+          <span>
+            {dateStr}, {offer.from} – {offer.to}
+          </span>
+        </div>
+
+        <p className='text-xs text-gray-500 mt-2 line-clamp-2'>
+          {offer.description}
+        </p>
+
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className='flex items-center gap-1 text-xs text-green-700 font-medium mt-1'
+        >
+          {expanded ? "Hide details" : "Read more"}
+          <ChevronDown
+            className={cn(
+              "w-3.5 h-3.5 transition-transform",
+              expanded && "rotate-180",
+            )}
+          />
+        </button>
+
+        {expanded && (
+          <div className='mt-2 space-y-1 border-t pt-2'>
+            {offer.items.map((item: any) => (
+              <div
+                key={item._id}
+                className='flex justify-between text-xs text-gray-600'
+              >
+                <span>
+                  {item.title} × {item.quantity}
+                </span>
+                <span>
+                  ${(item.quantity * item.unitPrice).toLocaleString()}
+                </span>
+              </div>
+            ))}
+            {offer.discount > 0 && (
+              <div className='flex justify-between text-xs text-green-600'>
+                <span>Discount ({offer.discount}%)</span>
+                <span>-${discountAmount.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className='mt-2 pt-2 border-t'>
+          <p className='text-sm font-bold text-gray-900'>
+            Total: ${total.toLocaleString()}
+          </p>
+        </div>
+
+        {offer.status === "draft" && (
+          <span className='inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium'>
+            Pending
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MessagesPageInner() {
+  const [chatId, setChatId] = useState("");
+  const [selectedUser, setSelectedUser] = useState<Conversation>();
   const [messageText, setMessageText] = useState("");
-  const [messages, setMessages] =
-    useState<Record<string, Message[]>>(initialMessages);
+  const [messages, setMessages] = useState<any[]>([]);
   const [searchMessageQuery, setSearchMessageQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [conversationList, setConversationList] = useState<Conversation[]>();
   const [showChat, setShowChat] = useState(false);
   const [openSearchMessage, setOpenSearchMessage] = useState(false);
   const [inboxUserLists, setInboxUserLists] = useState([]);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const debouncedSearchMessageQuery = useDebounce(searchMessageQuery, 500);
+
+  const { socket, onlineUsers } = useSocket();
 
   // Offer modal state
   const [modalView, setModalView] = useState<ModalView | null>(null);
@@ -927,10 +1018,54 @@ export default function MessagesPage() {
   const [offerResult, setOfferResult] = useState<
     "accepted" | "rejected" | null
   >(null);
+  const [inboxPage, setInboxPage] = useState(1);
 
-  const { data: inboxChats } = useGetInboxChatsQuery({});
+  const { data: inboxChats, isFetching: inboxChatsFetching } =
+    useGetInboxChatsQuery({
+      page: inboxPage,
+      limit: 10,
+      search: debouncedSearchQuery,
+    });
 
-  console.log(inboxChats?.data);
+  const { data: messagesResponse, isFetching: messagesFetching } =
+    useGetMessagesQuery(
+      {
+        page: 1,
+        limit: 300,
+        search: debouncedSearchMessageQuery,
+        chat_id: selectedUser?._id!,
+      },
+      {
+        skip: !selectedUser?._id,
+      },
+    );
+
+  // ✅ Fix 1: Wrap in useMemo so the array reference is stable between renders
+  const messagesData = useMemo(
+    () => messagesResponse?.data ?? [],
+    [messagesResponse?.data],
+  );
+
+  useEffect(() => {
+    if (!messagesData.length) return;
+
+    setMessages((prev) => {
+      const existingIds = new Set(prev.map((m: any) => m._id ?? m.id));
+
+      const incoming = messagesData.filter(
+        (msg: any) => !existingIds.has(msg._id ?? msg.id),
+      );
+
+      if (!incoming.length) return prev;
+
+      const merged = [...prev, ...incoming];
+      merged.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+      return merged;
+    });
+  }, [messagesData]);
 
   useEffect(() => {
     if (inboxChats?.data) {
@@ -940,58 +1075,43 @@ export default function MessagesPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const currentConversation = (inboxUserLists as Conversation[]).find(
-    (c) => c._id === selectedConversation,
-  );
-
-  const currentMessages = messages[selectedConversation] || [];
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentMessages]);
+  }, [messages]);
 
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
+    if (!selectedUser) {
+      toast.error("Please select a conversation to send a message.");
+    }
+    if (!socket) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: messageText,
-      sender: "user",
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      status: "sent",
-      conversationId: selectedConversation,
+    const newMessage = {
+      _id: Date.now().toString(),
+      message: messageText,
+      isOwner: true,
+      type: "text",
+      offer: null,
+      createdAt: new Date().toISOString(),
     };
 
-    setMessages((prev) => ({
-      ...prev,
-      [selectedConversation]: [
-        ...(prev[selectedConversation] || []),
-        newMessage,
-      ],
-    }));
+    socket.emit("send-message", {
+      chat: "6932c1bc933f5528d63c0330",
+      sender: selectedUser?._id,
+      message: messageText,
+      isOwner: true,
+    });
 
-    // setConversationList((prev) =>
-    //   prev.map((conv) =>
-    //     conv.id === selectedConversation
-    //       ? { ...conv, lastMessage: messageText, timestamp: "Now" }
-    //       : conv,
-    //   ),
-    // );
-
+    setMessages((prev) => [...prev, newMessage]);
     setMessageText("");
-    setIsTyping(true);
-    setTimeout(() => setIsTyping(false), 2000);
+    // setIsTyping(true);
+    // setTimeout(() => setIsTyping(false), 2000);
   };
 
-  const handleConversationSelect = (id: string) => {
-    setSelectedConversation(id);
+  const handleConversationSelect = async (user: Conversation) => {
+    setMessages([]);
+    setSelectedUser(user);
     setShowChat(true);
-    // setConversationList((prev) =>
-    //   prev.map((c) => (c._id === id ? { ...c, unread: 0 } : c)),
-    // );
   };
 
   // Offer modal handlers
@@ -1015,8 +1135,8 @@ export default function MessagesPage() {
   const isModalOpen = modalView !== null;
 
   return (
-    <SocketProvider>
-      <div className='flex min-h-[calc(100vh-90px)] bg-gray-50'>
+    <>
+      <div className='flex h-[calc(100vh-90px)] overflow-hidden bg-gray-50'>
         {/* Sidebar */}
         <div
           className={cn(
@@ -1038,34 +1158,55 @@ export default function MessagesPage() {
           </div>
 
           <div className='flex-1 overflow-y-auto'>
-            {inboxUserLists.map((c: Conversation) => (
-              <div
-                key={c._id}
-                onClick={() => handleConversationSelect(c._id)}
-                className={cn(
-                  "flex gap-3 p-4 cursor-pointer hover:bg-gray-50",
-                  selectedConversation === c._id && "bg-green-50",
-                )}
-              >
-                <Avatar className='w-10 h-10'>
-                  <AvatarImage src={c?.members[0]?.image} />
-                  <AvatarFallback>{c?.members[0]?.name}</AvatarFallback>
-                </Avatar>
-                <div className='flex-1 min-w-0'>
-                  <div className='flex justify-between items-start'>
-                    <p className='font-medium truncate'>{c.members[0]?.name}</p>
-                    {c?.unread ? (
-                      <span className='text-xs bg-[#0A5512] text-white px-2 rounded-full ml-2 flex-shrink-0'>
-                        {c?.unread}
-                      </span>
-                    ) : null}
+            {inboxChatsFetching && (
+              <div className='divide-y divide-gray-100'>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className='flex gap-3 p-4 items-center'>
+                    <div className='w-10 h-10 rounded-full bg-gray-200 animate-pulse flex-shrink-0' />
+                    <div className='flex-1 space-y-2'>
+                      <div className='h-3.5 w-28 bg-gray-200 rounded-full animate-pulse' />
+                      <div className='h-3 w-44 bg-gray-100 rounded-full animate-pulse' />
+                    </div>
                   </div>
-                  <p className='text-sm text-gray-600 line-clamp-1'>
-                    {c?.lastMessage?.message}
-                  </p>
-                </div>
+                ))}
               </div>
-            ))}
+            )}
+            {!inboxChatsFetching &&
+              inboxUserLists.map((c: Conversation) => (
+                <div
+                  key={c._id}
+                  onClick={() => handleConversationSelect(c)}
+                  className={cn(
+                    "relative flex gap-3 p-4 cursor-pointer hover:bg-gray-50",
+                    selectedUser?._id === c._id && "bg-green-50",
+                  )}
+                >
+                  <Avatar className='w-10 h-10'>
+                    <AvatarImage src={c?.members[0]?.image} />
+                    <AvatarFallback>{c?.members[0]?.name}</AvatarFallback>
+                  </Avatar>
+
+                  {onlineUsers.includes(c._id) && (
+                    <div className='absolute top-4 left-12 w-3 h-3 bg-green-500 border-2 border-white rounded-full' />
+                  )}
+
+                  <div className='flex-1 min-w-0'>
+                    <div className='flex justify-between items-start'>
+                      <p className='font-medium truncate'>
+                        {c.members[0]?.name || "N/A"}
+                      </p>
+                      {c?.unread ? (
+                        <span className='text-xs bg-[#0A5512] text-white px-2 rounded-full ml-2 flex-shrink-0'>
+                          {c?.unread}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className='text-sm text-gray-600 line-clamp-1'>
+                      {c?.lastMessage?.message}
+                    </p>
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
 
@@ -1087,23 +1228,19 @@ export default function MessagesPage() {
 
             <div className='flex items-center gap-3'>
               <Avatar className='w-8 h-8'>
-                <AvatarImage src={currentConversation?.members[0]?.image} />
+                <AvatarImage src={selectedUser?.members[0]?.image} />
                 <AvatarFallback>
-                  {currentConversation?.members[0]?.name}
+                  {selectedUser?.members[0]?.name}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <p className='font-medium'>
-                  {currentConversation?.members[0]?.name}
-                </p>
-                <p className='text-xs text-gray-500'>
-                  {/* {currentConversation?.online ? "Active now" : "Offline"} */}
+                  {selectedUser?.members[0]?.name || "N/A"}
                 </p>
               </div>
             </div>
 
             <div className='flex items-center gap-5 pr-0 lg:pr-6'>
-              {/* ✅ Create Offer button — opens the modal */}
               <button
                 onClick={handleOpenCreateOffer}
                 className='w-max h-12! bg-white flex items-center gap-2 text-green-700 font-semibold rounded-sm shadow px-2 py-1.5 hover:bg-green-50 transition-colors'
@@ -1136,28 +1273,84 @@ export default function MessagesPage() {
           </div>
 
           {/* Messages */}
-          <div className='flex-1 overflow-y-auto p-4 space-y-4'>
-            {currentMessages.map((m) => (
-              <div
-                key={m.id}
-                className={cn(
-                  "flex",
-                  m.sender === "user" ? "justify-end" : "justify-start",
-                )}
-              >
+          <div className='flex-1 h-[90vh] overflow-y-auto p-4 space-y-4'>
+            {/* messages placeholder in loading */}
+            {messagesFetching && (
+              <div className='space-y-4'>
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
+                  >
+                    <div
+                      className={`h-10 rounded-2xl bg-gray-200 animate-pulse ${
+                        i % 2 === 0
+                          ? `w-${["40", "56", "48"][i % 3]}`
+                          : `w-${["32", "44", "36"][i % 3]}`
+                      }`}
+                      style={{
+                        width: `${[140, 200, 160, 120, 180, 100][i]}px`,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!messagesFetching &&
+              messages.map((m: any) => (
                 <div
+                  key={m._id ?? m.id}
                   className={cn(
-                    "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
-                    m.sender === "user"
-                      ? "bg-[#0A5512] text-white"
-                      : "bg-gray-100",
+                    "flex",
+                    m.isOwner ? "justify-end" : "justify-start",
                   )}
                 >
-                  <p className='text-sm'>{m.text}</p>
-                  <p className='text-xs mt-1 opacity-70'>{m.timestamp}</p>
+                  {m.type === "offer" && m.offer ? (
+                    <div className='flex flex-col gap-1 max-w-[75%] sm:max-w-xs lg:max-w-md'>
+                      {m.message && (
+                        <div
+                          className={cn(
+                            "px-4 py-2 rounded-2xl",
+                            m.isOwner || m.sender === "user"
+                              ? "bg-[#0A5512] text-white self-end"
+                              : "bg-gray-100 self-start",
+                          )}
+                        >
+                          <p className='text-sm'>{m.message} </p>
+                        </div>
+                      )}
+                      <OfferCard offer={m.offer} />
+                      <p className='text-xs opacity-50 pl-1'>
+                        {m.timestamp ??
+                          new Date(m.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
+                        m.isOwner || m.sender === "user"
+                          ? "bg-[#0A5512] text-white"
+                          : "bg-gray-100",
+                      )}
+                    >
+                      <p className='text-sm'>{m.message ?? m.text}</p>
+                      <p className='text-xs mt-1 opacity-70'>
+                        {m.timestamp ??
+                          new Date(m.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              ))}
+
             {isTyping && (
               <div className='flex justify-start'>
                 <div className='px-4 py-3 rounded-2xl bg-gray-100'>
@@ -1193,7 +1386,7 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* ─── Offer Modal ─────────────────────────────────────────────────────── */}
+      {/* Offer Modal */}
       <Dialog
         open={isModalOpen}
         onOpenChange={(open) => !open && setModalView(null)}
@@ -1204,7 +1397,6 @@ export default function MessagesPage() {
             maxWidth: modalView === "accept-reject" ? 420 : 500,
             width: "95vw",
           }}
-          // hideClose
           showCloseButton={false}
         >
           {modalView === "create" && (
@@ -1235,335 +1427,21 @@ export default function MessagesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── Result Banner ────────────────────────────────────────────────────── */}
+      {/* Result Banner */}
       {offerResult && (
         <ResultBanner
           result={offerResult}
           onDismiss={() => setOfferResult(null)}
         />
       )}
-    </SocketProvider>
+    </>
   );
 }
 
-// "use client";
-
-// import type React from "react";
-// import { useState, useEffect, useRef } from "react";
-// import { ArrowLeft, Calendar, Search, Send } from "lucide-react";
-// import { Button } from "@/components/ui/button";
-// import { Input } from "@/components/ui/input";
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { cn } from "@/lib/utils";
-// import { SocketProvider } from "@/provider/SocketProvider";
-
-// interface Conversation {
-//   id: string;
-//   name: string;
-//   avatar: string;
-//   lastMessage: string;
-//   timestamp: string;
-//   unread?: number;
-//   online?: boolean;
-//   typing?: boolean;
-// }
-
-// interface Message {
-//   id: string;
-//   text: string;
-//   sender: "user" | "other";
-//   timestamp: string;
-//   status?: "sent" | "delivered" | "read";
-//   conversationId: string;
-// }
-
-// const conversations: Conversation[] = [
-//   {
-//     id: "1",
-//     name: "Jennifer Markus",
-//     avatar: "/professional-woman.png",
-//     lastMessage:
-//       "Hey! Did you finish the Hi-Fi wireframes for flora app design?",
-//     timestamp: "Today | 05:30 PM",
-//     unread: 2,
-//     online: true,
-//   },
-//   {
-//     id: "2",
-//     name: "Iva Ryan",
-//     avatar: "/woman-designer.png",
-//     lastMessage: "Thanks for the quick turnaround on the project!",
-//     timestamp: "Today | 04:15 PM",
-//     online: false,
-//   },
-//   {
-//     id: "3",
-//     name: "Jerry Helfer",
-//     avatar: "/man-developer.png",
-//     lastMessage: "Can we schedule a call for tomorrow?",
-//     timestamp: "Yesterday | 11:20 AM",
-//     unread: 1,
-//     online: true,
-//   },
-//   {
-//     id: "4",
-//     name: "David Elson",
-//     avatar: "/business-man.png",
-//     lastMessage: "The client approved the final designs",
-//     timestamp: "Yesterday | 09:45 AM",
-//     online: false,
-//   },
-//   {
-//     id: "5",
-//     name: "Mary Freund",
-//     avatar: "/woman-manager.png",
-//     lastMessage: "Let's discuss the budget allocation",
-//     timestamp: "Monday | 03:30 PM",
-//     online: true,
-//   },
-// ];
-
-// const initialMessages: Record<string, Message[]> = {
-//   "1": [
-//     {
-//       id: "1",
-//       text: "Hey! Did you finish the Hi-Fi wireframes for flora app design?",
-//       sender: "other",
-//       timestamp: "05:25 PM",
-//       status: "read",
-//       conversationId: "1",
-//     },
-//     {
-//       id: "2",
-//       text: "Oh, hello! All perfectly. I will check it and get back to you soon",
-//       sender: "user",
-//       timestamp: "05:27 PM",
-//       status: "delivered",
-//       conversationId: "1",
-//     },
-//     {
-//       id: "3",
-//       text: "Great! Also, could you review the color palette?",
-//       sender: "other",
-//       timestamp: "05:30 PM",
-//       status: "sent",
-//       conversationId: "1",
-//     },
-//   ],
-// };
-
-// export default function MessagesPage() {
-//   const [selectedConversation, setSelectedConversation] = useState("1");
-//   const [messageText, setMessageText] = useState("");
-//   const [messages, setMessages] =
-//     useState<Record<string, Message[]>>(initialMessages);
-//   const [searchQuery, setSearchQuery] = useState("");
-//   const [isTyping, setIsTyping] = useState(false);
-//   const [conversationList, setConversationList] =
-//     useState<Conversation[]>(conversations);
-
-//   const [showChat, setShowChat] = useState(false); // ✅ mobile toggle
-//   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-//   const currentConversation = conversationList.find(
-//     (c) => c.id === selectedConversation,
-//   );
-
-//   const currentMessages = messages[selectedConversation] || [];
-
-//   useEffect(() => {
-//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-//   }, [currentMessages]);
-
-//   const handleSendMessage = () => {
-//     if (!messageText.trim()) return;
-
-//     const newMessage: Message = {
-//       id: Date.now().toString(),
-//       text: messageText,
-//       sender: "user",
-//       timestamp: new Date().toLocaleTimeString([], {
-//         hour: "2-digit",
-//         minute: "2-digit",
-//       }),
-//       status: "sent",
-//       conversationId: selectedConversation,
-//     };
-
-//     setMessages((prev) => ({
-//       ...prev,
-//       [selectedConversation]: [
-//         ...(prev[selectedConversation] || []),
-//         newMessage,
-//       ],
-//     }));
-
-//     setConversationList((prev) =>
-//       prev.map((conv) =>
-//         conv.id === selectedConversation
-//           ? { ...conv, lastMessage: messageText, timestamp: "Now" }
-//           : conv,
-//       ),
-//     );
-
-//     setMessageText("");
-//     setIsTyping(true);
-
-//     setTimeout(() => {
-//       setIsTyping(false);
-//     }, 2000);
-//   };
-
-//   const handleConversationSelect = (id: string) => {
-//     setSelectedConversation(id);
-//     setShowChat(true);
-//     setConversationList((prev) =>
-//       prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)),
-//     );
-//   };
-
-//   const filteredConversations = conversationList.filter(
-//     (c) =>
-//       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-//       c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
-//   );
-
-//   return (
-//     <SocketProvider>
-//       <div className='flex min-h-[calc(100vh-90px)] bg-gray-50'>
-//         {/* Sidebar */}
-//         <div
-//           className={cn(
-//             "w-full md:w-80 bg-white border-r border-gray-200 flex-col",
-//             showChat ? "hidden md:flex" : "flex",
-//           )}
-//         >
-//           <div className='p-4 border-b'>
-//             <h1 className='text-lg font-semibold mb-3'>All Messages</h1>
-//             <div className='relative'>
-//               <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
-//               <Input
-//                 className='pl-10 bg-gray-100 border-0'
-//                 placeholder='Search'
-//                 value={searchQuery}
-//                 onChange={(e) => setSearchQuery(e.target.value)}
-//               />
-//             </div>
-//           </div>
-
-//           <div className='flex-1 overflow-y-auto'>
-//             {filteredConversations.map((c) => (
-//               <div
-//                 key={c.id}
-//                 onClick={() => handleConversationSelect(c.id)}
-//                 className={cn(
-//                   "flex gap-3 p-4 cursor-pointer hover:bg-gray-50",
-//                   selectedConversation === c.id && "bg-green-50",
-//                 )}
-//               >
-//                 <Avatar className='w-10 h-10'>
-//                   <AvatarImage src={c.avatar} />
-//                   <AvatarFallback>{c.name[0]}</AvatarFallback>
-//                 </Avatar>
-//                 <div className='flex-1'>
-//                   <div className='flex justify-between'>
-//                     <p className='font-medium'>{c.name}</p>
-//                     {c.unread && (
-//                       <span className='text-xs bg-[#0A5512] text-white px-2 rounded-full'>
-//                         {c.unread}
-//                       </span>
-//                     )}
-//                   </div>
-//                   <p className='text-sm text-gray-600 line-clamp-1'>
-//                     {c.lastMessage}
-//                   </p>
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-
-//         {/* Chat */}
-//         <div
-//           className={cn(
-//             "flex-1 flex flex-col",
-//             !showChat ? "hidden md:flex" : "flex",
-//           )}
-//         >
-//           <div className='p-4 bg-transparent border-b flex items-center justify-between gap-3'>
-//             <button
-//               onClick={() => setShowChat(false)}
-//               className='md:hidden flex items-center gap-2 text-green-700 font-medium'
-//             >
-//               <ArrowLeft className='w-4 h-4' /> Back
-//             </button>
-
-//             <div className='flex items-center gap-3'>
-//               <Avatar className='w-8 h-8'>
-//                 <AvatarImage src={currentConversation?.avatar} />
-//                 <AvatarFallback>{currentConversation?.name[0]}</AvatarFallback>
-//               </Avatar>
-
-//               <div>
-//                 <p className='font-medium'>{currentConversation?.name}</p>
-//                 <p className='text-xs text-gray-500'>
-//                   {currentConversation?.online ? "Active now" : "Offline"}
-//                 </p>
-//               </div>
-//             </div>
-
-//             <div className='flex items-center gap-5 pr-0 lg:pr-6'>
-//               <button className='bg-white! flex items-center gap-2 text-green-700 font-semibold rounded-sm shadow px-2 py-1.5'>
-//                 <Calendar size={18} /> <span>Create Offer</span>{" "}
-//               </button>
-
-//               <button>
-//                 <Search size={18} />
-//               </button>
-//             </div>
-//           </div>
-
-//           <div className='flex-1 overflow-y-auto p-4 space-y-4'>
-//             {currentMessages.map((m) => (
-//               <div
-//                 key={m.id}
-//                 className={cn(
-//                   "flex",
-//                   m.sender === "user" ? "justify-end" : "justify-start",
-//                 )}
-//               >
-//                 <div
-//                   className={cn(
-//                     "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
-//                     m.sender === "user"
-//                       ? "bg-[#0A5512] text-white"
-//                       : "bg-gray-100",
-//                   )}
-//                 >
-//                   <p className='text-sm'>{m.text}</p>
-//                   <p className='text-xs mt-1 opacity-70'>{m.timestamp}</p>
-//                 </div>
-//               </div>
-//             ))}
-//             <div ref={messagesEndRef} />
-//           </div>
-
-//           <div className='p-4 bg-white border-t flex gap-2'>
-//             <Input
-//               value={messageText}
-//               onChange={(e) => setMessageText(e.target.value)}
-//               placeholder='Type your message...'
-//               className='h-12'
-//             />
-//             <Button
-//               onClick={handleSendMessage}
-//               className='rounded-full w-10 h-10 p-0 bg-[#0A5512]'
-//             >
-//               <Send className='w-4 h-4' />
-//             </Button>
-//           </div>
-//         </div>
-//       </div>
-//     </SocketProvider>
-//   );
-// }
+export default function MessagesPage() {
+  return (
+    <SocketProvider>
+      <MessagesPageInner />
+    </SocketProvider>
+  );
+}

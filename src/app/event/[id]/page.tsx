@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import AboutEvent from "@/components/event/AboutEvent";
@@ -11,6 +12,8 @@ import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import ReportModal from "@/components/modal/ReportModal";
 import AddressDisplay from "@/components/share/AddressDisplay";
 import { useAuth } from "@/hooks/useAuth.ts";
+import { useNewChatMutation } from "@/redux/features/chat/chatAPI";
+import { setChatId, setSelectedUser } from "@/redux/features/chat/chatSlice";
 import { useToggleLikeMutation } from "@/redux/features/like/likeAPI";
 import { useGetPostDetailByIdQuery } from "@/redux/features/post/postAPI";
 import { useGetReviewsByPostIdQuery } from "@/redux/features/review/reviewAPI";
@@ -22,16 +25,19 @@ import {
   Bookmark,
   Calendar,
   Eye,
+  Loader2,
   MapPin,
   MessageSquareText,
   MessageSquareWarning,
 } from "lucide-react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 
 export default function EventDetailPage() {
+  const router = useRouter();
   const { userLat, userLng } = useAuth();
 
   const id = useParams().id as string;
@@ -43,10 +49,12 @@ export default function EventDetailPage() {
 
   const [toggleSaveMutation] = useToggleSaveMutation();
   const [toggleLikeMutation] = useToggleLikeMutation();
+  const [newChatMutation, { isLoading: newChatLoading }] = useNewChatMutation();
 
   const { data, isLoading, refetch } = useGetPostDetailByIdQuery(id);
 
   const { data: reviewsData } = useGetReviewsByPostIdQuery(id);
+  const dispatch = useDispatch();
 
   const reviews = reviewsData?.data;
 
@@ -106,6 +114,32 @@ export default function EventDetailPage() {
   const handleReport = () => {
     setReportOpen(true);
   };
+
+  const handleChatStart = async () => {
+    try {
+      const res = await newChatMutation({
+        member: postDetail?.author?._id,
+      }).unwrap();
+
+      console.log({ res });
+
+      if (res?.success) {
+        dispatch(setChatId(res?.data?._id));
+        dispatch(
+          setSelectedUser({
+            members: [res?.data?.members[0]],
+          }),
+        );
+        router.push(`/messages`);
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message);
+    }
+  };
+
+  const selectUser = useSelector((state: any) => state?.chat?.selectedUser);
+
+  console.log({ selectUser });
 
   if (isLoading) {
     return <LoadingSpinner text='event' />;
@@ -236,14 +270,18 @@ export default function EventDetailPage() {
 
               {!showReportBtn ? (
                 <div className='flex items-center gap-2'>
-                  {/* Comment Button */}
-                  <a
-                    href='#comments'
+                  {/* Message start Button */}
+                  <button
+                    onClick={() => handleChatStart()}
+                    disabled={newChatLoading}
                     className='flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-50 active:scale-95 transition-all duration-200'
-                    aria-label='Comments'
                   >
-                    <MessageSquareText />
-                  </a>
+                    {newChatLoading ? (
+                      <Loader2 className='animate-spin' />
+                    ) : (
+                      <MessageSquareText />
+                    )}
+                  </button>
 
                   {/* Save Button */}
                   <button

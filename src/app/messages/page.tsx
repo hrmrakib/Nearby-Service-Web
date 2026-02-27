@@ -41,10 +41,17 @@ import {
 import { toast } from "sonner";
 import { SocketProvider, useSocket } from "@/provider/SocketProvider";
 import { useMyProvidedServicesQuery } from "@/redux/features/post/postAPI";
-import { useCreateOfferMutation } from "@/redux/features/offer/offerAPI";
+import {
+  useCreateOfferMutation,
+  useAcceptOfferMutation,
+  useRejectOfferMutation,
+} from "@/redux/features/offer/offerAPI";
 import { IServiceForOfferCreation } from "./message.type";
 import { useAuth } from "@/hooks/useAuth.ts";
+import { useDispatch, useSelector } from "react-redux";
+import { setChatId, setSelectedUser } from "@/redux/features/chat/chatSlice";
 
+// ─── Interfaces ───────────────────────────────────────────────────────────────
 interface ConversationMember {
   _id: string;
   name: string;
@@ -75,7 +82,7 @@ interface ServiceItem {
 }
 
 interface OfferData {
-  service: { _id: string; title: string } | null; // ✅ was: string
+  service: { _id: string; title: string } | null;
   serviceDetails: string;
   date: string;
   fromTime: string;
@@ -86,6 +93,7 @@ interface OfferData {
 
 type ModalView = "create" | "preview" | "sent" | "accept-reject";
 
+// ─── Constants ────────────────────────────────────────────────────────────────
 const SERVICE_OPTIONS = [
   {
     value: "plumbing",
@@ -106,6 +114,7 @@ const SERVICE_OPTIONS = [
   { value: "dev", label: "Web Development", category: "Digital Services" },
 ];
 
+// ─── Utilities ────────────────────────────────────────────────────────────────
 function useDebounce<T>(value: T, delay = 400): T {
   const [debounced, setDebounced] = useState<T>(value);
   useEffect(() => {
@@ -145,6 +154,39 @@ function formatTime(timeStr: string) {
   return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
+function defaultOfferData(): OfferData {
+  return {
+    service: { _id: "", title: "" },
+    serviceDetails: "",
+    date: "",
+    fromTime: "",
+    toTime: "",
+    discount: "",
+    items: [{ id: generateId(), title: "", quantity: "", unitPrice: "" }],
+  };
+}
+
+// Convert raw offer object → OfferData shape for modal display
+function offerToOfferData(offer: any): OfferData {
+  return {
+    service: offer.service
+      ? { _id: offer.service._id, title: offer.service.title }
+      : null,
+    serviceDetails: offer.description ?? "",
+    date: offer.date ? offer.date.slice(0, 10) : "",
+    fromTime: offer.from ?? "",
+    toTime: offer.to ?? "",
+    discount: String(offer.discount ?? ""),
+    items: (offer.items ?? []).map((item: any) => ({
+      id: item._id ?? generateId(),
+      title: item.title,
+      quantity: String(item.quantity),
+      unitPrice: String(item.unitPrice),
+    })),
+  };
+}
+
+// ─── Shared UI ────────────────────────────────────────────────────────────────
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <Label className='text-[13px] font-semibold text-gray-700 tracking-wide uppercase mb-1.5 block'>
@@ -176,8 +218,8 @@ function GreenButton({
       className={cn(
         "rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 disabled:opacity-50",
         variant === "solid"
-          ? "bg-[#2d9b4f] text-white hover:bg-[#248042] active:scale-[0.98] shadow-md shadow-green-200"
-          : "border-2 border-[#2d9b4f] text-[#2d9b4f] bg-white hover:bg-green-50 active:scale-[0.98]",
+          ? "bg-[#15B826] text-white hover:bg-[#248042] active:scale-[0.98] shadow-md shadow-green-200"
+          : "border-2 border-[#15B826] text-[#15B826] bg-white hover:bg-green-50 active:scale-[0.98]",
         className,
       )}
     >
@@ -186,26 +228,156 @@ function GreenButton({
   );
 }
 
-// modal for creating offer
+// ─── Shared Offer Body ────────────────────────────────────────────────────────
+// Reused in both PreviewOfferView and AcceptRejectView
+function OfferBody({ offerData }: { offerData: OfferData }) {
+  const [expanded, setExpanded] = useState(false);
+  const serviceTotal = calcServiceTotal(offerData.items);
+  const discount = parseFloat(offerData.discount) || 0;
+  const total = Math.max(0, serviceTotal - discount);
+  const selectedService = SERVICE_OPTIONS.find(
+    (s) => s.value === offerData.service?.title,
+  );
+
+  const description =
+    offerData.serviceDetails ||
+    "Lorem ipsum dolor sit amet consectetur. Turpis montes euismod nunc odio ut imperdiet proin enim...";
+  const shortDesc =
+    description.length > 120 ? description.slice(0, 120) + "..." : description;
+
+  return (
+    <div className='space-y-6'>
+      <div>
+        <h3 className='text-2xl font-bold text-gray-900 tracking-tight'>
+          {offerData.service?.title || selectedService?.label || "Service"}
+        </h3>
+        <p className='text-sm text-gray-400 mt-0.5'>
+          {selectedService?.category || "Services"}
+        </p>
+      </div>
+
+      <div className='space-y-2'>
+        <div className='flex items-center gap-2 text-sm text-gray-600'>
+          <Calendar size={15} className='text-green-500 flex-shrink-0' />
+          <span>{formatDate(offerData.date)}</span>
+        </div>
+        <div className='flex items-center gap-2 text-sm text-gray-600'>
+          <Clock size={15} className='text-green-500 flex-shrink-0' />
+          <span>
+            {formatTime(offerData.fromTime)} – {formatTime(offerData.toTime)}
+          </span>
+        </div>
+      </div>
+
+      <p className='text-sm text-gray-600 leading-relaxed'>
+        {expanded ? description : shortDesc}
+        {description.length > 120 && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className='text-[#15B826] font-semibold ml-1 hover:underline'
+          >
+            {expanded ? "Show less" : "Read more"}
+          </button>
+        )}
+      </p>
+
+      {/* Items breakdown */}
+      <div>
+        <h4 className='text-base font-bold text-gray-900 mb-4'>
+          Service Items Breakdown
+        </h4>
+        <div className='space-y-4'>
+          {offerData.items
+            .filter((item) => item.title)
+            .map((item, idx, arr) => {
+              const lineTotal =
+                (parseFloat(item.quantity) || 0) *
+                (parseFloat(item.unitPrice) || 0);
+              return (
+                <div key={item.id}>
+                  <p className='font-semibold text-gray-800 mb-1.5'>
+                    {item.title}
+                  </p>
+                  <div className='text-sm text-gray-500 space-y-0.5'>
+                    <p>
+                      Quantity :{" "}
+                      <span className='text-gray-700'>
+                        {item.quantity || "–"}
+                      </span>
+                    </p>
+                    <p>
+                      Unit Price :{" "}
+                      <span className='text-gray-700'>
+                        ${parseFloat(item.unitPrice || "0").toFixed(0)}
+                      </span>
+                    </p>
+                    <p>
+                      Line Total :{" "}
+                      <span className='text-gray-700'>
+                        ${lineTotal.toFixed(0)}
+                      </span>
+                    </p>
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <div className='h-px bg-gray-100 mt-4' />
+                  )}
+                </div>
+              );
+            })}
+        </div>
+      </div>
+
+      {/* Price summary */}
+      <div>
+        <h4 className='text-base font-bold text-gray-900 mb-3'>
+          Price Summary
+        </h4>
+        <div className='space-y-2'>
+          <div className='flex justify-between text-sm text-gray-500'>
+            <span>Service:</span>
+            <span className='font-medium text-gray-700'>
+              ${serviceTotal.toFixed(0)}
+            </span>
+          </div>
+          <div className='flex justify-between text-sm text-gray-500'>
+            <span>Discount:</span>
+            <span className='font-medium text-gray-700'>
+              ${discount.toFixed(0)}
+            </span>
+          </div>
+          <div className='h-px bg-gray-100' />
+          <div className='flex justify-between text-base font-bold text-gray-900 pt-1'>
+            <span>Total:</span>
+            <span>${total.toFixed(0)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Create Offer Modal ───────────────────────────────────────────────────────
 function CreateOfferView({
   offerData,
   setOfferData,
   onPreview,
   onClose,
+  isEditing,
 }: {
   offerData: OfferData;
   setOfferData: React.Dispatch<React.SetStateAction<OfferData>>;
   onPreview: () => void;
   onClose: () => void;
+  isEditing: boolean;
 }) {
   const serviceTotal = calcServiceTotal(offerData.items);
   const discount = parseFloat(offerData.discount) || 0;
   const total = serviceTotal - discount;
+
   const { data: servicesList, isLoading } = useMyProvidedServicesQuery({
     page: 1,
     limit: 22,
   });
-
   const services = servicesList?.data;
 
   const inputClass =
@@ -242,7 +414,7 @@ function CreateOfferView({
       {/* Header */}
       <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100'>
         <h2 className='text-lg font-bold text-gray-900 tracking-tight'>
-          Create Offer
+          {isEditing ? "Edit Offer" : "Create Offer"}
         </h2>
         <button
           onClick={onClose}
@@ -252,7 +424,7 @@ function CreateOfferView({
         </button>
       </div>
 
-      {/* Scrollable Body */}
+      {/* Body */}
       <div className='flex-1 overflow-y-auto px-6 py-5 space-y-5'>
         {/* Select Service */}
         <div>
@@ -274,22 +446,21 @@ function CreateOfferView({
             <SelectTrigger className='w-full rounded-xl border-gray-200 bg-gray-50 h-11 text-sm focus:ring-green-100 focus:border-green-400 data-[placeholder]:text-gray-400'>
               <SelectValue placeholder='Select service' />
             </SelectTrigger>
-
-            {isLoading && (
+            {isLoading ? (
               <SelectContent>
-                <SelectItem disabled value='Loading ...' className='text-sm'>
+                <SelectItem disabled value='loading' className='text-sm'>
                   Loading...
                 </SelectItem>
               </SelectContent>
+            ) : (
+              <SelectContent className='rounded-xl'>
+                {services?.map((opt: IServiceForOfferCreation) => (
+                  <SelectItem key={opt._id} value={opt._id} className='text-sm'>
+                    {opt.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             )}
-
-            <SelectContent className='rounded-xl'>
-              {services?.map((opt: IServiceForOfferCreation) => (
-                <SelectItem key={opt._id} value={opt._id} className='text-sm'>
-                  {opt.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
           </Select>
         </div>
 
@@ -312,18 +483,22 @@ function CreateOfferView({
         {/* Date */}
         <div>
           <FieldLabel>Date</FieldLabel>
-          <div className='relative'>
+          <div
+            className='relative cursor-pointer'
+            onClick={() =>
+              (
+                document.getElementById("date") as HTMLInputElement
+              )?.showPicker()
+            }
+          >
             <input
+              id='date'
               type='date'
               value={offerData.date}
               onChange={(e) =>
                 setOfferData((prev) => ({ ...prev, date: e.target.value }))
               }
-              className={cn(inputClass, "pr-10")}
-            />
-            <Calendar
-              size={16}
-              className='absolute right-3 top-1/2 -translate-y-1/2 text-green-500 pointer-events-none'
+              className={inputClass}
             />
           </div>
         </div>
@@ -332,8 +507,16 @@ function CreateOfferView({
         <div className='grid grid-cols-2 gap-3'>
           <div>
             <FieldLabel>From</FieldLabel>
-            <div className='relative'>
+            <div
+              className='relative cursor-pointer'
+              onClick={() =>
+                (
+                  document.getElementById("fromTime") as HTMLInputElement
+                )?.showPicker()
+              }
+            >
               <input
+                id='fromTime'
                 type='time'
                 value={offerData.fromTime}
                 onChange={(e) =>
@@ -342,28 +525,31 @@ function CreateOfferView({
                     fromTime: e.target.value,
                   }))
                 }
-                className={cn(inputClass, "pr-10")}
-              />
-              <Clock
-                size={16}
-                className='absolute right-3 top-1/2 -translate-y-1/2 text-green-500 pointer-events-none'
+                className={inputClass}
               />
             </div>
           </div>
           <div>
             <FieldLabel>To</FieldLabel>
-            <div className='relative'>
+            <div
+              className='relative cursor-pointer'
+              onClick={() =>
+                (
+                  document.getElementById("toTime") as HTMLInputElement
+                )?.showPicker()
+              }
+            >
               <input
+                id='toTime'
                 type='time'
                 value={offerData.toTime}
                 onChange={(e) =>
-                  setOfferData((prev) => ({ ...prev, toTime: e.target.value }))
+                  setOfferData((prev) => ({
+                    ...prev,
+                    toTime: e.target.value,
+                  }))
                 }
-                className={cn(inputClass, "pr-10")}
-              />
-              <Clock
-                size={16}
-                className='absolute right-3 top-1/2 -translate-y-1/2 text-green-500 pointer-events-none'
+                className={inputClass}
               />
             </div>
           </div>
@@ -380,7 +566,10 @@ function CreateOfferView({
               type='number'
               value={offerData.discount}
               onChange={(e) =>
-                setOfferData((prev) => ({ ...prev, discount: e.target.value }))
+                setOfferData((prev) => ({
+                  ...prev,
+                  discount: e.target.value,
+                }))
               }
               placeholder='0.00'
               className={cn(inputClass, "pl-7")}
@@ -404,7 +593,7 @@ function CreateOfferView({
                 className='rounded-2xl border border-gray-100 bg-gray-50/60 p-4 relative'
               >
                 <div className='flex items-center justify-between mb-3'>
-                  <span className='text-xs font-bold text-green-600 uppercase tracking-wider'>
+                  <span className='text-xs font-bold text-[#15B826] uppercase tracking-wider'>
                     Item {idx + 1}
                   </span>
                   {offerData.items.length > 1 && (
@@ -462,7 +651,7 @@ function CreateOfferView({
                     </div>
                   </div>
                   {item.quantity && item.unitPrice && (
-                    <div className='text-right text-xs font-semibold text-green-600'>
+                    <div className='text-right text-xs font-semibold text-[#15B826]'>
                       Line Total: $
                       {(
                         (parseFloat(item.quantity) || 0) *
@@ -476,7 +665,7 @@ function CreateOfferView({
           </div>
           <button
             onClick={addItem}
-            className='mt-3 w-full rounded-xl border-2 border-dashed border-green-200 py-2.5 text-sm font-semibold text-green-600 hover:border-green-400 hover:bg-green-50 flex items-center justify-center gap-2 transition-all'
+            className='mt-3 w-full rounded-xl border-2 border-dashed border-green-200 py-2.5 text-sm font-semibold text-[#15B826] hover:border-green-400 hover:bg-green-50 flex items-center justify-center gap-2 transition-all'
           >
             <Plus size={16} />
             Add New Item
@@ -500,7 +689,7 @@ function CreateOfferView({
           <div className='h-px bg-gray-200 my-1' />
           <div className='flex justify-between text-base font-bold text-gray-900'>
             <span>Total</span>
-            <span className='text-green-600'>
+            <span className='text-[#15B826]'>
               ${Math.max(0, total).toFixed(2)}
             </span>
           </div>
@@ -520,33 +709,22 @@ function CreateOfferView({
   );
 }
 
+// ─── Preview Offer Modal ──────────────────────────────────────────────────────
 function PreviewOfferView({
   offerData,
   onEdit,
   onSend,
   onClose,
   isSent,
+  isEditing,
 }: {
   offerData: OfferData;
   onEdit: () => void;
   onSend: () => void;
   onClose: () => void;
   isSent?: boolean;
+  isEditing?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const serviceTotal = calcServiceTotal(offerData.items);
-  const discount = parseFloat(offerData.discount) || 0;
-  const total = Math.max(0, serviceTotal - discount);
-  const selectedService = SERVICE_OPTIONS.find(
-    (s) => s.value === offerData.service?.title,
-  );
-
-  const description =
-    offerData.serviceDetails ||
-    "Lorem ipsum dolor sit amet consectetur. Turpis montes euismod nunc odio ut imperdiet proin enim. Porttitor amet dolor nisi tempor amet dolor. Orci faucibus dui nunc diam....";
-  const shortDesc =
-    description.length > 120 ? description.slice(0, 120) + "..." : description;
-
   return (
     <div className='flex flex-col max-h-[85vh]'>
       {/* Header */}
@@ -573,112 +751,8 @@ function PreviewOfferView({
       </div>
 
       {/* Body */}
-      <div className='flex-1 overflow-y-auto px-6 py-5 space-y-6'>
-        <div>
-          <h3 className='text-2xl font-bold text-gray-900 tracking-tight'>
-            {selectedService?.label || "Service"}
-          </h3>
-          <p className='text-sm text-gray-400 mt-0.5'>
-            {selectedService?.category || "Services"}
-          </p>
-        </div>
-
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2 text-sm text-gray-600'>
-            <Calendar size={15} className='text-green-500 flex-shrink-0' />
-            <span>{formatDate(offerData.date)}</span>
-          </div>
-          <div className='flex items-center gap-2 text-sm text-gray-600'>
-            <Clock size={15} className='text-green-500 flex-shrink-0' />
-            <span>
-              {formatTime(offerData.fromTime)} – {formatTime(offerData.toTime)}
-            </span>
-          </div>
-        </div>
-
-        <p className='text-sm text-gray-600 leading-relaxed'>
-          {expanded ? description : shortDesc}
-          {description.length > 120 && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className='text-green-600 font-semibold ml-1 hover:underline'
-            >
-              {expanded ? "Show less" : "Read more"}
-            </button>
-          )}
-        </p>
-
-        {/* Service Items Breakdown */}
-        <div>
-          <h4 className='text-base font-bold text-gray-900 mb-4'>
-            Service Items Breakdown
-          </h4>
-          <div className='space-y-4'>
-            {offerData.items
-              .filter((item) => item.title)
-              .map((item, idx, arr) => {
-                const lineTotal =
-                  (parseFloat(item.quantity) || 0) *
-                  (parseFloat(item.unitPrice) || 0);
-                return (
-                  <div key={item.id}>
-                    <p className='font-semibold text-gray-800 mb-1.5'>
-                      {item.title}
-                    </p>
-                    <div className='text-sm text-gray-500 space-y-0.5'>
-                      <p>
-                        Quantity :{" "}
-                        <span className='text-gray-700'>
-                          {item.quantity || "–"}
-                        </span>
-                      </p>
-                      <p>
-                        Unit Price :{" "}
-                        <span className='text-gray-700'>
-                          ${parseFloat(item.unitPrice || "0").toFixed(0)}
-                        </span>
-                      </p>
-                      <p>
-                        Line Total :{" "}
-                        <span className='text-gray-700'>
-                          ${lineTotal.toFixed(0)}
-                        </span>
-                      </p>
-                    </div>
-                    {idx < arr.length - 1 && (
-                      <div className='h-px bg-gray-100 mt-4' />
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-
-        {/* Price Summary */}
-        <div>
-          <h4 className='text-base font-bold text-gray-900 mb-3'>
-            Price Summary
-          </h4>
-          <div className='space-y-2'>
-            <div className='flex justify-between text-sm text-gray-500'>
-              <span>Service:</span>
-              <span className='font-medium text-gray-700'>
-                ${serviceTotal.toFixed(0)}
-              </span>
-            </div>
-            <div className='flex justify-between text-sm text-gray-500'>
-              <span>Discount:</span>
-              <span className='font-medium text-gray-700'>
-                ${discount.toFixed(0)}
-              </span>
-            </div>
-            <div className='h-px bg-gray-100' />
-            <div className='flex justify-between text-base font-bold text-gray-900 pt-1'>
-              <span>Total:</span>
-              <span>${total.toFixed(0)}</span>
-            </div>
-          </div>
-        </div>
+      <div className='flex-1 overflow-y-auto px-6 py-5'>
+        <OfferBody offerData={offerData} />
       </div>
 
       {/* Footer */}
@@ -704,7 +778,7 @@ function PreviewOfferView({
               onClick={onSend}
               className='flex-1 py-3 text-base rounded-2xl'
             >
-              Send Offer
+              {isEditing ? "Update Offer" : "Send Offer"}
             </GreenButton>
           </div>
         )}
@@ -713,29 +787,63 @@ function PreviewOfferView({
   );
 }
 
+// ─── Accept / Reject Modal ────────────────────────────────────────────────────
 function AcceptRejectView({
   offerData,
+  offerId,
+  customerId,
   onClose,
 }: {
   offerData: OfferData;
+  offerId: string; // offer._id  → used in both API calls
+  customerId: string; // offer.customer → used in rejectOffer body
   onClose: (result: "accepted" | "rejected" | "closed") => void;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [acceptOffer, { isLoading: isAccepting }] = useAcceptOfferMutation();
+  const [rejectOffer, { isLoading: isRejecting }] = useRejectOfferMutation();
+
+  // Calculate final total to pass as `amount` to POST /offer/complete
   const serviceTotal = calcServiceTotal(offerData.items);
   const discount = parseFloat(offerData.discount) || 0;
   const total = Math.max(0, serviceTotal - discount);
-  const selectedService = SERVICE_OPTIONS.find(
-    (s) => s.value === offerData.service?.title,
-  );
 
-  const description =
-    offerData.serviceDetails ||
-    "Lorem ipsum dolor sit amet consectetur. Turpis montes euismod nunc odio ut imperdiet proin enim. Porttitor amet dolor nisi tempor amet dolor. Orci faucibus dui nunc diam....";
-  const shortDesc =
-    description.length > 120 ? description.slice(0, 120) + "..." : description;
+  const handleAccept = async () => {
+    try {
+      const res = await acceptOffer({
+        offerId, // "6996aa95b89791b8b772e79d"
+        amount: total, // computed final price
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Offer accepted successfully.");
+        onClose("accepted");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message ?? "Failed to accept offer.");
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      const res = await rejectOffer({
+        offerId, // "6996aa95b89791b8b772e79d"
+        customerId, // "694f6a700144720a04407c77"
+      }).unwrap();
+
+      if (res?.success) {
+        toast.success("Offer rejected.");
+        onClose("rejected");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message ?? "Failed to reject offer.");
+    }
+  };
+
+  const isLoading = isAccepting || isRejecting;
 
   return (
     <div className='flex flex-col max-h-[85vh]'>
+      {/* Header */}
       <div className='flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100'>
         <h2 className='text-lg font-bold text-gray-900 tracking-tight'>
           Offer Details
@@ -748,132 +856,35 @@ function AcceptRejectView({
         </button>
       </div>
 
-      <div className='flex-1 overflow-y-auto px-6 py-5 space-y-6'>
-        <div>
-          <h3 className='text-2xl font-bold text-gray-900 tracking-tight'>
-            {selectedService?.label || "Service"}
-          </h3>
-          <p className='text-sm text-gray-400 mt-0.5'>
-            {selectedService?.category || "Services"}
-          </p>
-        </div>
-
-        <div className='space-y-2'>
-          <div className='flex items-center gap-2 text-sm text-gray-600'>
-            <Calendar size={15} className='text-green-500 flex-shrink-0' />
-            <span>{formatDate(offerData.date)}</span>
-          </div>
-          <div className='flex items-center gap-2 text-sm text-gray-600'>
-            <Clock size={15} className='text-green-500 flex-shrink-0' />
-            <span>
-              {formatTime(offerData.fromTime)} – {formatTime(offerData.toTime)}
-            </span>
-          </div>
-        </div>
-
-        <p className='text-sm text-gray-600 leading-relaxed'>
-          {expanded ? description : shortDesc}
-          {description.length > 120 && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className='text-green-600 font-semibold ml-1 hover:underline'
-            >
-              {expanded ? "Show less" : "Read more"}
-            </button>
-          )}
-        </p>
-
-        <div>
-          <h4 className='text-base font-bold text-gray-900 mb-4'>
-            Service Items Breakdown
-          </h4>
-          <div className='space-y-4'>
-            {offerData.items
-              .filter((item) => item.title)
-              .map((item, idx, arr) => {
-                const lineTotal =
-                  (parseFloat(item.quantity) || 0) *
-                  (parseFloat(item.unitPrice) || 0);
-                return (
-                  <div key={item.id}>
-                    <p className='font-semibold text-gray-800 mb-1.5'>
-                      {item.title}
-                    </p>
-                    <div className='text-sm text-gray-500 space-y-0.5'>
-                      <p>
-                        Quantity :{" "}
-                        <span className='text-gray-700'>
-                          {item.quantity || "–"}
-                        </span>
-                      </p>
-                      <p>
-                        Unit Price :{" "}
-                        <span className='text-gray-700'>
-                          ${parseFloat(item.unitPrice || "0").toFixed(0)}
-                        </span>
-                      </p>
-                      <p>
-                        Line Total :{" "}
-                        <span className='text-gray-700'>
-                          ${lineTotal.toFixed(0)}
-                        </span>
-                      </p>
-                    </div>
-                    {idx < arr.length - 1 && (
-                      <div className='h-px bg-gray-100 mt-4' />
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-
-        <div>
-          <h4 className='text-base font-bold text-gray-900 mb-3'>
-            Price Summary
-          </h4>
-          <div className='space-y-2'>
-            <div className='flex justify-between text-sm text-gray-500'>
-              <span>Service:</span>
-              <span className='font-medium text-gray-700'>
-                ${serviceTotal.toFixed(0)}
-              </span>
-            </div>
-            <div className='flex justify-between text-sm text-gray-500'>
-              <span>Discount:</span>
-              <span className='font-medium text-gray-700'>
-                ${discount.toFixed(0)}
-              </span>
-            </div>
-            <div className='h-px bg-gray-100' />
-            <div className='flex justify-between text-base font-bold text-gray-900 pt-1'>
-              <span>Total:</span>
-              <span>${total.toFixed(0)}</span>
-            </div>
-          </div>
-        </div>
+      {/* Body */}
+      <div className='flex-1 overflow-y-auto px-6 py-5'>
+        <OfferBody offerData={offerData} />
       </div>
 
+      {/* Footer */}
       <div className='px-6 pb-5 pt-3 border-t border-gray-100 flex gap-3'>
         <button
-          onClick={() => onClose("rejected")}
-          className='flex-1 py-3 rounded-2xl border-2 border-red-200 text-red-500 font-semibold text-sm hover:bg-red-50 hover:border-red-400 active:scale-[0.98] transition-all flex items-center justify-center gap-2'
+          onClick={handleReject}
+          disabled={isLoading}
+          className='flex-1 py-3 rounded-2xl border-2 border-red-200 text-red-500 font-semibold text-sm hover:bg-red-50 hover:border-red-400 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
         >
           <XCircle size={17} />
-          Reject
+          {isRejecting ? "Rejecting..." : "Reject"}
         </button>
         <button
-          onClick={() => onClose("accepted")}
-          className='flex-1 py-3 rounded-2xl bg-[#2d9b4f] text-white font-semibold text-sm hover:bg-[#248042] active:scale-[0.98] shadow-md shadow-green-200 transition-all flex items-center justify-center gap-2'
+          onClick={handleAccept}
+          disabled={isLoading}
+          className='flex-1 py-3 rounded-2xl bg-[#15B826] text-white font-semibold text-sm hover:bg-[#248042] active:scale-[0.98] shadow-md shadow-green-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
         >
           <CheckCircle2 size={17} />
-          Accept
+          {isAccepting ? "Accepting..." : "Accept"}
         </button>
       </div>
     </div>
   );
 }
 
+// ─── Result Banner ────────────────────────────────────────────────────────────
 function ResultBanner({
   result,
   onDismiss,
@@ -885,7 +896,7 @@ function ResultBanner({
     <div
       className={cn(
         "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-xl text-white text-sm font-semibold animate-in slide-in-from-bottom-4 duration-300",
-        result === "accepted" ? "bg-[#2d9b4f]" : "bg-red-500",
+        result === "accepted" ? "bg-[#15B826]" : "bg-red-500",
       )}
     >
       {result === "accepted" ? (
@@ -901,37 +912,40 @@ function ResultBanner({
   );
 }
 
-function defaultOfferData(): OfferData {
-  return {
-    service: {
-      _id: "",
-      title: "",
-    },
-    serviceDetails: "",
-    date: "",
-    fromTime: "",
-    toTime: "",
-    discount: "",
-    items: [{ id: generateId(), title: "", quantity: "", unitPrice: "" }],
-  };
-}
-
-function OfferCard({ offer }: { offer: any }) {
+// ─── Offer Card ───────────────────────────────────────────────────────────────
+function OfferCard({
+  offer,
+  onEdit,
+  onViewOffer,
+}: {
+  offer: any;
+  onEdit?: () => void; // sender only — opens edit modal
+  onViewOffer?: () => void; // receiver only — opens accept/reject modal
+}) {
   const [expanded, setExpanded] = useState(false);
 
-  const subtotal = offer.items.reduce(
-    (acc: number, item: any) => acc + item.quantity * item.unitPrice,
-    0,
-  );
-  const discountAmount = (subtotal * offer.discount) / 100;
+  const subtotal =
+    offer?.items?.reduce(
+      (acc: number, item: any) => acc + item.quantity * item.unitPrice,
+      0,
+    ) ?? 0;
+  const discountAmount = (subtotal * (offer.discount ?? 0)) / 100;
   const total = subtotal - discountAmount;
 
-  const date = new Date(offer.date);
-  const dateStr = date.toLocaleDateString("en-US", {
+  const dateStr = new Date(offer.date).toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
   });
+
+  // Status badge
+  const statusMap: Record<string, { label: string; className: string }> = {
+    draft: { label: "Pending", className: "bg-yellow-100 text-yellow-700" },
+    accepted: { label: "Accepted", className: "bg-green-100  text-green-700" },
+    rejected: { label: "Rejected", className: "bg-red-100    text-red-600" },
+    complete: { label: "Completed", className: "bg-blue-100   text-blue-700" },
+  };
+  const statusInfo = statusMap[offer.status] ?? statusMap["draft"];
 
   return (
     <div className='bg-white rounded-2xl shadow-md overflow-hidden w-[260px] sm:w-[280px]'>
@@ -950,7 +964,7 @@ function OfferCard({ offer }: { offer: any }) {
 
         <div className='flex items-center gap-3 mt-1 text-xs text-gray-500'>
           <span className='flex items-center gap-0.5'>
-            <MapPin className='w-3 h-3 text-green-600' />
+            <MapPin className='w-3 h-3 text-[#15B826]' />
             {offer.service?.subcategory ?? "Service"}
           </span>
           <span className='flex items-center gap-0.5'>
@@ -960,7 +974,7 @@ function OfferCard({ offer }: { offer: any }) {
         </div>
 
         <div className='flex items-center gap-1 mt-1.5 text-xs text-gray-500'>
-          <Calendar className='w-3 h-3 text-green-600' />
+          <Calendar className='w-3 h-3 text-[#15B826]' />
           <span>
             {dateStr}, {offer.from} – {offer.to}
           </span>
@@ -985,7 +999,7 @@ function OfferCard({ offer }: { offer: any }) {
 
         {expanded && (
           <div className='mt-2 space-y-1 border-t pt-2'>
-            {offer.items.map((item: any) => (
+            {offer.items?.map((item: any) => (
               <div
                 key={item._id}
                 className='flex justify-between text-xs text-gray-600'
@@ -999,7 +1013,7 @@ function OfferCard({ offer }: { offer: any }) {
               </div>
             ))}
             {offer.discount > 0 && (
-              <div className='flex justify-between text-xs text-green-600'>
+              <div className='flex justify-between text-xs text-[#15B826]'>
                 <span>Discount ({offer.discount}%)</span>
                 <span>-${discountAmount.toLocaleString()}</span>
               </div>
@@ -1007,56 +1021,103 @@ function OfferCard({ offer }: { offer: any }) {
           </div>
         )}
 
-        <div className='mt-2 pt-2 border-t'>
+        {/* Total row + status badge */}
+        <div className='mt-2 pt-2 border-t flex items-center justify-between'>
           <p className='text-sm font-bold text-gray-900'>
             Total: ${total.toLocaleString()}
           </p>
+          <span
+            className={cn(
+              "text-[10px] px-2 py-0.5 rounded-full font-medium",
+              statusInfo.className,
+            )}
+          >
+            {statusInfo.label}
+          </span>
         </div>
 
-        {offer.status === "draft" && (
-          <span className='inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium'>
-            Pending
-          </span>
-        )}
+        {/* Action buttons — only shown while pending (draft) */}
+        <div className='mt-2 flex flex-col gap-1.5'>
+          {/* Sender sees Edit */}
+          {onEdit && offer.status === "draft" && (
+            <button
+              onClick={onEdit}
+              className='w-full text-xs font-semibold text-[#15B826] border border-green-200 rounded-xl py-1.5 hover:bg-green-50 transition-colors'
+            >
+              Edit Offer
+            </button>
+          )}
+
+          {/* Receiver sees View Offer (opens accept/reject modal) */}
+          {onViewOffer && offer.status === "draft" && (
+            <button
+              onClick={onViewOffer}
+              className='w-full text-xs font-semibold text-white bg-[#15B826] rounded-xl py-1.5 hover:bg-[#248042] transition-colors'
+            >
+              View Offer
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
+// ─── Main Page ────────────────────────────────────────────────────────────────
 function MessagesPageInner() {
-  const [chatId, setChatId] = useState("");
-  const [selectedUser, setSelectedUser] = useState<Conversation>();
+  // const [chatId, setChatId] = useState("");
+  // const [selectedUser, setSelectedUser] = useState<Conversation>();
   const [messageText, setMessageText] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
   const [searchMessageQuery, setSearchMessageQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [openSearchMessage, setOpenSearchMessage] = useState(false);
   const [inboxUserLists, setInboxUserLists] = useState([]);
+  const [inboxPage] = useState(1);
+
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const debouncedSearchMessageQuery = useDebounce(searchMessageQuery, 500);
+
   const [createOfferMutation] = useCreateOfferMutation();
-
   const { socket, onlineUsers } = useSocket();
+  const { user } = useAuth();
 
-  // Offer modal state
+  // ── Offer modal state ──────────────────────────────────────────────────────
   const [modalView, setModalView] = useState<ModalView | null>(null);
   const [offerData, setOfferData] = useState<OfferData>(defaultOfferData());
+  const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
+  // activeOffer: full raw offer object, needed for offerId + customerId in AcceptRejectView
+  const [activeOffer, setActiveOffer] = useState<any | null>(null);
   const [offerResult, setOfferResult] = useState<
     "accepted" | "rejected" | null
   >(null);
-  const [inboxPage, setInboxPage] = useState(1);
-  const { user } = useAuth();
 
-  console.log({ offerData });
+  // chat slice
+  const selectedUser = useSelector((state: any) => state.chat.selectedUser);
+  const chatId = useSelector((state: any) => state.chat.chatId);
+  const dispatch = useDispatch();
 
-  const { data: inboxChats, isFetching: inboxChatsFetching } =
-    useGetInboxChatsQuery({
+  // ── Queries ────────────────────────────────────────────────────────────────
+  const {
+    data: inboxChats,
+    isFetching: inboxChatsFetching,
+    refetch,
+  } = useGetInboxChatsQuery(
+    {
       page: inboxPage,
       limit: 10,
       search: debouncedSearchQuery,
-    });
+    },
+    {
+      refetchOnMountOrArgChange: true,
+    },
+  );
+
+  useEffect(() => {
+    refetch();
+  }, [selectedUser, refetch]);
 
   const { data: messagesResponse, isFetching: messagesFetching } =
     useGetMessagesQuery(
@@ -1066,12 +1127,9 @@ function MessagesPageInner() {
         search: debouncedSearchMessageQuery,
         chat_id: selectedUser?._id!,
       },
-      {
-        skip: !selectedUser?._id,
-      },
+      { skip: !selectedUser?._id },
     );
 
-  // ✅ Fix 1: Wrap in useMemo so the array reference is stable between renders
   const messagesData = useMemo(
     () => messagesResponse?.data ?? [],
     [messagesResponse?.data],
@@ -1079,16 +1137,12 @@ function MessagesPageInner() {
 
   useEffect(() => {
     if (!messagesData.length) return;
-
     setMessages((prev) => {
       const existingIds = new Set(prev.map((m: any) => m._id ?? m.id));
-
       const incoming = messagesData.filter(
         (msg: any) => !existingIds.has(msg._id ?? msg.id),
       );
-
       if (!incoming.length) return prev;
-
       const merged = [...prev, ...incoming];
       merged.sort(
         (a, b) =>
@@ -1099,9 +1153,7 @@ function MessagesPageInner() {
   }, [messagesData]);
 
   useEffect(() => {
-    if (inboxChats?.data) {
-      setInboxUserLists(inboxChats?.data);
-    }
+    if (inboxChats?.data) setInboxUserLists(inboxChats.data);
   }, [inboxChats?.data]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1110,10 +1162,12 @@ function MessagesPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = () => {
+  // ── Send plain text message ────────────────────────────────────────────────
+  const handleSendMessage = (offerId?: string, type?: string) => {
     if (!messageText.trim()) return;
     if (!selectedUser) {
       toast.error("Please select a conversation to send a message.");
+      return;
     }
     if (!socket) return;
 
@@ -1121,8 +1175,8 @@ function MessagesPageInner() {
       _id: Date.now().toString(),
       message: messageText,
       isOwner: true,
-      type: "text",
-      offer: null,
+      type: type || "text",
+      offer: offerId || null,
       createdAt: new Date().toISOString(),
     };
 
@@ -1131,30 +1185,49 @@ function MessagesPageInner() {
       sender: selectedUser?._id,
       message: messageText,
       isOwner: true,
+      type: type || "text",
+      offer: offerId || null,
     });
 
     setMessages((prev) => [...prev, newMessage]);
     setMessageText("");
-    // setIsTyping(true);
-    // setTimeout(() => setIsTyping(false), 2000);
   };
 
-  const handleConversationSelect = async (user: Conversation) => {
+  const handleConversationSelect = (conv: Conversation) => {
     setMessages([]);
-    setSelectedUser(user);
+    dispatch(setSelectedUser(conv));
     setShowChat(true);
-    setChatId(user?._id);
+    dispatch(setChatId(conv._id));
   };
 
-  // Offer modal handlers
+  console.log({ selectedUser });
+
+  // ── Open modal: CREATE ─────────────────────────────────────────────────────
   const handleOpenCreateOffer = () => {
     setOfferData(defaultOfferData());
+    setEditingOfferId(null);
+    setActiveOffer(null);
     setModalView("create");
   };
 
-  const handleOfferSend = async () => {
-    console.log("submitting offer ............", offerData);
+  // ── Open modal: EDIT (sender clicks "Edit Offer" on card) ─────────────────
+  const handleOpenEditOffer = (offer: any) => {
+    setOfferData(offerToOfferData(offer));
+    setEditingOfferId(offer._id);
+    setActiveOffer(offer);
+    setModalView("create");
+  };
 
+  // ── Open modal: ACCEPT/REJECT (receiver clicks "View Offer" on card) ──────
+  const handleOpenAcceptReject = (offer: any) => {
+    setOfferData(offerToOfferData(offer));
+    setActiveOffer(offer);
+    setEditingOfferId(null);
+    setModalView("accept-reject");
+  };
+
+  // ── Submit: create OR update ───────────────────────────────────────────────
+  const handleOfferSend = async () => {
     const formattedItems = offerData.items.map(
       ({ title, quantity, unitPrice }) => ({
         title,
@@ -1163,12 +1236,10 @@ function MessagesPageInner() {
       }),
     );
 
-    console.log({ formattedItems });
-
-    const data = {
+    const payload = {
       chat: chatId,
-      provider: "69994dbcbfda51ba50ba764a",
-      customer: user?._id,
+      provider: user?._id,
+      customer: selectedUser?.members[0]?._id,
       service: offerData?.service?._id,
       description: offerData?.serviceDetails,
       date: offerData?.date,
@@ -1178,28 +1249,74 @@ function MessagesPageInner() {
       discount: offerData?.discount,
     };
 
-    // try {
-    //   const res = await createOfferMutation(offerData).unwrap();
-    // } catch (error) {}
+    try {
+      if (editingOfferId) {
+        // UPDATE — pass id so your backend can route to PATCH /offer/:id
+        const res = await createOfferMutation({
+          id: editingOfferId,
+          ...payload,
+        }).unwrap();
+        if (res?.success) {
+          // Patch card in-place immediately
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.offer?._id === editingOfferId ? { ...m, offer: res.data } : m,
+            ),
+          );
+          toast.success("Offer updated successfully.");
+        }
+      } else {
+        // CREATE
+        const res = await createOfferMutation(payload).unwrap();
+        if (res?.success) {
+          handleSendMessage(res?.data?._id, "offer");
+          toast.success("Offer sent successfully.");
+        }
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message ?? "Something went wrong.");
+    }
 
-    // setModalView("sent");
+    setEditingOfferId(null);
+    setActiveOffer(null);
     setModalView(null);
   };
 
-  const handleAcceptReject = (result: "accepted" | "rejected" | "closed") => {
+  // ── Called by AcceptRejectView after API resolves ──────────────────────────
+  const handleAcceptRejectClose = (
+    result: "accepted" | "rejected" | "closed",
+  ) => {
     setModalView(null);
+
     if (result === "accepted" || result === "rejected") {
+      // Optimistically update the status badge on the card
+      if (activeOffer?._id) {
+        const newStatus = result === "accepted" ? "accepted" : "rejected";
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.offer?._id === activeOffer._id
+              ? { ...m, offer: { ...m.offer, status: newStatus } }
+              : m,
+          ),
+        );
+      }
       setOfferResult(result);
       setTimeout(() => setOfferResult(null), 4000);
     }
+
+    setActiveOffer(null);
   };
 
   const isModalOpen = modalView !== null;
 
+  // ? test console
+
+  console.log({ chatId, selectedUser });
+
   return (
     <>
       <div className='flex h-[calc(100vh-90px)] overflow-hidden bg-gray-50'>
-        {/* Sidebar */}
+        {/* ── Sidebar ───────────────────────────────────────────────────── */}
         <div
           className={cn(
             "w-full md:w-80 bg-white border-r border-gray-200 flex-col",
@@ -1247,11 +1364,9 @@ function MessagesPageInner() {
                     <AvatarImage src={c?.members[0]?.image} />
                     <AvatarFallback>{c?.members[0]?.name}</AvatarFallback>
                   </Avatar>
-
                   {onlineUsers.includes(c._id) && (
                     <div className='absolute top-4 left-12 w-3 h-3 bg-green-500 border-2 border-white rounded-full' />
                   )}
-
                   <div className='flex-1 min-w-0'>
                     <div className='flex justify-between items-start'>
                       <p className='font-medium truncate'>
@@ -1272,7 +1387,7 @@ function MessagesPageInner() {
           </div>
         </div>
 
-        {/* Chat Panel */}
+        {/* ── Chat Panel ────────────────────────────────────────────────── */}
         <div
           className={cn(
             "flex-1 flex flex-col",
@@ -1305,7 +1420,7 @@ function MessagesPageInner() {
             <div className='flex items-center gap-5 pr-0 lg:pr-6'>
               <button
                 onClick={handleOpenCreateOffer}
-                className='w-max h-12! bg-white flex items-center gap-2 text-green-700 font-semibold rounded-sm shadow px-2 py-1.5 hover:bg-green-50 transition-colors'
+                className='w-max bg-white flex items-center gap-2 text-green-700 font-semibold rounded-sm shadow px-2 py-1.5 hover:bg-green-50 transition-colors'
               >
                 <Calendar size={18} />
                 <span>Create Offer</span>
@@ -1336,7 +1451,6 @@ function MessagesPageInner() {
 
           {/* Messages */}
           <div className='flex-1 h-[90vh] overflow-y-auto p-4 space-y-4'>
-            {/* messages placeholder in loading */}
             {messagesFetching && (
               <div className='space-y-4'>
                 {Array.from({ length: 10 }).map((_, i) => (
@@ -1345,13 +1459,9 @@ function MessagesPageInner() {
                     className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
                   >
                     <div
-                      className={`h-10 rounded-2xl bg-gray-200 animate-pulse ${
-                        i % 2 === 0
-                          ? `w-${["40", "56", "48"][i % 3]}`
-                          : `w-${["32", "44", "36"][i % 3]}`
-                      }`}
+                      className='h-10 rounded-2xl bg-gray-200 animate-pulse'
                       style={{
-                        width: `${[140, 200, 160, 120, 180, 100][i]}px`,
+                        width: `${[140, 200, 160, 120, 180, 100][i % 6]}px`,
                       }}
                     />
                   </div>
@@ -1374,15 +1484,29 @@ function MessagesPageInner() {
                         <div
                           className={cn(
                             "px-4 py-2 rounded-2xl",
-                            m.isOwner || m.sender === "user"
+                            m.isOwner
                               ? "bg-[#0A5512] text-white self-end"
                               : "bg-gray-100 self-start",
                           )}
                         >
-                          <p className='text-sm'>{m.message} </p>
+                          <p className='text-sm'>{m.message}</p>
                         </div>
                       )}
-                      <OfferCard offer={m.offer} />
+                      <OfferCard
+                        offer={m.offer}
+                        // Sender gets Edit button
+                        onEdit={
+                          m.isOwner
+                            ? () => handleOpenEditOffer(m.offer)
+                            : undefined
+                        }
+                        // Receiver gets "View Offer" → accept/reject modal
+                        onViewOffer={
+                          !m.isOwner
+                            ? () => handleOpenAcceptReject(m.offer)
+                            : undefined
+                        }
+                      />
                       <p className='text-xs opacity-50 pl-1'>
                         {m.timestamp ??
                           new Date(m.createdAt).toLocaleTimeString([], {
@@ -1395,9 +1519,7 @@ function MessagesPageInner() {
                     <div
                       className={cn(
                         "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
-                        m.isOwner || m.sender === "user"
-                          ? "bg-[#0A5512] text-white"
-                          : "bg-gray-100",
+                        m.isOwner ? "bg-[#0A5512] text-white" : "bg-gray-100",
                       )}
                     >
                       <p className='text-sm'>{m.message ?? m.text}</p>
@@ -1439,7 +1561,7 @@ function MessagesPageInner() {
               className='h-12'
             />
             <Button
-              onClick={handleSendMessage}
+              onClick={() => handleSendMessage()}
               className='rounded-full w-10 h-10 p-0 bg-[#0A5512] hover:bg-[#0A5512]/90'
             >
               <Send className='w-4 h-4' />
@@ -1448,7 +1570,7 @@ function MessagesPageInner() {
         </div>
       </div>
 
-      {/* Offer Modal */}
+      {/* ── Offer Modal ─────────────────────────────────────────────────── */}
       <Dialog
         open={isModalOpen}
         onOpenChange={(open) => !open && setModalView(null)}
@@ -1467,6 +1589,7 @@ function MessagesPageInner() {
               setOfferData={setOfferData}
               onPreview={() => setModalView("preview")}
               onClose={() => setModalView(null)}
+              isEditing={!!editingOfferId}
             />
           )}
 
@@ -1477,13 +1600,26 @@ function MessagesPageInner() {
               onSend={handleOfferSend}
               onClose={() => setModalView(null)}
               isSent={modalView === "sent"}
+              isEditing={!!editingOfferId}
             />
           )}
 
-          {modalView === "accept-reject" && (
+          {/*
+            AcceptRejectView needs:
+            - offerId  → activeOffer._id
+            - customerId → activeOffer.customer
+              (the customer field your backend stores on the offer document)
+          */}
+          {modalView === "accept-reject" && activeOffer && (
             <AcceptRejectView
               offerData={offerData}
-              onClose={handleAcceptReject}
+              offerId={activeOffer._id}
+              customerId={
+                activeOffer.customer ?? // field on the offer doc
+                selectedUser?.members[0]?._id ?? // fallback: other chat member
+                ""
+              }
+              onClose={handleAcceptRejectClose}
             />
           )}
         </DialogContent>

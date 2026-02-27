@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import Link from "next/link";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
-import CommonLocationInput from "@/components/CommonLocationInput";
+import CommonLocationInput from "@/components/location/CommonLocationInput";
 import MinStarRating from "@/components/home/Minstarrating";
 import getDistanceKm from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
@@ -703,7 +703,7 @@ export default function DashboardLayout() {
                                 item?.location?.coordinates[1],
                                 item?.location?.coordinates[0],
                               ).toFixed(1)}{" "}
-                              km 
+                              km
                             </p>
                           </div>
 

@@ -10,6 +10,22 @@ const offerAPI = baseAPI.injectEndpoints({
       }),
     }),
 
+    acceptOffer: builder.mutation({
+      query: (body) => ({
+        url: `/offer/complete`,
+        method: "POST",
+        body,
+      }),
+    }),
+
+    rejectOffer: builder.mutation({
+      query: (body) => ({
+        url: `/offer/reject`,
+        method: "POST",
+        body,
+      }),
+    }),
+
     getAllOffers: builder.query({
       query: ({ page, limit, search }) => {
         const queryParams = new URLSearchParams();
@@ -25,5 +41,10 @@ const offerAPI = baseAPI.injectEndpoints({
   }),
 });
 
-export const { useCreateOfferMutation, useGetAllOffersQuery } = offerAPI;
+export const {
+  useCreateOfferMutation,
+  useAcceptOfferMutation,
+  useRejectOfferMutation,
+  useGetAllOffersQuery,
+} = offerAPI;
 export default offerAPI;

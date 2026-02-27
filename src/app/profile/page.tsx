@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import AttendingEvents from "@/components/profile/AttendingEvents";
 import SavedPost from "@/components/profile/SavedPost";
 import MyPost from "@/components/profile/MyPost";
-import CommonLocationInput from "@/components/CommonLocationInput";
+import CommonLocationInput from "@/components/location/CommonLocationInput";
 
 export interface IFollow {
   _id: string;

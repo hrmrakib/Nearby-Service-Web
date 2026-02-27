@@ -18,6 +18,7 @@ type Prediction = {
   place_id: string;
 };
 
+// deprecated, i use CommonLocationInput✅
 export default function AutoCompleteLocation() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [query, setQuery] = useState("");

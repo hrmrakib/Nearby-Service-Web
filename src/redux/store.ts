@@ -2,10 +2,12 @@ import { configureStore } from "@reduxjs/toolkit";
 import baseAPI from "./api/api";
 import globalSearchReducer from "./features/search/globalSearchSlice";
 import authReducer from "./features/auth/authSlice";
+import chatReducer from "./features/chat/chatSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    chat: chatReducer,
     [baseAPI.reducerPath]: baseAPI.reducer,
     globalSearch: globalSearchReducer,
   },

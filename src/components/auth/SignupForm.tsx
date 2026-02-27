@@ -9,12 +9,15 @@ import { useCreateAccountMutation } from "@/redux/features/auth/authAPI";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import CommonLocationInput from "../location/CommonLocationInput";
 
 export default function SignupForm() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     location: "",
+    lng: null as number | null,
+    lat: null as number | null,
     email: "",
     password: "",
     confirmPassword: "",
@@ -48,7 +51,7 @@ export default function SignupForm() {
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 8 characters";
+      newErrors.password = "Password must be at least 6 characters";
     }
 
     if (!formData.confirmPassword) {
@@ -98,23 +101,23 @@ export default function SignupForm() {
         address: formData.location,
         location: {
           type: "Point",
-          coordinates: [-90.4125, 23.8103], // long, latt
+          coordinates: [formData.lng, formData.lat], // long, latt
         },
       }).unwrap();
-
-      console.log(res);
 
       if (res?.success) {
         toast.success(res?.message);
         router.push("/verify-otp?email=" + formData.email + "&type=signup");
 
         setSuccessMessage(
-          "Account created successfully! Redirecting to login..."
+          "Account created successfully! Redirecting to login...",
         );
 
         setFormData({
           name: "",
           location: "",
+          lng: null,
+          lat: null,
           email: "",
           password: "",
           confirmPassword: "",
@@ -168,22 +171,17 @@ export default function SignupForm() {
         >
           Location
         </label>
-        <input
-          type='text'
-          id='location'
-          name='location'
-          placeholder='Enter your location'
-          value={formData.location}
-          onChange={handleChange}
-          className={`w-full px-4 py-3 rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-green-400 ${
-            errors.location
-              ? "border-red-500 bg-red-50"
-              : "border-gray-300 bg-gray-50"
-          }`}
+        <CommonLocationInput
+          currentLocation={formData?.location}
+          onChange={(loc) =>
+            setFormData({
+              ...formData,
+              location: loc.location,
+              lat: loc.lat,
+              lng: loc.lng,
+            })
+          }
         />
-        {errors.location && (
-          <p className='text-red-500 text-sm mt-1'>{errors.location}</p>
-        )}
       </div>
 
       {/* Email Field */}

@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { saveTokens } from "@/service/authService";
 import { userTrack } from "@/redux/features/auth/authSlice";
 import { useDispatch } from "react-redux";
+import { toast } from "sonner";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -63,7 +64,6 @@ export default function LoginForm() {
       }
     } catch (err: any) {
       setError("Login failed. Please try again.");
-      console.error(err);
     } finally {
       setLoading(false);
     }

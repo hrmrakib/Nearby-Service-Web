@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import CommonLocationInput from "../CommonLocationInput";
+import CommonLocationInput from "../location/CommonLocationInput";
 
 interface PostEventModalProps {
   isOpen: boolean;

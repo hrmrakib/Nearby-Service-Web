@@ -35,6 +35,8 @@ export default function ReportModal({
       }
     } catch (error: any) {
       toast.error(error?.data?.message);
+    } finally {
+      onClose?.();
     }
 
     onSubmit?.(reason);

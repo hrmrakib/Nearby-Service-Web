@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { ScheduleSelector } from "./ScheduleSelector";
+import CommonLocationInput from "../location/CommonLocationInput";
 
 interface PostEventModalProps {
   isOpen: boolean;
@@ -98,17 +99,17 @@ export default function PostEventModal({
 }: PostEventModalProps) {
   const [scheduleData, setScheduleData] = useState(mockSchedule);
   const [selectedCategory, setSelectedCategory] = useState(
-    serviceCategories[0]
+    serviceCategories[0],
   );
   const [selectedDays, setSelectedDays] = useState<string[]>(["Mon"]);
   const [repeatAll, setRepeatAll] = useState(false);
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const [coverVideoPreview, setCoverVideoPreview] = useState<string | null>(
-    null
+    null,
   );
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
-    null
+    null,
   );
 
   const [coverImage, setCoverImage] = useState<File | null>(null);
@@ -125,8 +126,10 @@ export default function PostEventModal({
   const [amenitiesInput, setAmenitiesInput] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const [locationResults, setLocationResults] = useState<any[]>([]);
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
+  const [location, setLocation] = useState("");
+
+  const [lat, setLat] = useState<number | null>();
+  const [lng, setLng] = useState<number | null>();
 
   const locationTimeout = useRef<any>(null);
   const [startTime, setStartTime] = useState("");
@@ -208,23 +211,18 @@ export default function PostEventModal({
   //   setVideos((prev: File[]) => [...prev, ...videoFiles]);
   // };
 
-  const handleLocationSearch = (value: string) => {
-    setLocationQuery(value);
-
-    if (locationTimeout.current) clearTimeout(locationTimeout.current);
-
-    locationTimeout.current = setTimeout(async () => {
-      if (!value.trim()) {
-        setLocationResults([]);
-        return;
-      }
-
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${value}`
-      );
-      const data = await res.json();
-      setLocationResults(data);
-    }, 400);
+  const handleLocationChange = ({
+    location,
+    lat,
+    lng,
+  }: {
+    location: string;
+    lat: number | null;
+    lng: number | null;
+  }) => {
+    setLocation(location);
+    setLat(lat);
+    setLng(lng);
   };
 
   const selectLocation = (place: any) => {
@@ -258,7 +256,7 @@ export default function PostEventModal({
   };
 
   const handleKeyDownForAmenity = (
-    e: React.KeyboardEvent<HTMLInputElement>
+    e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -290,7 +288,7 @@ export default function PostEventModal({
       category: "Event",
       location: {
         type: "Point",
-        coordinates: [parseFloat(lng), parseFloat(lat)],
+        coordinates: [lng ?? 0, lat ?? 0],
       },
       hasTag: hashtags,
     };
@@ -330,7 +328,7 @@ export default function PostEventModal({
     address: locationQuery,
     location: {
       type: "Point",
-      coordinates: [parseFloat(lng), parseFloat(lat)],
+      coordinates: [lng ?? 0, lat ?? 0],
     },
     hasTag: hashtags,
   };
@@ -388,14 +386,12 @@ export default function PostEventModal({
       let res;
 
       if (selectedCategory === "Food & Beverage") {
-        res = await createServicePostForFoodAndBeverageMutation(
-          formData
-        ).unwrap();
+        res =
+          await createServicePostForFoodAndBeverageMutation(formData).unwrap();
       }
       if (selectedCategory === "Entertainment") {
-        res = await createServicePostForEntertainmentMutation(
-          formData
-        ).unwrap();
+        res =
+          await createServicePostForEntertainmentMutation(formData).unwrap();
       }
       if (selectedCategory === "Personal/Home Services") {
         res = await createServicePostForPersonalHomeMutation(formData).unwrap();
@@ -696,12 +692,10 @@ export default function PostEventModal({
               Location (Type your full address)
             </label>
             <div className='relative'>
-              <Input
-                placeholder='Search location'
-                value={locationQuery}
-                onChange={(e) => handleLocationSearch(e.target.value)}
+              <CommonLocationInput
+                onChange={handleLocationChange}
+                currentLocation={location}
               />
-              <MapPin className='absolute right-3 top-1/2 -translate-y-1/2 text-green-600 w-4 h-4' />
             </div>
 
             {locationResults.length > 0 && (
@@ -722,11 +716,11 @@ export default function PostEventModal({
           <div className='grid grid-cols-2 gap-3'>
             <div>
               <label className='text-sm font-bold mb-2 block'>Latitude</label>
-              <Input value={lat} readOnly className='bg-gray-100' />
+              <Input value={lat ?? ""} readOnly className='bg-gray-100' />
             </div>
             <div>
               <label className='text-sm font-bold mb-2 block'>Longitude</label>
-              <Input value={lng} readOnly className='bg-gray-100' />
+              <Input value={lng ?? ""} readOnly className='bg-gray-100' />
             </div>
           </div>
 

@@ -456,8 +456,27 @@ export default function PostEventModal({
               Location (Type your full address)
             </label>
 
-            <CommonLocationInput onChange={handleLocationChange} />
+            <CommonLocationInput
+              onChange={handleLocationChange}
+              currentLocation={location}
+            />
           </div>
+
+          {/* Lat & Lng */}
+          {selectedCategory !== "Missing Person" && (
+            <div className='grid grid-cols-2 gap-3'>
+              <div>
+                <label className='text-sm font-bold mb-2 block'>Latitude</label>
+                <Input value={lat ?? ""} readOnly className='bg-gray-100' />
+              </div>
+              <div>
+                <label className='text-sm font-bold mb-2 block'>
+                  Longitude
+                </label>
+                <Input value={lng ?? ""} readOnly className='bg-gray-100' />
+              </div>
+            </div>
+          )}
 
           {/* Category */}
           <div className='w-full'>
@@ -596,22 +615,6 @@ export default function PostEventModal({
                 </div>
               </div>
             </>
-          )}
-
-          {/* Lat & Lng */}
-          {selectedCategory !== "Missing Person" && (
-            <div className='grid grid-cols-2 gap-3'>
-              <div>
-                <label className='text-sm font-bold mb-2 block'>Latitude</label>
-                <Input value={lat ?? ""} readOnly className='bg-gray-100' />
-              </div>
-              <div>
-                <label className='text-sm font-bold mb-2 block'>
-                  Longitude
-                </label>
-                <Input value={lng ?? ""} readOnly className='bg-gray-100' />
-              </div>
-            </div>
           )}
 
           {/* Contact */}

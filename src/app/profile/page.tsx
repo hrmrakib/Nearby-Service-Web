@@ -235,7 +235,7 @@ export default function ProfilePage() {
 
                 <CommonLocationInput
                   onChange={(location) =>
-                    setUser({
+                    setUser({ 
                       ...user,
                       location: location.location,
                       lat: location.lat,

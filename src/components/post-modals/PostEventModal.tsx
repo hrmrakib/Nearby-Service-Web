@@ -18,6 +18,7 @@ import Image from "next/image";
 import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
 import { toast } from "sonner";
+import CommonLocationInput from "../location/CommonLocationInput";
 
 interface PostEventModalProps {
   isOpen: boolean;
@@ -31,10 +32,10 @@ export default function PostEventModal({
   onBack,
 }: PostEventModalProps) {
   const [coverVideoPreview, setCoverVideoPreview] = useState<string | null>(
-    null
+    null,
   );
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
-    null
+    null,
   );
 
   const [coverImage, setCoverImage] = useState<File | null>(null);
@@ -49,8 +50,9 @@ export default function PostEventModal({
   const [inputValue, setInputValue] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const [locationResults, setLocationResults] = useState<any[]>([]);
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
+  const [location, setLocation] = useState("");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
 
   const locationTimeout = useRef<any>(null);
   const [date, setDate] = useState("");
@@ -97,18 +99,25 @@ export default function PostEventModal({
       }
 
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${value}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${value}`,
       );
       const data = await res.json();
       setLocationResults(data);
     }, 400);
   };
 
-  const selectLocation = (place: any) => {
-    setLocationQuery(place.display_name);
-    setLat(place.lat);
-    setLng(place.lon);
-    setLocationResults([]);
+  const handleLocationChange = ({
+    location,
+    lat,
+    lng,
+  }: {
+    location: string;
+    lat: number | null;
+    lng: number | null;
+  }) => {
+    setLocation(location);
+    setLat(lat);
+    setLng(lng);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -138,7 +147,7 @@ export default function PostEventModal({
       category: "Event",
       location: {
         type: "Point",
-        coordinates: [parseFloat(lng), parseFloat(lat)],
+        coordinates: [lng ?? 0, lat ?? 0],
       },
       hasTag: hashtags,
     };
@@ -382,37 +391,21 @@ export default function PostEventModal({
               Location (Type your full address)
             </label>
             <div className='relative'>
-              <Input
-                placeholder='Search location'
-                value={locationQuery}
-                onChange={(e) => handleLocationSearch(e.target.value)}
+              <CommonLocationInput
+                onChange={handleLocationChange}
+                currentLocation={location}
               />
-              <MapPin className='absolute right-3 top-1/2 -translate-y-1/2 text-green-600 w-4 h-4' />
             </div>
-
-            {locationResults.length > 0 && (
-              <ul className='absolute z-20 bg-white shadow rounded w-full border mt-1 max-h-60 overflow-y-auto'>
-                {locationResults.map((loc) => (
-                  <li
-                    key={loc.place_id}
-                    className='p-2 hover:bg-gray-100 cursor-pointer text-sm'
-                    onClick={() => selectLocation(loc)}
-                  >
-                    {loc.display_name}
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
 
           <div className='grid grid-cols-2 gap-3'>
             <div>
               <label className='text-sm font-bold mb-2 block'>Latitude</label>
-              <Input value={lat} readOnly className='bg-gray-100' />
+              <Input value={lat ?? ""} readOnly className='bg-gray-100' />
             </div>
             <div>
               <label className='text-sm font-bold mb-2 block'>Longitude</label>
-              <Input value={lng} readOnly className='bg-gray-100' />
+              <Input value={lng ?? ""} readOnly className='bg-gray-100' />
             </div>
           </div>
 

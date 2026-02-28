@@ -48,12 +48,12 @@ import {
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { toast } from "sonner";
 
 export default function EventDetailPage() {
   const router = useRouter();
-  const { userLat, userLng } = useAuth();
+  const { userLat, userLng, user } = useAuth();
 
   const id = useParams().id as string;
   const [imagePreview, setImagePreview] = useState("");
@@ -73,7 +73,6 @@ export default function EventDetailPage() {
     page: 1,
     limit: 100,
   });
-  console.log({ userJoinedEvents });
 
   const { data: reviewsData } = useGetReviewsByPostIdQuery(id);
   const dispatch = useDispatch();
@@ -103,6 +102,11 @@ export default function EventDetailPage() {
     } catch (error: any) {
       toast.error(error?.data?.message);
     }
+  };
+
+  const handleRequestQuote = (postId: string) => {
+    try {
+    } catch (error) {}
   };
 
   const handleSave = async () => {
@@ -164,13 +168,12 @@ export default function EventDetailPage() {
     }
   };
 
-  const selectUser = useSelector((state: any) => state?.chat?.selectedUser);
-
-  console.log(postDetail?.category);
-
   if (isLoading) {
     return <LoadingSpinner text='event' />;
   }
+
+  console.log({ user });
+  console.log(postDetail?.author?._id);
 
   return (
     <div className='min-h-screen bg-[#F3F4F6]'>
@@ -293,6 +296,32 @@ export default function EventDetailPage() {
                   </span>
                   <span className='truncate'>
                     {attended ? "Attending" : "Attend"}
+                  </span>
+                </button>
+              )}
+
+              {/* Comment Button */}
+              {postDetail?.category === "service" && (
+                <button
+                  onClick={() => handleRequestQuote(postDetail._id)}
+                  className={`
+              flex-1 min-w-0 flex items-center justify-center gap-2
+              px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
+              transition-all duration-200 active:scale-95 select-none
+              ${
+                attended
+                  ? "bg-green-700 text-white shadow-inner"
+                  : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+              }
+            `}
+                >
+                  <span
+                    className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
+                  >
+                    {attended ? "✓" : ""}
+                  </span>
+                  <span className='truncate'>
+                    {attended ? "Requested" : "Request Quote"}
                   </span>
                 </button>
               )}
@@ -465,7 +494,7 @@ export default function EventDetailPage() {
             </div>
 
             {/* Event Details */}
-            <AboutEvent />
+            <AboutEvent postDetail={postDetail} />
             <MomentsSection postId={id} />
 
             {postDetail?.category === "service" ? (

@@ -104,6 +104,8 @@ export default function EventDetailPage() {
     }
   };
 
+
+  // sending a quotem request - message
   const handleRequestQuote = (postId: string) => {
     try {
     } catch (error) {}

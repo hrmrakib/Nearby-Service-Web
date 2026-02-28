@@ -28,7 +28,7 @@ const AboutEvent = ({ postDetail }: any) => {
           </div>
           <Avatar className='w-10 h-10 flex-shrink-0'>
             <AvatarImage src={postDetail?.author?.image} />
-            <AvatarFallback>CV</AvatarFallback>
+            <AvatarFallback>{postDetail?.author?.name}</AvatarFallback>
           </Avatar>
         </div>
       </div>

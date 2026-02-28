@@ -17,7 +17,7 @@ export default function ReportModal({
   onSubmit?: (reason: string) => void;
 }) {
   const [reason, setReason] = useState("");
-  const [createReportMutation] = useCreateReportMutation();
+  const [createReportMutation, { isLoading }] = useCreateReportMutation();
 
   if (!open) return null;
 
@@ -31,15 +31,13 @@ export default function ReportModal({
       }).unwrap();
 
       if (res?.success) {
-        toast.success(res?.message);
+        toast.success("Report submitted successfully.");
+        onSubmit?.(reason);
+        onClose?.();
       }
     } catch (error: any) {
       toast.error(error?.data?.message);
-    } finally {
-      onClose?.();
     }
-
-    onSubmit?.(reason);
   };
 
   return (
@@ -88,7 +86,7 @@ export default function ReportModal({
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={!reason.trim()}
+          disabled={!reason.trim() || isLoading}
           className='mt-4 w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-2xl transition-colors'
         >
           Submit

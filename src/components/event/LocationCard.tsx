@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 interface LocationCardProps {
@@ -141,31 +142,33 @@ export default function LocationCard({
     <div className='flex items-center justify-end font-[system-ui]'>
       <div className='w-full max-w-sm'>
         {/* Card */}
-        <div className='bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100'>
-          {/* Map */}
-          <div className='relative h-52 sm:h-60 bg-slate-100'>
-            <GoogleMap lat={lat} lng={lng} apiKey={googleMapsApiKey} />
-          </div>
-
-          {/* Info */}
-          <div className='px-5 py-4 space-y-3'>
-            <div>
-              <p className='text-xs font-bold text-[#374151] uppercase mb-0.5'>
-                Location
-              </p>
-              <p className='text-sm text-slate-700 leading-snug'>{address}</p>
+        <Link href='/map'>
+          <div className='bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100'>
+            {/* Map */}
+            <div className='relative h-52 sm:h-60 bg-slate-100'>
+              <GoogleMap lat={lat} lng={lng} apiKey={googleMapsApiKey} />
             </div>
 
-            <div className='h-px bg-slate-100' />
+            {/* Info */}
+            <div className='px-5 py-4 space-y-3'>
+              <div>
+                <p className='text-xs font-bold text-[#374151] uppercase mb-0.5'>
+                  Location
+                </p>
+                <p className='text-sm text-slate-700 leading-snug'>{address}</p>
+              </div>
 
-            <p className='text-sm font-semibold text-[#1F2937]'>
-              Servicing:{" "}
-              <span className='text-sm font-semibold text-[#1F2937]'>
-                {servicingAreas}
-              </span>
-            </p>
+              <div className='h-px bg-slate-100' />
+
+              <p className='text-sm font-semibold text-[#1F2937]'>
+                Servicing:{" "}
+                <span className='text-sm font-semibold text-[#1F2937]'>
+                  {servicingAreas}
+                </span>
+              </p>
+            </div>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );

@@ -17,7 +17,7 @@ function isVideoUrl(url: string) {
   );
 }
 
-export default function MomentsSection() {
+export default function MomentsSection({ postId }: { postId: string }) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [lightbox, setLightbox] = useState<{
     url: string;
@@ -27,7 +27,7 @@ export default function MomentsSection() {
   const [tab, setTab] = useState("all");
 
   const { data, isFetching } = useGetMomentsQuery({
-    id: "699c1df44bdd6c4865a77fa2",
+    id: postId,
     params: tab,
   });
 

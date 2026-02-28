@@ -4,12 +4,14 @@
 import getDistanceKm from "@/utils/getDistanceMiles";
 import { MapPin, Star, Tag } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function RelatedCard({ userLng, userLat, relevantPosts }: any) {
   return (
     <div className='flex flex-col items-end justify-end gap-6 lg:gap-10 pt-5 font-sans'>
       {relevantPosts?.map((post: any) => (
-        <div
+        <Link
+          href={`/event/${post?._id}`}
           key={post._id}
           className='card-font w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl card-shine relative'
         >
@@ -63,7 +65,7 @@ export default function RelatedCard({ userLng, userLat, relevantPosts }: any) {
               </span>
             </div>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );

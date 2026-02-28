@@ -176,7 +176,7 @@ export default function ReviewSection({ reviews }: { reviews: Review[] }) {
     <>
       <div
         id='see-all'
-        className='min-h-screen bg-gray-50 flex items-start justify-center'
+        className='h-auto bg-gray-50 flex items-start justify-center'
       >
         <div className='w-full bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 flex flex-col gap-6'>
           {/* Review list */}

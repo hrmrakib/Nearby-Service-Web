@@ -72,10 +72,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [page] = useState<number>(1);
-  const limit = 10;
+  const [limit, setLimit] = useState<number>(15);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [isCreatePostOpen, setIsCreatePostOpen] = useState<boolean>(false);
   const [hasToken, setHasToken] = useState<boolean>(false);
+  const [notifications, setNotifications] = useState<INotification[]>([]);
 
   useEffect(() => {
     setHasToken(!!localStorage?.getItem("accessToken"));
@@ -86,8 +87,18 @@ export default function Navbar() {
     { skip: !hasToken },
   );
 
-  const { data } = useGetNotificationsQuery({ page, limit });
-  const notifications = data?.data;
+  const { data, isFetching: isFetchingNotifications } =
+    useGetNotificationsQuery({ page, limit });
+  const notificationsData = data?.data;
+  const totalCount: number = data?.meta?.total ?? data?.meta?.total ?? 0;
+
+  console.log({ totalCount });
+
+  useEffect(() => {
+    if (notificationsData) {
+      setNotifications((prev) => [...prev, ...notificationsData]);
+    }
+  }, [notificationsData]);
 
   const dispatch = useDispatch();
 
@@ -466,6 +477,29 @@ export default function Navbar() {
                         No notifications yet
                       </div>
                     )}
+
+                    <div className='flex items-center justify-center py-2'>
+                      {isFetchingNotifications ? (
+                        <svg
+                          className='animate-spin text-[#15B826]'
+                          width='18'
+                          height='18'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                        >
+                          <path d='M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83' />
+                        </svg>
+                      ) : (
+                        <button
+                          onClick={() => setLimit((prev) => prev + 10)}
+                          className='text-sm font-semibold text-[#15B826] hover:underline px-4 py-2'
+                        >
+                          Show more
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>

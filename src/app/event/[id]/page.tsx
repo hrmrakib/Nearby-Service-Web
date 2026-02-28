@@ -13,13 +13,28 @@ import ReportModal from "@/components/modal/ReportModal";
 import AddressDisplay from "@/components/share/AddressDisplay";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { useNewChatMutation } from "@/redux/features/chat/chatAPI";
-import { setChatId, setSelectedUser } from "@/redux/features/chat/chatSlice";
+import {
+  setChatId,
+  setNewChatStart,
+  setSelectedUser,
+} from "@/redux/features/chat/chatSlice";
 import { useToggleLikeMutation } from "@/redux/features/like/likeAPI";
-import { useGetPostDetailByIdQuery } from "@/redux/features/post/postAPI";
+import {
+  useAttendEventMutation,
+  useGetPostDetailByIdQuery,
+  useUserJoinedEventsQuery,
+} from "@/redux/features/post/postAPI";
 import { useGetReviewsByPostIdQuery } from "@/redux/features/review/reviewAPI";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import formatDate from "@/utils/formatDate";
 import getDistanceKm from "@/utils/getDistanceMiles";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarGroup,
+  AvatarGroupCount,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 import {
   Bookmark,
@@ -50,8 +65,15 @@ export default function EventDetailPage() {
   const [toggleSaveMutation] = useToggleSaveMutation();
   const [toggleLikeMutation] = useToggleLikeMutation();
   const [newChatMutation, { isLoading: newChatLoading }] = useNewChatMutation();
+  const [attendEventMutation] = useAttendEventMutation();
 
   const { data, isLoading, refetch } = useGetPostDetailByIdQuery(id);
+  const { data: userJoinedEvents } = useUserJoinedEventsQuery({
+    eventId: id,
+    page: 1,
+    limit: 100,
+  });
+  console.log({ userJoinedEvents });
 
   const { data: reviewsData } = useGetReviewsByPostIdQuery(id);
   const dispatch = useDispatch();
@@ -71,12 +93,16 @@ export default function EventDetailPage() {
     }
   }, [postDetail]);
 
-  const handleAttend = () => {
-    setAttended((prev) => {
-      const next = !prev;
-
-      return next;
-    });
+  const handleAttend = async (postId: string) => {
+    try {
+      const res = await attendEventMutation(postId).unwrap();
+      if (res?.success) {
+        refetch();
+        toast.success(res?.message);
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message);
+    }
   };
 
   const handleSave = async () => {
@@ -130,6 +156,7 @@ export default function EventDetailPage() {
             members: [res?.data?.members[0]],
           }),
         );
+        dispatch(setNewChatStart(true));
         router.push(`/messages`);
       }
     } catch (error: any) {
@@ -139,7 +166,7 @@ export default function EventDetailPage() {
 
   const selectUser = useSelector((state: any) => state?.chat?.selectedUser);
 
-  console.log({ selectUser });
+  console.log(postDetail?.category);
 
   if (isLoading) {
     return <LoadingSpinner text='event' />;
@@ -245,9 +272,10 @@ export default function EventDetailPage() {
           <div className='w-full max-w-2xl bg-white rounded-2xl px-4 py-3'>
             <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
               {/* Attend Button */}
-              <button
-                onClick={handleAttend}
-                className={`
+              {postDetail?.category === "event" && (
+                <button
+                  onClick={() => handleAttend(postDetail._id)}
+                  className={`
               flex-1 min-w-0 flex items-center justify-center gap-2
               px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
               transition-all duration-200 active:scale-95 select-none
@@ -257,16 +285,17 @@ export default function EventDetailPage() {
                   : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
               }
             `}
-              >
-                <span
-                  className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
                 >
-                  {attended ? "✓" : ""}
-                </span>
-                <span className='truncate'>
-                  {attended ? "Attending" : "Attend"}
-                </span>
-              </button>
+                  <span
+                    className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
+                  >
+                    {attended ? "✓" : ""}
+                  </span>
+                  <span className='truncate'>
+                    {attended ? "Attending" : "Attend"}
+                  </span>
+                </button>
+              )}
 
               {!showReportBtn ? (
                 <div className='flex items-center gap-2'>
@@ -400,9 +429,44 @@ export default function EventDetailPage() {
         <div className='grid grid-cols-1 lg:grid-cols-7 gap-6 md:gap-8 lg:gap-36'>
           {/* Left Column */}
           <div className='lg:col-span-4 space-y-6'>
+            <div>
+              <h2 className='text-lg font-bold text-[#1F2937] tracking-tight mb-3'>
+                Attending{" "}
+              </h2>
+              <div className='flex items-center gap-1'>
+                <AvatarGroup className='grayscale'>
+                  <Avatar>
+                    <AvatarImage
+                      src='https://github.com/shadcn.png'
+                      alt='@shadcn'
+                    />
+                    <AvatarFallback>CN</AvatarFallback>
+                  </Avatar>
+                  <Avatar>
+                    <AvatarImage
+                      src='https://github.com/maxleiter.png'
+                      alt='@maxleiter'
+                    />
+                    <AvatarFallback>LR</AvatarFallback>
+                  </Avatar>
+                  <Avatar>
+                    <AvatarImage
+                      src='https://github.com/evilrabbit.png'
+                      alt='@evilrabbit'
+                    />
+                    <AvatarFallback>ER</AvatarFallback>
+                  </Avatar>
+                  <AvatarGroupCount>+3</AvatarGroupCount>
+                </AvatarGroup>
+                <button className='text-sm font-semibold pl-4 text-[#108F1E]'>
+                  See all
+                </button>
+              </div>
+            </div>
+
             {/* Event Details */}
             <AboutEvent />
-            <MomentsSection />
+            <MomentsSection postId={id} />
 
             {postDetail?.category === "service" ? (
               <ReviewSection reviews={reviews} />
@@ -414,8 +478,6 @@ export default function EventDetailPage() {
           {/* Right Sidebar */}
           <div className='lg:col-span-3 space-y-4'>
             <LocationCard
-              // lat={postDetail?.location?.coordinates[0]}
-              // lng={postDetail?.location?.coordinates[1]}
               address={postDetail?.address}
               lat={90.39064309999999}
               lng={23.7511665}

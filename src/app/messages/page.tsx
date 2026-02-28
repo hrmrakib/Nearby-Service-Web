@@ -1084,6 +1084,8 @@ function MessagesPageInner() {
   const { socket, onlineUsers } = useSocket();
   const { user } = useAuth();
 
+  console.log(user?._id);
+
   // ── Offer modal state ──────────────────────────────────────────────────────
   const [modalView, setModalView] = useState<ModalView | null>(null);
   const [offerData, setOfferData] = useState<OfferData>(defaultOfferData());
@@ -1097,6 +1099,7 @@ function MessagesPageInner() {
   // chat slice
   const selectedUser = useSelector((state: any) => state.chat.selectedUser);
   const chatId = useSelector((state: any) => state.chat.chatId);
+  const newChatStart = useSelector((state: any) => state.chat.newChatStart);
   const dispatch = useDispatch();
 
   // ── Queries ────────────────────────────────────────────────────────────────
@@ -1117,7 +1120,7 @@ function MessagesPageInner() {
 
   useEffect(() => {
     refetch();
-  }, [selectedUser, refetch]);
+  }, [newChatStart, refetch]);
 
   const { data: messagesResponse, isFetching: messagesFetching } =
     useGetMessagesQuery(
@@ -1182,7 +1185,7 @@ function MessagesPageInner() {
 
     socket.emit("send-message", {
       chat: chatId,
-      sender: selectedUser?._id,
+      sender: user?._id,
       message: messageText,
       isOwner: true,
       type: type || "text",
@@ -1193,14 +1196,14 @@ function MessagesPageInner() {
     setMessageText("");
   };
 
+  console.log(chatId, user?._id);
+
   const handleConversationSelect = (conv: Conversation) => {
     setMessages([]);
     dispatch(setSelectedUser(conv));
     setShowChat(true);
     dispatch(setChatId(conv._id));
   };
-
-  console.log({ selectedUser });
 
   // ── Open modal: CREATE ─────────────────────────────────────────────────────
   const handleOpenCreateOffer = () => {
@@ -1310,8 +1313,6 @@ function MessagesPageInner() {
   const isModalOpen = modalView !== null;
 
   // ? test console
-
-  console.log({ chatId, selectedUser });
 
   return (
     <>

@@ -124,6 +124,28 @@ const postAPI = baseAPI.injectEndpoints({
         method: "GET",
       }),
     }),
+
+    attendEvent: builder.mutation({
+      query: (postId) => ({
+        url: `/post/event/join/${postId}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Post"],
+    }),
+
+    myJoinedEvents: builder.query({
+      query: ({ page, limit }) => ({
+        url: `/post/my-join-event?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+    }),
+
+    userJoinedEvents: builder.query({
+      query: ({ eventId, page, limit }) => ({
+        url: `/post/user-join-event/${eventId}?page=${page}&limit=${limit}`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -141,5 +163,9 @@ export const {
   useCreateServicePostForVenuesMutation,
 
   useMyProvidedServicesQuery,
+
+  useAttendEventMutation,
+  useMyJoinedEventsQuery,
+  useUserJoinedEventsQuery,
 } = postAPI;
 export default postAPI;

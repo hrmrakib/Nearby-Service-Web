@@ -13,9 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Upload, MapPin, Video, Clock } from "lucide-react";
+import { Plus, Upload, Video, Loader } from "lucide-react";
 import Image from "next/image";
-import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import {
   useCreateServicePostForEntertainmentMutation,
   useCreateServicePostForFoodAndBeverageMutation,
@@ -23,7 +22,6 @@ import {
   useCreateServicePostForVenuesMutation,
 } from "@/redux/features/post/postAPI";
 import { toast } from "sonner";
-import { Checkbox } from "../ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -143,6 +141,7 @@ export default function PostEventModal({
   const [guestCapacity, setGuestCapacity] = useState<number | string>();
   const [amenities, setAmenities] = useState<string[]>([]);
   const [serviceType, setServiceType] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [createServicePostForFoodAndBeverageMutation] =
     useCreateServicePostForFoodAndBeverageMutation();
@@ -152,8 +151,6 @@ export default function PostEventModal({
     useCreateServicePostForPersonalHomeMutation();
   const [createServicePostForVenuesMutation] =
     useCreateServicePostForVenuesMutation();
-
-  console.log({ scheduleData });
 
   const handleCoverImageUpload = (e: any) => {
     const file = e.target.files?.[0];
@@ -182,34 +179,6 @@ export default function PostEventModal({
 
     setVideos((prev: File[]) => [...prev, ...videoFiles]);
   };
-
-  // const handleCoverImageUpload = (e: any) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file || !file.type.startsWith("image")) return;
-  //   setCoverImage(file);
-  //   setCoverVideo(null); // Reset video if selected
-  // };
-
-  // const handleCoverVideoUpload = (e: any) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file || !file.type.startsWith("video")) return;
-  //   setCoverVideo(file);
-  //   setCoverImage(null); // Reset image if selected
-  // };
-
-  // const handleMoreImages = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const files = Array.from(e.target.files ?? []) as File[];
-  //   const imageFiles = files.filter((file) => file.type.startsWith("image"));
-
-  //   setImages((prev: File[]) => [...prev, ...imageFiles]);
-  // };
-
-  // const handleMoreVideos = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const files = Array.from(e.target.files ?? []) as File[];
-  //   const videoFiles = files.filter((file) => file.type.startsWith("video"));
-
-  //   setVideos((prev: File[]) => [...prev, ...videoFiles]);
-  // };
 
   const handleLocationChange = ({
     location,
@@ -344,8 +313,6 @@ export default function PostEventModal({
     amenities,
   };
 
-  console.log({ amenities });
-
   const handlePublish = async () => {
     try {
       const formData = new FormData();
@@ -383,6 +350,8 @@ export default function PostEventModal({
         formData.append("media", vid);
       });
 
+      setIsLoading(true);
+
       let res;
 
       if (selectedCategory === "Food & Beverage") {
@@ -400,14 +369,14 @@ export default function PostEventModal({
         res = await createServicePostForVenuesMutation(formData).unwrap();
       }
 
-      console.log(res);
-
       if (res?.success) {
         toast.success(res?.message);
         onClose();
       }
     } catch (err) {
       console.error("Upload Failed:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -598,88 +567,6 @@ export default function PostEventModal({
             />
           </div>
 
-          {/* Availability */}
-          {/* <div>
-            <label className='text-sm font-bold mb-2 block'>Availability</label>
-            <div className='space-y-3'>
-              <div>
-                <label className='text-xs text-muted-foreground mb-2 block'>
-                  Day
-                </label>
-                <div className='flex gap-2'>
-                  {days.map((day) => (
-                    <Button
-                      key={day}
-                      variant={
-                        selectedDays.includes(day) ? "default" : "outline"
-                      }
-                      size='sm'
-                      className={`text-xs ${
-                        selectedDays.includes(day)
-                          ? "bg-green-500 hover:bg-green-600"
-                          : ""
-                      }`}
-                      onClick={() => toggleDay(day)}
-                    >
-                      {day}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div className='grid grid-cols-2 gap-3'>
-                <div>
-                  <label className='text-sm font-bold mb-2 block'>
-                    Start Time
-                  </label>
-                  <Input
-                    type='time'
-                    value={startTime}
-                    placeholder='Available from'
-                    onChange={(e) => setStartTime(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className='text-sm font-bold mb-2 block'>Time</label>
-                  <Input
-                    type='time'
-                    value={endTime}
-                    placeholder='Available till'
-                    onChange={(e) => setEndTime(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className='mt-4'>
-                <label className='text-xs text-muted-foreground mb-1 block'>
-                  Repeat
-                </label>
-
-                <div className='flex items-center gap-2'>
-                  <Checkbox
-                    id='repeat-all'
-                    checked={repeatAll}
-                    onCheckedChange={(val) => {
-                      setRepeatAll(!!val);
-                      if (val) {
-                        setSelectedDays(days);
-                      } else {
-                        setSelectedDays([]);
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor='repeat-all'
-                    className='text-sm cursor-pointer'
-                  >
-                    Repeat this for all days of the week.
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div> */}
-
           <ScheduleSelector
             schedule={scheduleData}
             onScheduleChange={(updated: any) => setScheduleData(updated)}
@@ -697,20 +584,6 @@ export default function PostEventModal({
                 currentLocation={location}
               />
             </div>
-
-            {locationResults.length > 0 && (
-              <ul className='absolute z-20 bg-white shadow rounded w-full border mt-1 max-h-60 overflow-y-auto'>
-                {locationResults.map((loc) => (
-                  <li
-                    key={loc.place_id}
-                    className='p-2 hover:bg-gray-100 cursor-pointer text-sm'
-                    onClick={() => selectLocation(loc)}
-                  >
-                    {loc.display_name}
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
 
           <div className='grid grid-cols-2 gap-3'>
@@ -768,39 +641,6 @@ export default function PostEventModal({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Service - Entertainment */}
-          {/* {selectedCategory === "Entertainment" && (
-            <div>
-              <label className='text-sm font-bold mb-2 block text-[#030712]'>
-                Rate
-              </label>
-              <div className='flex items-center justify-between gap-4 border border-gray-200 rounded-2xl px-2 py-5'>
-                <div className='w-1/2'>
-                  <label className='text-sm font-bold mb-2 block'>Hourly</label>
-                  <Input
-                    type='number'
-                    value={rate.hourly}
-                    onChange={(e) =>
-                      setRate({ ...rate, hourly: Number(e.target.value) })
-                    }
-                    placeholder='Enter starting price'
-                  />
-                </div>
-                <div className='w-1/2'>
-                  <label className='text-sm font-bold mb-2 block'>Day</label>
-                  <Input
-                    type='number'
-                    value={rate.day}
-                    onChange={(e) =>
-                      setRate({ ...rate, day: Number(e.target.value) })
-                    }
-                    placeholder='Enter starting price'
-                  />
-                </div>
-              </div>
-            </div>
-          )} */}
 
           {/* Service - Personal/Home Services */}
           {selectedCategory === "Personal/Home Services" && (
@@ -911,9 +751,11 @@ export default function PostEventModal({
           <Button
             type='submit'
             onClick={handlePublish}
+            disabled={isLoading}
             className='w-full bg-[#15B826] hover:bg-green-600 text-white'
           >
             Publish
+            {isLoading && <Loader className='animate-spin' />}
           </Button>
         </div>
       </DialogContent>

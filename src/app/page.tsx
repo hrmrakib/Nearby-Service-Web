@@ -23,7 +23,6 @@ import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
-import Link from "next/link";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import CommonLocationInput from "@/components/location/CommonLocationInput";
 import MinStarRating from "@/components/home/Minstarrating";
@@ -393,7 +392,7 @@ export default function DashboardLayout() {
   const [lng, setLng] = useState<number | null>(null);
 
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const limit = 50;
 
   const { data, isFetching, refetch } = useGetAllPostQuery({
     category: selectedCategory,
@@ -510,7 +509,10 @@ export default function DashboardLayout() {
     <div className='min-h-[calc(100vh-60px)] bg-[#F3F4F6]'>
       <HeroSection />
 
-      <div className='container mx-auto grid grid-cols-1 lg:grid-cols-[20rem_1fr] xl:grid-cols-[20rem_1fr_20rem] gap-6 mt-8'>
+      <div
+        id='all-post'
+        className='container mx-auto grid grid-cols-1 lg:grid-cols-[20rem_1fr] xl:grid-cols-[20rem_1fr_20rem] gap-6 mt-8'
+      >
         {/* Left Column - Filters */}
         <div className='sticky top-20 w-80 bg-transparent hidden lg:block h-[calc(100vh-80px)] overflow-y-auto'>
           <ScrollArea className='h-[calc(100vh-100px)]'>

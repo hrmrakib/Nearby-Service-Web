@@ -1166,13 +1166,15 @@ function MessagesPageInner() {
   }, [messages]);
 
   // ── Send plain text message ────────────────────────────────────────────────
-  const handleSendMessage = (offerId?: string, type?: string) => {
+  const handleSendMessage22 = (offerId?: string, type?: string) => {
     if (!messageText.trim()) return;
     if (!selectedUser) {
       toast.error("Please select a conversation to send a message.");
       return;
     }
     if (!socket) return;
+
+    console.log({ offerId, type });
 
     const newMessage = {
       _id: Date.now().toString(),
@@ -1190,6 +1192,42 @@ function MessagesPageInner() {
       isOwner: true,
       type: type || "text",
       offer: offerId || null,
+    });
+
+    setMessages((prev) => [...prev, newMessage]);
+    setMessageText("");
+  };
+
+  const handleSendMessage = (offerId?: string, type?: string) => {
+    const isOffer = type === "offer" && offerId;
+
+    // ✅ For plain text, require non-empty text. Offers can have empty message.
+    if (!isOffer && !messageText.trim()) return;
+
+    if (!selectedUser) {
+      toast.error("Please select a conversation to send a message.");
+      return;
+    }
+    if (!socket) return;
+
+    const finalMessage = isOffer ? messageText || "" : messageText;
+
+    const newMessage = {
+      _id: Date.now().toString(),
+      message: finalMessage,
+      isOwner: true,
+      type: type || "text",
+      offer: offerId || null,
+      createdAt: new Date().toISOString(),
+    };
+
+    socket.emit("send-message", {
+      chat: chatId,
+      sender: user?._id,
+      message: finalMessage,
+      isOwner: true,
+      type: type || "text",
+      ...(isOffer && { offer: offerId }),
     });
 
     setMessages((prev) => [...prev, newMessage]);

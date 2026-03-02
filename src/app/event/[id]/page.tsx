@@ -56,6 +56,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import RedeemCode from "@/components/event/RedeemCode";
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -154,6 +155,8 @@ export default function EventDetailPage() {
   const handleReport = () => {
     setReportOpen(true);
   };
+
+  const handleGetDeal = (id: string) => {};
 
   const handleChatStart = async () => {
     try {
@@ -333,10 +336,32 @@ export default function EventDetailPage() {
                 </button>
               )}
 
+              {/* Get Deal */}
+              {postDetail?.category === "deal" && (
+                <button
+                  onClick={() => handleGetDeal(postDetail._id)}
+                  className={`
+                  flex-1 min-w-0 flex items-center justify-center gap-2
+                  px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
+                  transition-all duration-200 active:scale-95 select-none
+                    ${
+                      attended
+                        ? "bg-green-700 text-white shadow-inner"
+                        : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+                    }
+                  `}
+                >
+                  <span
+                    className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
+                  ></span>
+                  <span className='truncate'>Get Deal</span>
+                </button>
+              )} 
+
               {/* alert post */}
               {postDetail?.category === "alert" && (
                 <a
-                  href='#comments'
+                  href='#see-all'
                   className={`
               flex-1 min-w-0 flex items-center justify-center gap-2
               px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
@@ -610,6 +635,9 @@ export default function EventDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Redeem Modal */}
+      {/* <RedeemCode /> */}
     </div>
   );
 }

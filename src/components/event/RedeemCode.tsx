@@ -46,7 +46,7 @@ export default function RedeemCode({
 
   if (!isOpen) {
     return (
-      <div className=' bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4'>
+      <div className='bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4'>
         <button
           onClick={() => setIsOpen(true)}
           className='px-6 py-3 bg-emerald-600 text-white rounded-2xl font-semibold text-sm shadow-lg hover:bg-emerald-700 active:scale-95 transition-all duration-150'
@@ -58,7 +58,7 @@ export default function RedeemCode({
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4'>
+    <div className='bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4'>
       {/* Backdrop */}
       <div
         className='fixed inset-0 bg-black/20 backdrop-blur-sm'

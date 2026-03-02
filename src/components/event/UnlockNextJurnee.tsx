@@ -1,4 +1,7 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 "use client";
+
+import Link from "next/link";
 
 export default function UnlockNextJurnee() {
   return (
@@ -17,11 +20,12 @@ export default function UnlockNextJurnee() {
           </p>
 
           {/* CTA Button */}
-          <button
+          <Link
+            href='/#all-post'
             className={`bg-[#15B826] text-white w-2/3 py-4 px-6 flex items-center justify-center rounded-2xl gap-2`}
           >
             Discover More
-          </button>
+          </Link>
         </div>
       </div>
     </>

@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Upload, MapPin, Video, Loader } from "lucide-react";
 import Image from "next/image";
-import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import {
   useCreateDealPostMutation,
   useCreateEventPostMutation,
@@ -34,12 +33,6 @@ export default function PostDealModal({
   onClose,
   onBack,
 }: PostEventModalProps) {
-  const [coverVideoPreview, setCoverVideoPreview] = useState<string | null>(
-    null,
-  );
-  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
-    null,
-  );
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverVideo, setCoverVideo] = useState<File | null>(null);
 
@@ -51,12 +44,10 @@ export default function PostDealModal({
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
-  const [locationResults, setLocationResults] = useState<any[]>([]);
   const [location, setLocation] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
 
-  const locationTimeout = useRef<any>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
 
@@ -104,13 +95,6 @@ export default function PostDealModal({
     setLng(lng);
   };
 
-  const selectLocation = (place: any) => {
-    setLocationQuery(place.display_name);
-    setLat(place.lat);
-    setLng(place.lon);
-    setLocationResults([]);
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -136,10 +120,10 @@ export default function PostDealModal({
       startDate: isoStartDateTime,
       endDate: isoEndDateTime,
       address: locationQuery,
-      category: "Event",
+      category: "deal",
       location: {
         type: "Point",
-        coordinates: [parseFloat(lng), parseFloat(lat)],
+        coordinates: [lng ?? 0, lat ?? 0],
       },
       hasTag: hashtags,
     };
@@ -338,6 +322,7 @@ export default function PostDealModal({
             </div>
           </div>
 
+          {/* Title */}
           <div>
             <label className='text-sm font-bold mb-2 block'>Title</label>
             <Input
@@ -348,6 +333,7 @@ export default function PostDealModal({
             />
           </div>
 
+          {/* Description */}
           <div>
             <label className='text-sm font-bold mb-2 block'>Description</label>
             <Textarea
@@ -406,8 +392,6 @@ export default function PostDealModal({
             </div>
           </div>
 
-          <AutoCompleteLocation />
-
           <div className='relative'>
             <label className='text-sm font-bold mb-2 block'>
               Location (Type your full address)
@@ -418,20 +402,6 @@ export default function PostDealModal({
                 currentLocation={location}
               />
             </div>
-
-            {locationResults.length > 0 && (
-              <ul className='absolute z-20 bg-white shadow rounded w-full border mt-1 max-h-60 overflow-y-auto'>
-                {locationResults.map((loc) => (
-                  <li
-                    key={loc.place_id}
-                    className='p-2 hover:bg-gray-100 cursor-pointer text-sm'
-                    onClick={() => selectLocation(loc)}
-                  >
-                    {loc.display_name}
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
 
           <div className='grid grid-cols-2 gap-3'>
@@ -473,7 +443,7 @@ export default function PostDealModal({
 
           <Button
             type='submit'
-            onClick={handlePublish} 
+            onClick={handlePublish}
             disabled={isLoading}
             className='w-full bg-[#15B826] hover:bg-green-600 text-white'
           >

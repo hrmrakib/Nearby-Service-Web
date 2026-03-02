@@ -13,9 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Upload, MapPin, Video, Loader } from "lucide-react";
+import { Plus, Upload, Video, Loader } from "lucide-react";
 import Image from "next/image";
-import AutoCompleteLocation from "../location/AutoCompleteLocation";
 import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
 import { toast } from "sonner";
 import CommonLocationInput from "../location/CommonLocationInput";
@@ -48,8 +47,6 @@ export default function PostEventModal({
   const [description, setDescription] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [locationQuery, setLocationQuery] = useState("");
-  const [locationResults, setLocationResults] = useState<any[]>([]);
   const [location, setLocation] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
@@ -85,25 +82,6 @@ export default function PostEventModal({
     const videoFiles = files.filter((file) => file.type.startsWith("video"));
 
     setVideos((prev: File[]) => [...prev, ...videoFiles]);
-  };
-
-  const handleLocationSearch = (value: string) => {
-    setLocationQuery(value);
-
-    if (locationTimeout.current) clearTimeout(locationTimeout.current);
-
-    locationTimeout.current = setTimeout(async () => {
-      if (!value.trim()) {
-        setLocationResults([]);
-        return;
-      }
-
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${value}`,
-      );
-      const data = await res.json();
-      setLocationResults(data);
-    }, 400);
   };
 
   const handleLocationChange = ({
@@ -143,7 +121,7 @@ export default function PostEventModal({
       description,
       startDate: isoStartDate,
       startTime: isoStartDate,
-      address: locationQuery,
+      address: location,
       category: "Event",
       location: {
         type: "Point",
@@ -384,8 +362,6 @@ export default function PostEventModal({
             </div>
           </div>
 
-          {/* <AutoCompleteLocation /> */}
-
           <div className='relative'>
             <label className='text-sm font-bold mb-2 block'>
               Location (Type your full address)
@@ -437,12 +413,7 @@ export default function PostEventModal({
           <Button
             type='submit'
             disabled={
-              !title ||
-              !description ||
-              !date ||
-              !time ||
-              !locationQuery ||
-              isLoading
+              !title || !description || !date || !time || !location || isLoading
             }
             onClick={handlePublish}
             className='w-full bg-[#15B826] hover:bg-green-600 text-white'

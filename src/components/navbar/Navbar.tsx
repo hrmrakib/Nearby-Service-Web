@@ -92,8 +92,6 @@ export default function Navbar() {
   const notificationsData = data?.data;
   const totalCount: number = data?.meta?.total ?? data?.meta?.total ?? 0;
 
-  console.log({ totalCount });
-
   useEffect(() => {
     if (notificationsData) {
       setNotifications((prev) => [...prev, ...notificationsData]);
@@ -346,7 +344,7 @@ export default function Navbar() {
                 Home
               </Link>
               <Link
-                href='/recommended'
+                href='/#all-post'
                 className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
               >
                 Recommended

@@ -22,7 +22,7 @@ interface Props {
 const CommonLocationInput = ({
   onChange,
   className,
-  currentLocation,
+  currentLocation = "",
 }: Props) => {
   const locationRef = useRef<google.maps.places.Autocomplete | null>(null);
 
@@ -53,6 +53,8 @@ const CommonLocationInput = ({
       onChange?.({ location: newLocation, lat: newLat, lng: newLng });
     }
   };
+
+  console.log({ isLoaded });
 
   if (loadError) return <div>Error loading maps</div>;
 

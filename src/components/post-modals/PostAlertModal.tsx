@@ -172,7 +172,7 @@ export default function PostEventModal({
     return {
       title,
       description,
-      category: selectedCategory,
+      category: "alert",
       address: location,
       location: {
         type: "Point",
@@ -187,7 +187,7 @@ export default function PostEventModal({
   const alertData = {
     title,
     description,
-    category: selectedCategory,
+    category: "alert",
     subcategory: selectedCategory,
     address: location,
     location: {
@@ -202,7 +202,7 @@ export default function PostEventModal({
   const missingPersonAlertData = {
     title,
     description,
-    category: selectedCategory,
+    category: "alert",
     subcategory: "Missing Person",
     address: location,
     location: {
@@ -428,6 +428,7 @@ export default function PostEventModal({
             </div>
           </div>
 
+          {/* Title */}
           <div>
             <label className='text-sm font-bold mb-2 block'>Title</label>
             <Input
@@ -438,6 +439,7 @@ export default function PostEventModal({
             />
           </div>
 
+          {/* Description */}
           <div>
             <label className='text-sm font-bold mb-2 block'>Description</label>
             <Textarea

@@ -18,7 +18,7 @@ const commentAPI = baseAPI.injectEndpoints({
 
     createReply: builder.mutation({
       query: (body) => ({
-        url: "/comments/reply",
+        url: "/replies",
         method: "POST",
         body,
       }),

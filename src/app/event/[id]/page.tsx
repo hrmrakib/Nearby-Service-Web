@@ -50,6 +50,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -61,6 +67,7 @@ export default function EventDetailPage() {
   const [attended, setAttended] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [showReportBtn, setShowReportBtn] = useState(false);
+  const [showAttendingModal, setShowAttendingModal] = useState(false);
 
   const [toggleSaveMutation] = useToggleSaveMutation();
   const [toggleLikeMutation] = useToggleLikeMutation();
@@ -81,6 +88,8 @@ export default function EventDetailPage() {
 
   const postDetail = data?.data?.detail;
   const relevantPosts = data?.data?.relevantPosts;
+
+  console.log(postDetail?.attenders);
 
   const thumbnails = postDetail?.media?.filter((m: string) =>
     /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
@@ -103,7 +112,6 @@ export default function EventDetailPage() {
       toast.error(error?.data?.message);
     }
   };
-
 
   // sending a quotem request - message
   const handleRequestQuote = (postId: string) => {
@@ -159,7 +167,7 @@ export default function EventDetailPage() {
         dispatch(setChatId(res?.data?._id));
         dispatch(
           setSelectedUser({
-            members: [res?.data?.members[0]],
+            members: [res?.data?.members[1]],
           }),
         );
         dispatch(setNewChatStart(true));
@@ -174,14 +182,11 @@ export default function EventDetailPage() {
     return <LoadingSpinner text='event' />;
   }
 
-  console.log({ user });
-  console.log(postDetail?.author?._id);
-
   return (
     <div className='min-h-screen bg-[#F3F4F6]'>
       <div className='relative w-full'>
         {/* Hero Section */}
-        <div className='relative w-full h-56 md:h-110 overflow-hidden bg-card'>
+        <div className='relative w-full h-56 md:h-128 overflow-hidden bg-card'>
           <Image
             src={imagePreview}
             alt='Night at Casa Verde'
@@ -281,15 +286,15 @@ export default function EventDetailPage() {
                 <button
                   onClick={() => handleAttend(postDetail._id)}
                   className={`
-              flex-1 min-w-0 flex items-center justify-center gap-2
-              px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
-              transition-all duration-200 active:scale-95 select-none
-              ${
-                attended
-                  ? "bg-green-700 text-white shadow-inner"
-                  : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
-              }
-            `}
+                    flex-1 min-w-0 flex items-center justify-center gap-2
+                    px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
+                    transition-all duration-200 active:scale-95 select-none
+                      ${
+                        attended
+                          ? "bg-green-700 text-white shadow-inner"
+                          : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+                      }
+                  `}
                 >
                   <span
                     className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
@@ -307,15 +312,15 @@ export default function EventDetailPage() {
                 <button
                   onClick={() => handleRequestQuote(postDetail._id)}
                   className={`
-              flex-1 min-w-0 flex items-center justify-center gap-2
-              px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
-              transition-all duration-200 active:scale-95 select-none
-              ${
-                attended
-                  ? "bg-green-700 text-white shadow-inner"
-                  : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
-              }
-            `}
+                  flex-1 min-w-0 flex items-center justify-center gap-2
+                  px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
+                  transition-all duration-200 active:scale-95 select-none
+                    ${
+                      attended
+                        ? "bg-green-700 text-white shadow-inner"
+                        : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+                    }
+                  `}
                 >
                   <span
                     className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
@@ -326,6 +331,25 @@ export default function EventDetailPage() {
                     {attended ? "Requested" : "Request Quote"}
                   </span>
                 </button>
+              )}
+
+              {/* alert post */}
+              {postDetail?.category === "alert" && (
+                <a
+                  href='#comments'
+                  className={`
+              flex-1 min-w-0 flex items-center justify-center gap-2
+              px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
+              transition-all duration-200 active:scale-95 select-none
+              ${
+                attended
+                  ? "bg-green-700 text-white shadow-inner"
+                  : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+              }
+            `}
+                >
+                  <span className='truncate'>Add Comment</span>
+                </a>
               )}
 
               {!showReportBtn ? (
@@ -465,33 +489,36 @@ export default function EventDetailPage() {
                 Attending{" "}
               </h2>
               <div className='flex items-center gap-1'>
-                <AvatarGroup className='grayscale'>
-                  <Avatar>
-                    <AvatarImage
-                      src='https://github.com/shadcn.png'
-                      alt='@shadcn'
-                    />
-                    <AvatarFallback>CN</AvatarFallback>
-                  </Avatar>
-                  <Avatar>
-                    <AvatarImage
-                      src='https://github.com/maxleiter.png'
-                      alt='@maxleiter'
-                    />
-                    <AvatarFallback>LR</AvatarFallback>
-                  </Avatar>
-                  <Avatar>
-                    <AvatarImage
-                      src='https://github.com/evilrabbit.png'
-                      alt='@evilrabbit'
-                    />
-                    <AvatarFallback>ER</AvatarFallback>
-                  </Avatar>
-                  <AvatarGroupCount>+3</AvatarGroupCount>
-                </AvatarGroup>
-                <button className='text-sm font-semibold pl-4 text-[#108F1E]'>
-                  See all
-                </button>
+                {postDetail?.attenders?.length > 0 && (
+                  <>
+                    <AvatarGroup className='grayscale'>
+                      {postDetail.attenders
+                        .slice(0, 2)
+                        .map((attender: any, index: number) => (
+                          <Avatar key={index}>
+                            <AvatarImage
+                              src={attender?.image}
+                              alt={attender?.name || "attender"}
+                            />
+                            <AvatarFallback>CN</AvatarFallback>
+                          </Avatar>
+                        ))}
+                      {postDetail.attenders.length > 2 && (
+                        <AvatarGroupCount>
+                          +{postDetail.attenders.length - 2}
+                        </AvatarGroupCount>
+                      )}
+                    </AvatarGroup>
+                    {postDetail.attenders.length > 0 && (
+                      <button
+                        onClick={() => setShowAttendingModal(true)}
+                        className='text-sm font-semibold pl-4 text-[#108F1E]'
+                      >
+                        See all
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
@@ -512,13 +539,15 @@ export default function EventDetailPage() {
               address={postDetail?.address}
               lat={90.39064309999999}
               lng={23.7511665}
-              googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_API_KEY!}
+              haveServiceAreas={false}
             />
+
             <RelatedCard
               userLng={userLng}
               userLat={userLat}
               relevantPosts={relevantPosts}
             />
+
             <UnlockNextJurnee />
           </div>
         </div>
@@ -531,6 +560,56 @@ export default function EventDetailPage() {
         onClose={() => setReportOpen(false)}
         onSubmit={handleReport}
       />
+
+      {/* Attending Modal */}
+      <Dialog open={showAttendingModal} onOpenChange={setShowAttendingModal}>
+        <DialogContent className='max-w-sm mx-auto max-h-[80vh] p-0'>
+          <DialogHeader className='p-4 pb-2 border-b'>
+            <div className='flex items-center justify-between'>
+              <DialogTitle className='text-lg font-semibold'>
+                Attending ({postDetail.attenders?.length})
+              </DialogTitle>
+              <button
+                onClick={() => setShowAttendingModal(false)}
+                className='p-1 hover:bg-gray-100 rounded-full'
+              >
+                {/* <X className='w-5 h-5' /> */}
+              </button>
+            </div>
+          </DialogHeader>
+          <div className='overflow-y-auto max-h-96 p-4'>
+            <div className='space-y-3'>
+              {postDetail.attenders?.map((user: any, index: number) => (
+                <div
+                  key={index}
+                  className='flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors'
+                >
+                  <div className='flex items-center gap-3'>
+                    <Avatar className='w-10 h-10'>
+                      <AvatarImage src={user?.image} alt={user?.name} />
+                      <AvatarFallback className='bg-green-100 text-green-700 font-semibold'>
+                        {user?.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className='font-medium text-[#1F2937]'>
+                      {user?.name}
+                    </span>
+                  </div>
+
+                  <div className='flex items-center gap-3'>
+                    <button
+                      onClick={() => handleChatStart()}
+                      className='flex items-center gap-3 text-sm font-semibold text-[#108F1E] border border-[#108F1E] px-3 py-1 rounded-full'
+                    >
+                      Chat <MessageSquareText size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

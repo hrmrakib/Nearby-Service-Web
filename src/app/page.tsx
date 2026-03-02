@@ -15,6 +15,7 @@ import {
   Loader,
   Calendar,
   Tag,
+  Loader2,
 } from "lucide-react";
 import Image from "next/image";
 import { HeroSection } from "@/components/home/HeroSection";
@@ -28,6 +29,8 @@ import CommonLocationInput from "@/components/location/CommonLocationInput";
 import MinStarRating from "@/components/home/Minstarrating";
 import getDistanceKm from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
+import { useRouter } from "next/navigation";
+import LocationCard from "@/components/event/LocationCard";
 
 const categories = [
   {
@@ -361,8 +364,7 @@ const renderStars = (count: number) => {
 
 export default function DashboardLayout() {
   const { userLat, userLng } = useAuth();
-
-  console.log({ userLat, userLng });
+  const router = useRouter();
 
   const [selectedCategory, setSelectedCategory] = useState("");
   const [distanceRadius, setDistanceRadius] = useState([50]);
@@ -378,12 +380,13 @@ export default function DashboardLayout() {
   const [location, setLocation] = useState<string>("");
   const [showCalendar, setShowCalendar] = useState(false);
   const search = useSelector((state: any) => state.globalSearch.searchValue);
-  const [toggleSaveMutation] = useToggleSaveMutation();
+  const [toggleSaveMutation, { isLoading: isSaving }] = useToggleSaveMutation();
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const [allPosts, setAllPosts] = useState<IPost[]>([]);
   const [hasMore, setHasMore] = useState(true);
+  const [savingItemId, setSavingItemId] = useState<string | null>(null);
 
   // google places auto-suggest
   const [lat, setLat] = useState<number | null>(null);
@@ -415,13 +418,6 @@ export default function DashboardLayout() {
     setHasMore(true);
     setAllPosts([]);
   }, [selectedCategory, search]);
-
-  // useEffect(() => {
-  //   const accessToken = localStorage.getItem("accessToken");
-  //   if (!accessToken) {
-  //     localStorage.setItem("accessToken", "null");
-  //   }
-  // }, []);
 
   useEffect(() => {
     if (data?.data && data?.data?.length > 0) {
@@ -471,6 +467,7 @@ export default function DashboardLayout() {
   }, [hasMore, isFetching]);
 
   const handleSaveToggle = async (postId: string) => {
+    setSavingItemId(postId);
     try {
       const res = await toggleSaveMutation({
         postId,
@@ -667,13 +664,12 @@ export default function DashboardLayout() {
             ref={scrollRef}
           >
             {allPosts?.map((item: IPost) => (
-              <Link
-                key={item._id}
-                href={`/event/${item?._id}`}
-                className='p-6 space-y-6'
-              >
+              <div key={item._id} className='p-6 space-y-6'>
                 <Card className='overflow-hidden !border-none p-0'>
-                  <div className='aspect-vide relative'>
+                  <div
+                    onClick={() => router.push(`/event/${item?._id}`)}
+                    className='aspect-vide relative cursor-pointer!'
+                  >
                     {item?.image && (
                       <Image
                         width={600}
@@ -730,26 +726,37 @@ export default function DashboardLayout() {
                       </p>
 
                       <div className='flex items-center space-x-3 pt-2'>
-                        <Link
-                          href={`/service-booking/${item._id}`}
-                          className='h-11 flex-1 flex items-center justify-center font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600'
-                        >
-                          Request Quote
-                        </Link>
+                        {(item?.category === "event" ||
+                          item?.category === "service" ||
+                          item?.category === "deal" ||
+                          item?.category === "alert") && (
+                          <button
+                            onClick={() => router.push(`/event/${item?._id}`)}
+                            className='h-11 flex-1 flex items-center justify-center font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600'
+                          >
+                            {item?.category === "event" && "Attend"}
+                            {item?.category === "service" && "Request Quote"}
+                            {item?.category === "deal" && "Get Deal"}
+                            {item?.category === "alert" && "Add Comment"}
+                          </button>
+                        )}
                         <Button
                           variant='outline'
                           className={`h-11 px-6 bg-transparent font-semibold text-[#15B826] border border-[#15B826] ${
-                            item.isSaved ? "bg-[#15B826] text-white" : ""
+                            item?.isSaved ? "bg-[#15B826] text-white" : ""
                           }`}
                           onClick={() => handleSaveToggle(item?._id)}
                         >
-                          {item.isSaved ? "Saved" : "Save"}
+                          {item?.isSaved ? "Saved" : "Save"}{" "}
+                          {isSaving && item?._id === savingItemId && (
+                            <Loader2 className='animate-spin' />
+                          )}
                         </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
+              </div>
             ))}
 
             {isFetching && (
@@ -769,16 +776,11 @@ export default function DashboardLayout() {
             <div className='p-6 space-y-6'>
               {/* Map Section */}
               <div className='space-y-3'>
-                <h3 className='text-lg font-semibold text-gray-900'>Map</h3>
-                <div className='aspect-square bg-gray-100 rounded-lg overflow-hidden'>
-                  <Image
-                    width={600}
-                    height={600}
-                    src='/map.png'
-                    alt='Map'
-                    className='w-full h-full object-cover'
-                  />
-                </div>
+                <LocationCard
+                  address={"3517 W. Gray St. Utica, Pennsylvania 57867"}
+                  lat={90.39064309999999}
+                  lng={23.7511665}
+                />
               </div>
 
               <div className='space-y-4'>

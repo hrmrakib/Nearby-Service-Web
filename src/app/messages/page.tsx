@@ -1231,6 +1231,11 @@ function MessagesPageInner() {
 
   // ── Submit: create OR update ───────────────────────────────────────────────
   const handleOfferSend = async () => {
+    if (!selectedUser) {
+      toast.error("Please select a conversation to send a message.");
+      return;
+    }
+
     const formattedItems = offerData.items.map(
       ({ title, quantity, unitPrice }) => ({
         title,
@@ -1249,8 +1254,10 @@ function MessagesPageInner() {
       from: offerData?.fromTime,
       to: offerData?.toTime,
       items: formattedItems,
-      discount: offerData?.discount,
+      discount: Number(offerData?.discount),
     };
+
+    console.log("payload", payload);
 
     try {
       if (editingOfferId) {
@@ -1271,7 +1278,10 @@ function MessagesPageInner() {
       } else {
         // CREATE
         const res = await createOfferMutation(payload).unwrap();
+        console.log("res outside", res);
         if (res?.success) {
+          console.log("res inside", res);
+
           handleSendMessage(res?.data?._id, "offer");
           toast.success("Offer sent successfully.");
         }
@@ -1418,36 +1428,38 @@ function MessagesPageInner() {
               </div>
             </div>
 
-            <div className='flex items-center gap-5 pr-0 lg:pr-6'>
-              <button
-                onClick={handleOpenCreateOffer}
-                className='w-max bg-white flex items-center gap-2 text-green-700 font-semibold rounded-sm shadow px-2 py-1.5 hover:bg-green-50 transition-colors'
-              >
-                <Calendar size={18} />
-                <span>Create Offer</span>
-              </button>
-
-              {openSearchMessage ? (
-                <div className='relative flex items-center gap-2 pr-4 md:pr-0'>
-                  <Input
-                    className='w-80 hidden md:block bg-gray-100 border-0'
-                    placeholder='Search'
-                    value={searchMessageQuery}
-                    onChange={(e) => setSearchMessageQuery(e.target.value)}
-                  />
-                  <button
-                    className='absolute right-2'
-                    onClick={() => setOpenSearchMessage(false)}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              ) : (
-                <button onClick={() => setOpenSearchMessage(true)}>
-                  <Search size={18} />
+            {selectedUser ? (
+              <div className='flex items-center gap-5 pr-0 lg:pr-6'>
+                <button
+                  onClick={handleOpenCreateOffer}
+                  className='w-max bg-white flex items-center gap-2 text-green-700 font-semibold rounded-sm shadow px-2 py-1.5 hover:bg-green-50 transition-colors'
+                >
+                  <Calendar size={18} />
+                  <span>Create Offer</span>
                 </button>
-              )}
-            </div>
+
+                {openSearchMessage ? (
+                  <div className='relative flex items-center gap-2 pr-4 md:pr-0'>
+                    <Input
+                      className='w-80 hidden md:block bg-gray-100 border-0'
+                      placeholder='Search'
+                      value={searchMessageQuery}
+                      onChange={(e) => setSearchMessageQuery(e.target.value)}
+                    />
+                    <button
+                      className='absolute right-2'
+                      onClick={() => setOpenSearchMessage(false)}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setOpenSearchMessage(true)}>
+                    <Search size={18} />
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
 
           {/* Messages */}

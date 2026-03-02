@@ -1122,16 +1122,19 @@ function MessagesPageInner() {
     refetch();
   }, [newChatStart, refetch]);
 
-  const { data: messagesResponse, isFetching: messagesFetching } =
-    useGetMessagesQuery(
-      {
-        page: 1,
-        limit: 300,
-        search: debouncedSearchMessageQuery,
-        chat_id: selectedUser?._id!,
-      },
-      { skip: !selectedUser?._id },
-    );
+  const {
+    data: messagesResponse,
+    isFetching: messagesFetching,
+    refetch: refetchMessages,
+  } = useGetMessagesQuery(
+    {
+      page: 1,
+      limit: 300,
+      search: debouncedSearchMessageQuery,
+      chat_id: selectedUser?._id!,
+    },
+    { skip: !selectedUser?._id },
+  );
 
   const messagesData = useMemo(
     () => messagesResponse?.data ?? [],
@@ -1198,12 +1201,14 @@ function MessagesPageInner() {
     setMessageText("");
   };
 
-  const handleSendMessage = (offerId?: string, type?: string) => {
+  const handleSendMessage = (
+    offerId?: string,
+    type?: string,
+    offerObject?: any,
+  ) => {
     const isOffer = type === "offer" && offerId;
 
-    // ✅ For plain text, require non-empty text. Offers can have empty message.
     if (!isOffer && !messageText.trim()) return;
-
     if (!selectedUser) {
       toast.error("Please select a conversation to send a message.");
       return;
@@ -1217,7 +1222,7 @@ function MessagesPageInner() {
       message: finalMessage,
       isOwner: true,
       type: type || "text",
-      offer: offerId || null,
+      offer: offerObject ?? (offerId || null), // ✅ full object instead of just ID string
       createdAt: new Date().toISOString(),
     };
 
@@ -1225,7 +1230,6 @@ function MessagesPageInner() {
       chat: chatId,
       sender: user?._id,
       message: finalMessage,
-      isOwner: true,
       type: type || "text",
       ...(isOffer && { offer: offerId }),
     });
@@ -1233,8 +1237,6 @@ function MessagesPageInner() {
     setMessages((prev) => [...prev, newMessage]);
     setMessageText("");
   };
-
-  console.log(chatId, user?._id);
 
   const handleConversationSelect = (conv: Conversation) => {
     setMessages([]);
@@ -1316,11 +1318,8 @@ function MessagesPageInner() {
       } else {
         // CREATE
         const res = await createOfferMutation(payload).unwrap();
-        console.log("res outside", res);
         if (res?.success) {
-          console.log("res inside", res);
-
-          handleSendMessage(res?.data?._id, "offer");
+          handleSendMessage(res?.data?._id, "offer", res?.data);
           toast.success("Offer sent successfully.");
         }
       }

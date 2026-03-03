@@ -78,15 +78,23 @@ export default function Navbar() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState<boolean>(false);
   const [hasToken, setHasToken] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<INotification[]>([]);
+  const userToggle = useSelector((state: any) => state.auth.userToggle);
 
   useEffect(() => {
     setHasToken(!!localStorage?.getItem("accessToken"));
   }, []);
 
-  const { data: profile, isFetching } = useGetProfileQuery(
-    {},
-    { skip: !hasToken },
-  );
+  const {
+    data: profile,
+    isFetching,
+    refetch,
+  } = useGetProfileQuery({}, { skip: !hasToken });
+
+  useEffect(() => {
+    if (hasToken) {
+      refetch();
+    }
+  }, [userToggle]);
 
   const { data, isFetching: isFetchingNotifications } =
     useGetNotificationsQuery({ page, limit });

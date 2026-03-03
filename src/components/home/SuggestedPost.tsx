@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MapPin, ChevronRight } from "lucide-react";
 import Image from "next/image";
+import { useSuggestionPostQuery } from "@/redux/features/post/postAPI";
 
 interface Event {
   id: string;
@@ -15,6 +16,9 @@ interface Event {
 export function SuggestedPost() {
   const [expanded, setExpanded] = useState(false);
   const [showAllEvents, setShowAllEvents] = useState(false);
+  const { data } = useSuggestionPostQuery({});
+
+  console.log(data);
 
   const allEvents: Event[] = [
     {
@@ -98,7 +102,7 @@ export function SuggestedPost() {
                   <div className='flex-shrink-0'>
                     <div className='w-16 sm:w-18 h-16 sm:h-18 rounded-lg overflow-hidden bg-gray-200'>
                       <Image
-                        src={'/event/1.jpg'}
+                        src={"/event/1.jpg"}
                         alt={event.title}
                         className='w-full h-full object-cover'
                         width={400}

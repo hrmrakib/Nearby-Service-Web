@@ -154,6 +154,13 @@ const postAPI = baseAPI.injectEndpoints({
       }),
       invalidatesTags: ["Post"],
     }),
+
+    suggestionPost: builder.query({
+      query: () => ({
+        url: `/post/side-data`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -177,5 +184,7 @@ export const {
   useUserJoinedEventsQuery,
 
   useDeletePostMutation,
+
+  useSuggestionPostQuery,
 } = postAPI;
 export default postAPI;

@@ -44,12 +44,13 @@ const customBaseQuery: BaseQueryFn<
   if (result.error && result.error.status === 401) {
     if (!isLoggingOut && pathname !== "/login") {
       isLoggingOut = true;
-      localStorage?.removeItem("accessToken"); // Clear invalid token
+      localStorage?.removeItem("accessToken");
 
       toast.error("Session expired. Please login again.");
 
       if (window?.location?.replace) {
         setTimeout(() => {
+          isLoggingOut = false;
           window.location.replace("/login");
         }, 400);
       }

@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CloudUpload, Loader, MapPin } from "lucide-react";
 import Image from "next/image";
 import {
+  useConnectStripeMutation,
   useGetFollowersQuery,
   useGetFollowingQuery,
   useGetMyPostQuery,
@@ -90,6 +91,8 @@ export default function ProfilePage() {
   const { data: userProfile, refetch } = useGetProfileQuery(undefined);
   const [updateProfileMutation, { isLoading }] = useUpdateProfileMutation();
   const { data: myPost } = useGetMyPostQuery({});
+  const [connectStripeMutation, { isLoading: isConnectLoading }] =
+    useConnectStripeMutation();
 
   const { data: followersData } = useGetFollowersQuery({});
   const { data: followingData } = useGetFollowingQuery({});
@@ -164,6 +167,20 @@ export default function ProfilePage() {
     }
   };
 
+  const handleConnectStripe = async () => {
+    try {
+      const res = await connectStripeMutation({}).unwrap();
+
+      if (res?.success) {
+        window.open(res?.data?.url, "_blank");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message);
+    }
+  };
+
+  console.log(profile);
+
   if (isEditMode) {
     return (
       <div className='min-h-screen bg-[#F3F4F6] Z-10'>
@@ -235,7 +252,7 @@ export default function ProfilePage() {
 
                 <CommonLocationInput
                   onChange={(location) =>
-                    setUser({ 
+                    setUser({
                       ...user,
                       location: location.location,
                       lat: location.lat,
@@ -259,7 +276,18 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <div className='flex gap-3 mt-10'>
+              <Button
+                onClick={handleConnectStripe}
+                disabled={profile?.isStripeConnected || isConnectLoading}
+                className='w-full flex-1 h-12 bg-[#15B826] hover:bg-[#0bca1e] text-base text-white rounded-full py-3'
+              >
+                {profile?.isStripeConnected
+                  ? "Connected with Stripe"
+                  : "Stripe Connect"}
+                {isConnectLoading && <Loader className='animate-spin' />}
+              </Button>
+
+              <div className='flex gap-3 mt-4'>
                 <Button
                   onClick={handleSaveChanges}
                   disabled={isLoading}

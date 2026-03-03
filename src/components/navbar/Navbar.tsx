@@ -353,7 +353,7 @@ export default function Navbar() {
               <button
                 type='button'
                 className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
-                // onClick={() => setIsCreatePostOpen(true)}
+                // onClick={() => setIsCreatePostOpen(true)}`
                 onClick={() => dispatch(openPostModal())}
               >
                 Add Post

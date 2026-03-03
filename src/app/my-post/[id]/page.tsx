@@ -371,9 +371,9 @@ export default function EventDetailPage() {
                   {postDetail?.attenders?.length > 0 && (
                     <>
                       <AvatarGroup className='grayscale'>
-                        {postDetail.attenders
-                          .slice(0, 2)
-                          .map((attender: any, index: number) => (
+                        {postDetail?.attenders
+                          ?.slice(0, 2)
+                          ?.map((attender: any, index: number) => (
                             <Avatar key={index}>
                               <AvatarImage
                                 src={attender?.image}
@@ -382,13 +382,13 @@ export default function EventDetailPage() {
                               <AvatarFallback>CN</AvatarFallback>
                             </Avatar>
                           ))}
-                        {postDetail.attenders.length > 2 && (
+                        {postDetail?.attenders?.length > 2 && (
                           <AvatarGroupCount>
-                            +{postDetail.attenders.length - 2}
+                            +{postDetail?.attenders?.length - 2}
                           </AvatarGroupCount>
                         )}
                       </AvatarGroup>
-                      {postDetail.attenders.length > 0 && (
+                      {postDetail?.attenders?.length > 0 && (
                         <button
                           onClick={() => setShowAttendingModal(true)}
                           className='text-sm font-semibold pl-4 text-[#108F1E]'
@@ -447,7 +447,7 @@ export default function EventDetailPage() {
           <DialogHeader className='p-4 pb-2 border-b'>
             <div className='flex items-center justify-between'>
               <DialogTitle className='text-lg font-semibold'>
-                Attending ({postDetail.attenders?.length})
+                Attending ({postDetail?.attenders?.length})
               </DialogTitle>
               <button
                 onClick={() => setShowAttendingModal(false)}
@@ -459,7 +459,7 @@ export default function EventDetailPage() {
           </DialogHeader>
           <div className='overflow-y-auto max-h-96 p-4'>
             <div className='space-y-3'>
-              {postDetail.attenders?.map((user: any, index: number) => (
+              {postDetail?.attenders?.map((user: any, index: number) => (
                 <div
                   key={index}
                   className='flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors'

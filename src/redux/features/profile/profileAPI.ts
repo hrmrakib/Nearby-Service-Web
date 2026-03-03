@@ -68,6 +68,13 @@ const profileAPI = baseAPI.injectEndpoints({
         method: "GET",
       }),
     }),
+
+    connectStripe: builder.mutation({
+      query: () => ({
+        url: "/user/connect-stripe",
+        method: "POST",
+      }),
+    }),
   }),
 });
 
@@ -80,6 +87,7 @@ export const {
   useGetSavedPostQuery,
   useGetFollowersQuery,
   useGetFollowingQuery,
+  useConnectStripeMutation,
 } = profileAPI;
 
 export default profileAPI;

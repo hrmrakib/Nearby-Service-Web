@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -100,9 +100,6 @@ export default function PostEventModal({
   const [selectedCategory, setSelectedCategory] = useState(
     serviceCategories[0],
   );
-  const [selectedDays, setSelectedDays] = useState<string[]>(["Mon"]);
-  const [repeatAll, setRepeatAll] = useState(false);
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const [coverVideoPreview, setCoverVideoPreview] = useState<string | null>(
     null,
@@ -123,17 +120,11 @@ export default function PostEventModal({
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [amenitiesInput, setAmenitiesInput] = useState("");
-  const [locationQuery, setLocationQuery] = useState("");
   const [location, setLocation] = useState("");
 
   const [lat, setLat] = useState<number | null>();
   const [lng, setLng] = useState<number | null>();
 
-  // conditionally used
-  const [rate, setRate] = useState({
-    hourly: 0,
-    day: 1,
-  });
   const [license, setLicense] = useState<File | null>(null);
   const [guestCapacity, setGuestCapacity] = useState<number | string>();
   const [amenities, setAmenities] = useState<string[]>([]);
@@ -142,7 +133,55 @@ export default function PostEventModal({
 
   const data2 = useSelector((state: any) => state.postModal.data);
 
-  console.log({ data2 });
+  useEffect(() => {
+    if (!data2) return;
+
+    // Basic fields
+    setTitle(data2.title ?? "");
+    setDescription(data2.description ?? "");
+    setPrice(String(data2.price ?? ""));
+    setLocation(data2.address ?? "");
+
+    // Location coordinates — backend stores as [lng, lat]
+    setLng(data2.location?.coordinates?.[0] ?? null);
+    setLat(data2.location?.coordinates?.[1] ?? null);
+
+    // Cover image preview (URL from server)
+    setCoverImagePreview(data2.image ?? null);
+    setCoverVideoPreview(data2.media ?? null);
+
+    // Category
+    if (data2.subcategory) {
+      setSelectedCategory(data2.subcategory);
+    }
+
+    // Hashtags
+    if (Array.isArray(data2.hasTag)) {
+      setHashtags([data2.hasTag]);
+    }
+
+    // Amenities
+    if (Array.isArray(data2.amenities)) {
+      setAmenities(data2.amenities);
+    }
+
+    // Schedule
+    if (Array.isArray(data2.schedule) && data2.schedule.length > 0) {
+      setScheduleData(data2.schedule);
+    }
+
+    // Venues specific
+    if (data2.capacity) {
+      setGuestCapacity(data2.capacity);
+    }
+
+    // Personal/Home Services specific
+    if (data2.serviceType) {
+      setServiceType(data2.serviceType);
+    }
+  }, [data2]);
+
+  console.log(hashtags)
 
   const [createServicePostForFoodAndBeverageMutation] =
     useCreateServicePostForFoodAndBeverageMutation();
@@ -239,24 +278,6 @@ export default function PostEventModal({
     setAmenities(amenities.filter((t) => t !== ame));
   };
 
-  const buildPayload = () => {
-    // const isoStartDate = new Date(`${date}T${time}`).toISOString();
-
-    return {
-      title,
-      description,
-      // startDate: isoStartDate,
-      // startTime: isoStartDate,
-      address: locationQuery,
-      category: "Event",
-      location: {
-        type: "Point",
-        coordinates: [lng ?? 0, lat ?? 0],
-      },
-      hasTag: hashtags,
-    };
-  };
-
   // common - food and beverage / entertainment
   const data = {
     title,
@@ -288,12 +309,12 @@ export default function PostEventModal({
     ],
     category: "service",
     subcategory: selectedCategory,
-    address: locationQuery,
+    address: location,
     location: {
       type: "Point",
       coordinates: [lng ?? 0, lat ?? 0],
     },
-    hasTag: hashtags,
+    hasTag: [...hashtags],
   };
 
   const homeServiceData = {

@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,7 @@ import Image from "next/image";
 import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
 import { toast } from "sonner";
 import CommonLocationInput from "../location/CommonLocationInput";
+import { useSelector } from "react-redux";
 
 interface PostEventModalProps {
   isOpen: boolean;
@@ -51,10 +52,28 @@ export default function PostEventModal({
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
 
-  const locationTimeout = useRef<any>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [createEventPostMutation, { isLoading }] = useCreateEventPostMutation();
+
+  const data = useSelector((state: any) => state.postModal.data);
+
+  console.log(data);
+
+  useEffect(() => {
+    if (!data) return;
+
+    setCoverImagePreview(data.image ?? null);
+    setCoverVideoPreview(data.media ?? null);
+    setTitle(data.title ?? "");
+    setDescription(data.description ?? "");
+    setLocation(data.address ?? "");
+    setLat(data.location?.coordinates?.[1] ?? null);
+    setLng(data.location?.coordinates?.[0] ?? null);
+    setDate(data.startDate ? data.startDate.slice(0, 10) : "");
+    setTime(data.startDate ? data.startDate.slice(11, 16) : "");
+    setHashtags(data.hashtags ?? []);
+  }, [data]);
 
   const handleCoverImageUpload = (e: any) => {
     const file = e.target.files?.[0];
@@ -343,18 +362,34 @@ export default function PostEventModal({
           </div>
 
           <div className='grid grid-cols-2 gap-3'>
-            <div>
+            <div
+              className='relative cursor-pointer'
+              onClick={() =>
+                (
+                  document.getElementById("date") as HTMLInputElement
+                )?.showPicker()
+              }
+            >
               <label className='text-sm font-bold mb-2 block'>Date</label>
               <Input
+                id='date'
                 type='date'
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
 
-            <div>
+            <div
+              className='relative cursor-pointer'
+              onClick={() =>
+                (
+                  document.getElementById("time") as HTMLInputElement
+                )?.showPicker()
+              }
+            >
               <label className='text-sm font-bold mb-2 block'>Time</label>
               <Input
+                id='time'
                 type='time'
                 value={time}
                 onChange={(e) => setTime(e.target.value)}

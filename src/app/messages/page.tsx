@@ -1122,19 +1122,16 @@ function MessagesPageInner() {
     refetch();
   }, [newChatStart, refetch]);
 
-  const {
-    data: messagesResponse,
-    isFetching: messagesFetching,
-    refetch: refetchMessages,
-  } = useGetMessagesQuery(
-    {
-      page: 1,
-      limit: 300,
-      search: debouncedSearchMessageQuery,
-      chat_id: selectedUser?._id!,
-    },
-    { skip: !selectedUser?._id },
-  );
+  const { data: messagesResponse, isFetching: messagesFetching } =
+    useGetMessagesQuery(
+      {
+        page: 1,
+        limit: 300,
+        search: debouncedSearchMessageQuery,
+        chat_id: selectedUser?._id!,
+      },
+      { skip: !selectedUser?._id },
+    );
 
   const messagesData = useMemo(
     () => messagesResponse?.data ?? [],
@@ -1168,39 +1165,7 @@ function MessagesPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ── Send plain text message ────────────────────────────────────────────────
-  const handleSendMessage22 = (offerId?: string, type?: string) => {
-    if (!messageText.trim()) return;
-    if (!selectedUser) {
-      toast.error("Please select a conversation to send a message.");
-      return;
-    }
-    if (!socket) return;
-
-    console.log({ offerId, type });
-
-    const newMessage = {
-      _id: Date.now().toString(),
-      message: messageText,
-      isOwner: true,
-      type: type || "text",
-      offer: offerId || null,
-      createdAt: new Date().toISOString(),
-    };
-
-    socket.emit("send-message", {
-      chat: chatId,
-      sender: user?._id,
-      message: messageText,
-      isOwner: true,
-      type: type || "text",
-      offer: offerId || null,
-    });
-
-    setMessages((prev) => [...prev, newMessage]);
-    setMessageText("");
-  };
-
+  //  Send plain text message and offer
   const handleSendMessage = (
     offerId?: string,
     type?: string,
@@ -1222,7 +1187,7 @@ function MessagesPageInner() {
       message: finalMessage,
       isOwner: true,
       type: type || "text",
-      offer: offerObject ?? (offerId || null), // ✅ full object instead of just ID string
+      offer: offerObject ?? (offerId || null),
       createdAt: new Date().toISOString(),
     };
 
@@ -1359,8 +1324,6 @@ function MessagesPageInner() {
 
   const isModalOpen = modalView !== null;
 
-  // ? test console
-
   return (
     <>
       <div className='flex h-[calc(100vh-90px)] overflow-hidden bg-gray-50'>
@@ -1398,6 +1361,7 @@ function MessagesPageInner() {
                 ))}
               </div>
             )}
+
             {!inboxChatsFetching &&
               inboxUserLists.map((c: Conversation) => (
                 <div

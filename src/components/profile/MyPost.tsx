@@ -5,6 +5,7 @@ import { MapPin } from "lucide-react";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
 import { useGetMyPostQuery } from "@/redux/features/profile/profileAPI";
+import Link from "next/link";
 
 export interface IPost {
   _id: string;
@@ -111,7 +112,7 @@ const MyPost = () => {
   return (
     <div className='bg-[#F3F4F6] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 space-y-8'>
       {allPosts.map((post) => (
-        <div key={post._id}>
+        <Link href={`/my-post/${post?._id}`} key={post._id}>
           <Card className='overflow-hidden py-0'>
             <div className='relative h-48'>
               <Image
@@ -141,7 +142,7 @@ const MyPost = () => {
               </p>
             </CardContent>
           </Card>
-        </div>
+        </Link>
       ))}
 
       {/* Loader when fetching next pages */}

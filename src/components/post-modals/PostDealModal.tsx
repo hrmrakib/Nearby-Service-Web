@@ -348,9 +348,17 @@ export default function PostDealModal({
 
           {/* start date and time */}
           <div className='grid grid-cols-2 gap-3'>
-            <div>
+            <div
+              className='relative cursor-pointer'
+              onClick={() =>
+                (
+                  document.getElementById("start-date") as HTMLInputElement
+                )?.showPicker()
+              }
+            >
               <label className='text-sm font-bold mb-2 block'>Start Date</label>
               <Input
+                id='start-date'
                 type='date'
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -358,9 +366,17 @@ export default function PostDealModal({
               />
             </div>
 
-            <div>
+            <div
+              className='relative cursor-pointer'
+              onClick={() =>
+                (
+                  document.getElementById("start-time") as HTMLInputElement
+                )?.showPicker()
+              }
+            >
               <label className='text-sm font-bold mb-2 block'>Start Time</label>
               <Input
+                id='start-time'
                 type='time'
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
@@ -371,9 +387,17 @@ export default function PostDealModal({
 
           {/* end date and time */}
           <div className='grid grid-cols-2 gap-3'>
-            <div>
+            <div
+              className='relative cursor-pointer'
+              onClick={() =>
+                (
+                  document.getElementById("end-date") as HTMLInputElement
+                )?.showPicker()
+              }
+            >
               <label className='text-sm font-bold mb-2 block'>End Date</label>
               <Input
+                id='end-date'
                 type='date'
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
@@ -381,9 +405,17 @@ export default function PostDealModal({
               />
             </div>
 
-            <div>
+            <div
+              className='relative cursor-pointer'
+              onClick={() =>
+                (
+                  document.getElementById("end-time") as HTMLInputElement
+                )?.showPicker()
+              }
+            >
               <label className='text-sm font-bold mb-2 block'>End Time</label>
               <Input
+                id='end-time'
                 type='time'
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}

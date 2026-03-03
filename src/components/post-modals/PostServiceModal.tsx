@@ -31,6 +31,7 @@ import {
 } from "../ui/select";
 import { ScheduleSelector } from "./ScheduleSelector";
 import CommonLocationInput from "../location/CommonLocationInput";
+import { useSelector } from "react-redux";
 
 interface PostEventModalProps {
   isOpen: boolean;
@@ -123,15 +124,11 @@ export default function PostEventModal({
   const [inputValue, setInputValue] = useState("");
   const [amenitiesInput, setAmenitiesInput] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
-  const [locationResults, setLocationResults] = useState<any[]>([]);
   const [location, setLocation] = useState("");
 
   const [lat, setLat] = useState<number | null>();
   const [lng, setLng] = useState<number | null>();
 
-  const locationTimeout = useRef<any>(null);
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
   // conditionally used
   const [rate, setRate] = useState({
     hourly: 0,
@@ -142,6 +139,10 @@ export default function PostEventModal({
   const [amenities, setAmenities] = useState<string[]>([]);
   const [serviceType, setServiceType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const data2 = useSelector((state: any) => state.postModal.data);
+
+  console.log({ data2 });
 
   const [createServicePostForFoodAndBeverageMutation] =
     useCreateServicePostForFoodAndBeverageMutation();
@@ -192,13 +193,6 @@ export default function PostEventModal({
     setLocation(location);
     setLat(lat);
     setLng(lng);
-  };
-
-  const selectLocation = (place: any) => {
-    setLocationQuery(place.display_name);
-    setLat(place.lat);
-    setLng(place.lon);
-    setLocationResults([]);
   };
 
   const handleLicenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

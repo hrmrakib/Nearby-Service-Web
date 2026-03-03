@@ -33,9 +33,10 @@ import {
   useGetNotificationsQuery,
   useGetProfileQuery,
 } from "@/redux/features/profile/profileAPI";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setSearchValue } from "@/redux/features/search/globalSearchSlice";
 import { getTimeDifference } from "@/lib/getTimeDifferent";
+import { openPostModal } from "@/redux/features/postModal/postModalSlice";
 
 interface INotification {
   _id: string;
@@ -352,7 +353,8 @@ export default function Navbar() {
               <button
                 type='button'
                 className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
-                onClick={() => setIsCreatePostOpen(true)}
+                // onClick={() => setIsCreatePostOpen(true)}
+                onClick={() => dispatch(openPostModal())}
               >
                 Add Post
               </button>
@@ -658,8 +660,8 @@ export default function Navbar() {
       </nav>
 
       <CreatePostModal
-        isOpen={isCreatePostOpen}
-        onClose={() => setIsCreatePostOpen(false)}
+      // isOpen={isCreatePostOpen}
+      // onClose={() => setIsCreatePostOpen(false)}
       />
 
       {/* Logout Confirmation Dialog */}

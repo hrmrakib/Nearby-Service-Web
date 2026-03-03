@@ -6,17 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  MapPin,
-  MessageCircle,
-  Phone,
-  Loader,
-  Calendar,
-  Tag,
-  Loader2,
-} from "lucide-react";
+import { MapPin, Loader, Calendar, Tag, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { HeroSection } from "@/components/home/HeroSection";
 import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
@@ -30,6 +21,7 @@ import getDistanceKm from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { useRouter } from "next/navigation";
 import LocationCard from "@/components/event/LocationCard";
+import { SuggestedPost } from "@/components/home/SuggestedPost";
 
 const categories = [
   {
@@ -213,69 +205,6 @@ const categories = [
         <path d='M22 4 12 14.01l-3-3' />
       </svg>
     ),
-  },
-];
-
-const contacts = [
-  {
-    id: 1,
-    name: "Kristin Watson",
-    avatar: "/profile.png",
-    status: "online",
-  },
-  {
-    id: 2,
-    name: "Dianne Russell",
-    avatar: "/profile.png",
-    status: "online",
-  },
-  {
-    id: 3,
-    name: "Cody Fisher",
-    avatar: "/profile.png",
-    status: "online",
-  },
-  {
-    id: 4,
-    name: "Floyd Miles",
-    avatar: "/profile.png",
-    status: "offline",
-  },
-  {
-    id: 5,
-    name: "Ralph Edwards",
-    avatar: "/profile.png",
-    status: "online",
-  },
-  {
-    id: 6,
-    name: "Jane Cooper",
-    avatar: "/profile.png",
-    status: "online",
-  },
-  {
-    id: 7,
-    name: "Ronald Richards",
-    avatar: "/profile.png",
-    status: "online",
-  },
-  {
-    id: 8,
-    name: "Esther Howard",
-    avatar: "/profile.png",
-    status: "online",
-  },
-  {
-    id: 9,
-    name: "Jacob Jones",
-    avatar: "/profile.png",
-    status: "online",
-  },
-  {
-    id: 10,
-    name: "Annette Black",
-    avatar: "/profile.png",
-    status: "offline",
   },
 ];
 
@@ -471,6 +400,7 @@ export default function DashboardLayout() {
       const res = await toggleSaveMutation({
         postId,
       }).unwrap();
+
       if (res?.success) {
         refetch();
       }
@@ -734,7 +664,7 @@ export default function DashboardLayout() {
                           item?.category === "alert") && (
                           <button
                             onClick={() => router.push(`/event/${item?._id}`)}
-                            className='h-11 flex-1 flex items-center justify-center font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600'
+                            className='w-[88%] h-11 flex-1 flex items-center justify-center font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600'
                           >
                             {item?.category === "event" && "Attend"}
                             {item?.category === "service" && "Request Quote"}
@@ -744,7 +674,8 @@ export default function DashboardLayout() {
                         )}
                         <Button
                           variant='outline'
-                          className={`h-11 px-6 bg-transparent font-semibold text-[#15B826] border border-[#15B826] ${
+                          disabled={isSaving && item?._id === savingItemId}
+                          className={`w-[10%] h-11 px-6 bg-transparent font-semibold text-[#15B826] border border-[#15B826] ${
                             item?.isSaved ? "bg-[#15B826] text-white" : ""
                           }`}
                           onClick={() => handleSaveToggle(item?._id)}
@@ -775,7 +706,7 @@ export default function DashboardLayout() {
         {/* Right Column - Map & Contacts */}
         <div className='sticky top-20 w-80 bg-transparent hidden xl:block h-[calc(100vh-80px)] overflow-y-auto'>
           <ScrollArea className='h-[calc(100vh-100px)]'>
-            <div className='p-6 space-y-6'>
+            <div className='p-1.5 space-y-6'>
               {/* Map Section */}
               <div className='space-y-3'>
                 <LocationCard
@@ -786,60 +717,7 @@ export default function DashboardLayout() {
               </div>
 
               <div className='space-y-4'>
-                <h3 className='text-lg font-semibold text-gray-900'>
-                  Contacts
-                </h3>
-                <div className='space-y-3'>
-                  {contacts.map((contact) => (
-                    <div
-                      key={contact.id}
-                      className='flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer'
-                    >
-                      <div className='relative'>
-                        <Avatar className='w-10 h-10'>
-                          <AvatarImage
-                            src={contact.avatar || "/placeholder.svg"}
-                            alt={contact.name}
-                          />
-                          <AvatarFallback>
-                            {contact.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div
-                          className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-                            contact.status === "online"
-                              ? "bg-[#15B826]"
-                              : "bg-gray-400"
-                          }`}
-                        />
-                      </div>
-                      <div className='flex-1 min-w-0'>
-                        <p className='text-sm font-medium text-gray-900 truncate'>
-                          {contact.name}
-                        </p>
-                      </div>
-                      <div className='flex space-x-1'>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='p-1 h-8 w-8'
-                        >
-                          <MessageCircle className='w-4 h-4' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          className='p-1 h-8 w-8'
-                        >
-                          <Phone className='w-4 h-4' />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <SuggestedPost />
               </div>
             </div>
           </ScrollArea>

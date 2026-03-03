@@ -146,6 +146,14 @@ const postAPI = baseAPI.injectEndpoints({
         method: "GET",
       }),
     }),
+
+    deletePost: builder.mutation({
+      query: (postId) => ({
+        url: `/post/${postId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Post"],
+    }),
   }),
 });
 
@@ -167,5 +175,7 @@ export const {
   useAttendEventMutation,
   useMyJoinedEventsQuery,
   useUserJoinedEventsQuery,
+
+  useDeletePostMutation,
 } = postAPI;
 export default postAPI;

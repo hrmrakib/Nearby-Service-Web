@@ -63,6 +63,7 @@ export default function LoginForm() {
         router.push("/");
       }
     } catch (err: any) {
+      toast.error(err?.data?.message);
       setError("Login failed. Please try again.");
     } finally {
       setLoading(false);

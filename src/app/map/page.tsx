@@ -3,9 +3,6 @@
 
 import { useEffect, useRef, useState, useCallback, JSX } from "react";
 
-/* ─────────────────────────────────────────────
-   Types
-───────────────────────────────────────────── */
 type FilterType = "All" | "Events" | "Deals" | "Services" | "Alerts";
 
 interface CardItem {
@@ -22,9 +19,6 @@ interface CardItem {
   shopIcon: string;
 }
 
-/* ─────────────────────────────────────────────
-   Data
-───────────────────────────────────────────── */
 const CARDS: CardItem[] = [
   {
     id: 1,
@@ -118,9 +112,6 @@ const CARDS: CardItem[] = [
   },
 ];
 
-/* ─────────────────────────────────────────────
-   Filter config
-───────────────────────────────────────────── */
 const FILTERS: { label: FilterType; icon: JSX.Element }[] = [
   { label: "All", icon: <AllIcon /> },
   { label: "Events", icon: <CalIcon /> },
@@ -144,9 +135,6 @@ const MARKER_COLORS: Record<string, string> = {
   All: "#16a34a",
 };
 
-/* ─────────────────────────────────────────────
-   Custom pin-shape SVG marker with arrow
-───────────────────────────────────────────── */
 function buildMarkerSvg(
   emoji: string,
   color: string,
@@ -182,9 +170,6 @@ function buildMarkerSvg(
   return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
 }
 
-/* ─────────────────────────────────────────────
-   User location marker (blue dot + arrow)
-───────────────────────────────────────────── */
 function buildUserDot(): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
     <circle cx="20" cy="20" r="16" fill="#3b82f6" opacity="0.15">
@@ -199,32 +184,22 @@ function buildUserDot(): string {
   return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
 }
 
-/* ─────────────────────────────────────────────
-   Main component
-───────────────────────────────────────────── */
-export default function MapExplorer({
-  googleApiKey = "AIzaSyDltI2vV-mbS5Qy-gz2lPMTf7RAbR4tZRs",
-  defaultLat = 40.7282,
-  defaultLng = -73.8803,
-}: {
-  googleApiKey: string;
-  defaultLat?: number;
-  defaultLng?: number;
-}) {
+export default function MapExplorer() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<Map<number, google.maps.Marker>>(new Map());
-
+  const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY!;
   const [panelOpen, setPanelOpen] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  // use redux state for manage glob ally
+  const [defaultLat, defaultLng] = [37.7749, -122.4194];
 
   const filtered = CARDS.filter(
     (c) => activeFilter === "All" || c.category === activeFilter,
   );
 
-  // ── Load Google Maps script ──
   useEffect(() => {
     if (typeof window === "undefined") return;
     const load = () => initMap();
@@ -242,7 +217,7 @@ export default function MapExplorer({
   const initMap = useCallback(() => {
     if (!mapRef.current) return;
     const map = new google.maps.Map(mapRef.current, {
-      center: { lat: defaultLat, lng: defaultLng },
+      center: { lat: defaultLat!, lng: defaultLng! },
       zoom: 14,
       disableDefaultUI: true,
       zoomControl: true,
@@ -254,7 +229,7 @@ export default function MapExplorer({
 
     // User location marker
     new google.maps.Marker({
-      position: { lat: defaultLat, lng: defaultLng },
+      position: { lat: defaultLat!, lng: defaultLng! },
       map,
       title: "You are here",
       icon: {
@@ -542,9 +517,6 @@ export default function MapExplorer({
   );
 }
 
-/* ─────────────────────────────────────────────
-   Map styles (warm muted palette)
-───────────────────────────────────────────── */
 const MAP_STYLES: google.maps.MapTypeStyle[] = [
   { elementType: "geometry", stylers: [{ color: "#eeebe4" }] },
   { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
@@ -622,9 +594,6 @@ const MAP_STYLES: google.maps.MapTypeStyle[] = [
   },
 ];
 
-/* ─────────────────────────────────────────────
-   SVG icon sub-components
-───────────────────────────────────────────── */
 function HamburgerX({ open }: { open: boolean }) {
   return (
     <div className='w-5 h-[18px] flex flex-col justify-between'>
@@ -640,6 +609,7 @@ function HamburgerX({ open }: { open: boolean }) {
     </div>
   );
 }
+
 function CloseX() {
   return (
     <svg
@@ -657,6 +627,7 @@ function CloseX() {
     </svg>
   );
 }
+
 function AllIcon() {
   return (
     <svg
@@ -671,6 +642,7 @@ function AllIcon() {
     </svg>
   );
 }
+
 function CalIcon() {
   return (
     <svg
@@ -685,6 +657,7 @@ function CalIcon() {
     </svg>
   );
 }
+
 function TagIcon() {
   return (
     <svg
@@ -699,6 +672,7 @@ function TagIcon() {
     </svg>
   );
 }
+
 function WrenchIcon() {
   return (
     <svg
@@ -712,6 +686,7 @@ function WrenchIcon() {
     </svg>
   );
 }
+
 function BellIcon() {
   return (
     <svg
@@ -725,6 +700,7 @@ function BellIcon() {
     </svg>
   );
 }
+
 function PinArrow() {
   return (
     <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 24 24'>
@@ -732,6 +708,7 @@ function PinArrow() {
     </svg>
   );
 }
+
 function MapArrow() {
   return (
     <svg
@@ -749,6 +726,7 @@ function MapArrow() {
     </svg>
   );
 }
+
 function BookmarkSvg() {
   return (
     <svg
@@ -766,438 +744,3 @@ function BookmarkSvg() {
     </svg>
   );
 }
-
-// /* eslint-disable @typescript-eslint/no-explicit-any */
-// "use client";
-
-// import { useEffect, useRef, useState, useCallback } from "react";
-
-// // ── Types ────────────────────────────────────────────────────────────────────
-// type FilterType = "All" | "Events" | "Deals" | "Services" | "Alerts";
-
-// interface CardItem {
-//   id: number;
-//   title: string;
-//   category: FilterType;
-//   image: string;
-//   distance: string;
-//   rating: number;
-//   tag: string;
-//   description: string;
-//   lat: number;
-//   lng: number;
-// }
-
-// // ── Mock data ────────────────────────────────────────────────────────────────
-// const CARDS: CardItem[] = [
-//   {
-//     id: 1,
-//     title: "Cozy Coffee Spot",
-//     category: "Deals",
-//     image:
-//       "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&q=80",
-//     distance: "2.3 miles",
-//     rating: 4.9,
-//     tag: "Deals",
-//     description:
-//       "Artisan espresso crafted from single-origin beans. Enjoy our signature cinnamon latte in a warm, sunlit corner surrounded by good books.",
-//     lat: 40.7282,
-//     lng: -73.8803,
-//   },
-//   {
-//     id: 2,
-//     title: "Live Jazz Night",
-//     category: "Events",
-//     image:
-//       "https://images.unsplash.com/photo-1501386761578-eaa54b4e9d57?w=600&q=80",
-//     distance: "1.1 miles",
-//     rating: 4.7,
-//     tag: "Events",
-//     description:
-//       "Saturday nights come alive with live jazz, craft cocktails, and a crowd that knows how to move. Doors open at 8 PM — no cover before 9.",
-//     lat: 40.7328,
-//     lng: -73.8753,
-//   },
-//   {
-//     id: 3,
-//     title: "Quick Bike Repair",
-//     category: "Services",
-//     image:
-//       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-//     distance: "0.8 miles",
-//     rating: 4.8,
-//     tag: "Services",
-//     description:
-//       "Flat tire? Chain slipped? Our certified mechanics get you back on the road in under 30 minutes — most repairs under $20.",
-//     lat: 40.7255,
-//     lng: -73.8833,
-//   },
-//   {
-//     id: 4,
-//     title: "Flash Sale: 50% Off",
-//     category: "Deals",
-//     image:
-//       "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=80",
-//     distance: "3.0 miles",
-//     rating: 4.5,
-//     tag: "Deals",
-//     description:
-//       "Today only — half price on all outerwear. Dozens of styles, all sizes in stock. First come, first served at the Atlas Street location.",
-//     lat: 40.731,
-//     lng: -73.878,
-//   },
-//   {
-//     id: 5,
-//     title: "Road Closure – Queens Blvd",
-//     category: "Alerts",
-//     image:
-//       "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80",
-//     distance: "0.5 miles",
-//     rating: 0,
-//     tag: "Alerts",
-//     description:
-//       "Queens Blvd between 63rd Dr and Woodhaven is closed until 6 PM for utility work. Expect detours via Junction Blvd.",
-//     lat: 40.727,
-//     lng: -73.877,
-//   },
-//   {
-//     id: 6,
-//     title: "Yoga in the Park",
-//     category: "Events",
-//     image:
-//       "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?w=600&q=80",
-//     distance: "1.6 miles",
-//     rating: 4.6,
-//     tag: "Events",
-//     description:
-//       "Free Sunday morning yoga at Juniper Valley Park. All levels welcome. Bring your mat, we supply the good vibes and post-stretch smoothies.",
-//     lat: 40.73,
-//     lng: -73.882,
-//   },
-// ];
-
-// // ── Filter config ────────────────────────────────────────────────────────────
-// const FILTERS: { label: FilterType; icon: string }[] = [
-//   { label: "All", icon: "◎" },
-//   { label: "Events", icon: "🗓" },
-//   { label: "Deals", icon: "🏷" },
-//   { label: "Services", icon: "⚙" },
-//   { label: "Alerts", icon: "🔔" },
-// ];
-
-// const TAG_COLORS: Record<string, string> = {
-//   Deals: "bg-emerald-100 text-emerald-700",
-//   Events: "bg-violet-100 text-violet-700",
-//   Services: "bg-sky-100 text-sky-700",
-//   Alerts: "bg-rose-100 text-rose-700",
-// };
-
-// // ── Component ────────────────────────────────────────────────────────────────
-// export default function MapExplorer({
-//   googleApiKey = "AIzaSyDltI2vV-mbS5Qy-gz2lPMTf7RAbR4tZRs",
-//   defaultLat = 40.7282,
-//   defaultLng = -73.8803,
-// }: {
-//   googleApiKey: string;
-//   defaultLat?: number;
-//   defaultLng?: number;
-// }) {
-//   const mapRef = useRef<HTMLDivElement>(null);
-//   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-//   const markersRef = useRef<google.maps.Marker[]>([]);
-
-//   const [panelOpen, setPanelOpen] = useState(true);
-//   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
-//   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
-
-//   const filtered = CARDS.filter(
-//     (c) => activeFilter === "All" || c.category === activeFilter,
-//   );
-
-//   // ── Load Google Maps ──────────────────────────────────────────────────────
-//   useEffect(() => {
-//     if (typeof window === "undefined") return;
-//     if ((window as any).google?.maps) {
-//       initMap();
-//       return;
-//     }
-//     const script = document.createElement("script");
-//     script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}`;
-//     script.async = true;
-//     script.defer = true;
-//     script.onload = initMap;
-//     document.head.appendChild(script);
-//   }, []);
-
-//   const initMap = useCallback(() => {
-//     if (!mapRef.current) return;
-//     const map = new google.maps.Map(mapRef.current, {
-//       center: { lat: defaultLat, lng: defaultLng },
-//       zoom: 14,
-//       disableDefaultUI: true,
-//       zoomControl: true,
-//       styles: MAP_STYLES,
-//     });
-//     mapInstanceRef.current = map;
-//     addMarkers(map, CARDS);
-//   }, [defaultLat, defaultLng]);
-
-//   const addMarkers = (map: google.maps.Map, cards: CardItem[]) => {
-//     markersRef.current.forEach((m) => m.setMap(null));
-//     markersRef.current = cards.map((card) => {
-//       const marker = new google.maps.Marker({
-//         position: { lat: card.lat, lng: card.lng },
-//         map,
-//         title: card.title,
-//         icon: {
-//           path: google.maps.SymbolPath.CIRCLE,
-//           scale: 10,
-//           fillColor: "#16a34a",
-//           fillOpacity: 1,
-//           strokeColor: "#fff",
-//           strokeWeight: 2,
-//         },
-//       });
-//       marker.addListener("click", () => {
-//         setSelectedCard(card);
-//         setPanelOpen(true);
-//       });
-//       return marker;
-//     });
-//   };
-
-//   // Re-render markers when filter changes
-//   useEffect(() => {
-//     if (!mapInstanceRef.current) return;
-//     addMarkers(mapInstanceRef.current, filtered);
-//   }, [activeFilter]);
-
-//   return (
-//     <div className='relative w-full h-screen font-sans overflow-hidden'>
-//       {/* ── Map ── */}
-//       <div ref={mapRef} className='absolute inset-0 w-full h-full' />
-
-//       {/* ── Toggle button (top-right) ── */}
-//       <button
-//         onClick={() => setPanelOpen((p) => !p)}
-//         className='absolute top-4 right-4 z-30 flex items-center gap-2 bg-white shadow-lg rounded-full px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:scale-95 transition-all'
-//         aria-label='Toggle panel'
-//       >
-//         <MenuIcon open={panelOpen} />
-//         <span className='hidden sm:inline'>
-//           {panelOpen ? "Hide Panel" : "Explore"}
-//         </span>
-//       </button>
-
-//       {/* ── Slide-in Panel ── */}
-//       <div
-//         className={`absolute top-0 right-0 h-full z-20 flex flex-col bg-white shadow-2xl transition-all duration-500 ease-[cubic-bezier(.77,0,.18,1)]
-//           ${panelOpen ? "translate-x-0" : "translate-x-full"}
-//           w-[360px] sm:w-[400px]`}
-//       >
-//         {/* Header */}
-//         <div className='flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100'>
-//           <div>
-//             <h2 className='text-lg font-bold text-gray-900 tracking-tight'>
-//               Nearby
-//             </h2>
-//             <p className='text-xs text-gray-400 mt-0.5'>
-//               {filtered.length} place{filtered.length !== 1 ? "s" : ""} found
-//             </p>
-//           </div>
-//           <button
-//             onClick={() => setPanelOpen(false)}
-//             className='w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition'
-//             aria-label='Close panel'
-//           >
-//             ✕
-//           </button>
-//         </div>
-
-//         {/* Filter Pills */}
-//         <div className='flex gap-2 px-4 py-3 overflow-x-auto scrollbar-none border-b border-gray-100'>
-//           {FILTERS.map(({ label, icon }) => (
-//             <button
-//               key={label}
-//               onClick={() => {
-//                 setActiveFilter(label);
-//                 setSelectedCard(null);
-//               }}
-//               className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-200
-//                 ${
-//                   activeFilter === label
-//                     ? "bg-emerald-600 text-white shadow-md shadow-emerald-200"
-//                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-//                 }`}
-//             >
-//               <span className='text-base leading-none'>{icon}</span>
-//               {label}
-//             </button>
-//           ))}
-//         </div>
-
-//         {/* Cards List */}
-//         <div className='flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-200'>
-//           {filtered.length === 0 && (
-//             <div className='text-center py-16 text-gray-400'>
-//               <p className='text-4xl mb-3'>🔍</p>
-//               <p className='font-medium'>No results for this filter</p>
-//             </div>
-//           )}
-
-//           {filtered.map((card) => (
-//             <div
-//               key={card.id}
-//               onClick={() => {
-//                 setSelectedCard(card);
-//                 mapInstanceRef.current?.panTo({ lat: card.lat, lng: card.lng });
-//               }}
-//               className={`rounded-2xl overflow-hidden border cursor-pointer transition-all duration-200 hover:shadow-md
-//                 ${
-//                   selectedCard?.id === card.id
-//                     ? "border-emerald-500 shadow-lg shadow-emerald-100 ring-1 ring-emerald-300"
-//                     : "border-gray-100 hover:border-gray-200"
-//                 }`}
-//             >
-//               {/* Image */}
-//               <div className='relative h-44 overflow-hidden'>
-//                 <img
-//                   src={card.image}
-//                   alt={card.title}
-//                   className='w-full h-full object-cover transition-transform duration-500 hover:scale-105'
-//                 />
-//                 {/* Gradient overlay */}
-//                 <div className='absolute inset-0 bg-gradient-to-t from-black/40 to-transparent' />
-//                 {/* Map pins on image */}
-//                 <div className='absolute top-3 left-3 flex gap-1.5'>
-//                   {[...Array(3)].map((_, i) => (
-//                     <span
-//                       key={i}
-//                       className='text-emerald-400 text-xl drop-shadow'
-//                       style={{
-//                         transform: `translateY(${i % 2 === 0 ? 0 : -4}px)`,
-//                       }}
-//                     >
-//                       📍
-//                     </span>
-//                   ))}
-//                 </div>
-//               </div>
-
-//               {/* Body */}
-//               <div className='p-4'>
-//                 <div className='flex items-start justify-between gap-2 mb-2'>
-//                   <h3 className='font-bold text-gray-900 text-base leading-snug'>
-//                     {card.title}
-//                   </h3>
-//                   <span
-//                     className={`flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full ${TAG_COLORS[card.tag] ?? "bg-gray-100 text-gray-600"}`}
-//                   >
-//                     {card.tag}
-//                   </span>
-//                 </div>
-
-//                 <div className='flex items-center gap-3 text-xs text-gray-500 mb-3'>
-//                   <span className='flex items-center gap-1'>
-//                     <span className='text-emerald-500'>📍</span> {card.distance}
-//                   </span>
-//                   {card.rating > 0 && (
-//                     <span className='flex items-center gap-1'>
-//                       <span className='text-amber-400'>★</span>
-//                       <span className='font-semibold text-gray-700'>
-//                         {card.rating}
-//                       </span>
-//                     </span>
-//                   )}
-//                 </div>
-
-//                 <p className='text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4'>
-//                   {card.description}
-//                 </p>
-
-//                 <div className='flex gap-2'>
-//                   <button
-//                     onClick={(e) => {
-//                       e.stopPropagation();
-//                       alert(`Quote requested for: ${card.title}`);
-//                     }}
-//                     className='flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors active:scale-95'
-//                   >
-//                     Request Quote
-//                   </button>
-//                   <button
-//                     onClick={(e) => {
-//                       e.stopPropagation();
-//                       alert(`Saved: ${card.title}`);
-//                     }}
-//                     className='px-4 py-2.5 text-sm font-semibold text-emerald-700 border border-emerald-300 rounded-xl hover:bg-emerald-50 transition-colors'
-//                   >
-//                     Save
-//                   </button>
-//                 </div>
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// // ── Hamburger / X icon ───────────────────────────────────────────────────────
-// function MenuIcon({ open }: { open: boolean }) {
-//   return (
-//     <div className='w-5 h-4 flex flex-col justify-between relative'>
-//       <span
-//         className={`block h-0.5 bg-gray-700 rounded transition-all duration-300 origin-center
-//           ${open ? "rotate-45 translate-y-[7px]" : ""}`}
-//       />
-//       <span
-//         className={`block h-0.5 bg-gray-700 rounded transition-all duration-300
-//           ${open ? "opacity-0 scale-x-0" : ""}`}
-//       />
-//       <span
-//         className={`block h-0.5 bg-gray-700 rounded transition-all duration-300 origin-center
-//           ${open ? "-rotate-45 -translate-y-[9px]" : ""}`}
-//       />
-//     </div>
-//   );
-// }
-
-// // ── Custom Map Styles (muted/clean) ──────────────────────────────────────────
-// const MAP_STYLES: google.maps.MapTypeStyle[] = [
-//   { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
-//   { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-//   { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
-//   { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
-//   {
-//     featureType: "road",
-//     elementType: "geometry",
-//     stylers: [{ color: "#ffffff" }],
-//   },
-//   {
-//     featureType: "road.arterial",
-//     elementType: "labels.text.fill",
-//     stylers: [{ color: "#757575" }],
-//   },
-//   {
-//     featureType: "road.highway",
-//     elementType: "geometry",
-//     stylers: [{ color: "#dadada" }],
-//   },
-//   {
-//     featureType: "water",
-//     elementType: "geometry",
-//     stylers: [{ color: "#c9d4e8" }],
-//   },
-//   {
-//     featureType: "poi.park",
-//     elementType: "geometry",
-//     stylers: [{ color: "#d8e8c8" }],
-//   },
-//   {
-//     featureType: "transit.station",
-//     elementType: "geometry",
-//     stylers: [{ color: "#eeeeee" }],
-//   },
-// ];

@@ -57,6 +57,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import RedeemCode from "@/components/event/RedeemCode";
+import { useSocket } from "@/provider/SocketProvider";
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -90,7 +91,7 @@ export default function EventDetailPage() {
   const postDetail = data?.data?.detail;
   const relevantPosts = data?.data?.relevantPosts;
 
-  console.log(postDetail?.attenders);
+  const { socket } = useSocket();
 
   const thumbnails = postDetail?.media?.filter((m: string) =>
     /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
@@ -115,8 +116,28 @@ export default function EventDetailPage() {
   };
 
   // sending a quotem request - message
-  const handleRequestQuote = (postId: string) => {
+  const handleRequestQuote = async (postId: string) => {
     try {
+      if (!socket) return;
+
+      let chatId = "";
+
+      const res = await newChatMutation({
+        member: postDetail?.author?._id,
+      }).unwrap();
+
+      if (res?.success) {
+        chatId = res?.data?._id;
+      }
+
+      if (!chatId) return;
+
+      socket.emit("send-message", {
+        chat: chatId,
+        sender: user?._id,
+        message: `Mr. Ouuk is requesting a Quote Request for ${postDetail?.title}`,
+        type: "quote",
+      });
     } catch (error) {}
   };
 
@@ -310,7 +331,7 @@ export default function EventDetailPage() {
                 </button>
               )}
 
-              {/* Comment Button */}
+              {/* Request Quote Button */}
               {postDetail?.category === "service" && (
                 <button
                   onClick={() => handleRequestQuote(postDetail._id)}
@@ -356,7 +377,7 @@ export default function EventDetailPage() {
                   ></span>
                   <span className='truncate'>Get Deal</span>
                 </button>
-              )} 
+              )}
 
               {/* alert post */}
               {postDetail?.category === "alert" && (

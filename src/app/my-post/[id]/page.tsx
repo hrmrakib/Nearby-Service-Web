@@ -18,13 +18,11 @@ import {
   setNewChatStart,
   setSelectedUser,
 } from "@/redux/features/chat/chatSlice";
-import { useToggleLikeMutation } from "@/redux/features/like/likeAPI";
 import {
-  useAttendEventMutation,
+  useDeletePostMutation,
   useGetPostDetailByIdQuery,
 } from "@/redux/features/post/postAPI";
 import { useGetReviewsByPostIdQuery } from "@/redux/features/review/reviewAPI";
-import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import formatDate from "@/utils/formatDate";
 import getDistanceKm from "@/utils/getDistanceMiles";
 import {
@@ -38,6 +36,7 @@ import {
 import {
   Calendar,
   Eye,
+  Loader,
   MapPin,
   MessageSquareText,
   Pencil,
@@ -77,12 +76,11 @@ export default function EventDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAttendingModal, setShowAttendingModal] = useState(false);
 
-  const [toggleSaveMutation] = useToggleSaveMutation();
-  const [toggleLikeMutation] = useToggleLikeMutation();
-  const [newChatMutation, { isLoading: newChatLoading }] = useNewChatMutation();
-  const [attendEventMutation] = useAttendEventMutation();
+  const [newChatMutation] = useNewChatMutation();
+  const [deletePostMutation, { isLoading: deletePostLoading }] =
+    useDeletePostMutation();
 
-  const { data, isLoading, refetch } = useGetPostDetailByIdQuery(id);
+  const { data, isLoading } = useGetPostDetailByIdQuery(id);
 
   const { data: reviewsData } = useGetReviewsByPostIdQuery(id);
   const dispatch = useDispatch();
@@ -101,56 +99,6 @@ export default function EventDetailPage() {
       setImagePreview(postDetail?.image);
     }
   }, [postDetail]);
-
-  const handleAttend = async (postId: string) => {
-    try {
-      const res = await attendEventMutation(postId).unwrap();
-      if (res?.success) {
-        refetch();
-        toast.success(res?.message);
-      }
-    } catch (error: any) {
-      toast.error(error?.data?.message);
-    }
-  };
-
-  // sending a quotem request - message
-  const handleRequestQuote = (postId: string) => {
-    try {
-    } catch (error) {}
-  };
-
-  const handleSave = async () => {
-    try {
-      const res = await toggleSaveMutation({
-        postId: id,
-      }).unwrap();
-
-      if (res?.success) {
-        refetch();
-        toast.success(res?.message);
-      }
-      console.log(res, res?.message);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleLike = async () => {
-    try {
-      const res = await toggleLikeMutation({
-        postId: id,
-      }).unwrap();
-
-      if (res?.success) {
-        refetch();
-        toast.success(res?.message);
-      }
-      console.log(res, res?.message);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   const handleReport = () => {
     setReportOpen(true);
@@ -181,8 +129,19 @@ export default function EventDetailPage() {
     }
   };
 
-  const handleDelete = () => {
-    setShowDeleteModal(false);
+  const handleDelete = async () => {
+    try {
+      const res = await deletePostMutation(id).unwrap();
+
+      if (res?.success) {
+        toast.success(res?.message);
+        router.push("/profile");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message);
+    } finally {
+      setShowDeleteModal(false);
+    }
   };
 
   if (isLoading) {
@@ -526,10 +485,12 @@ export default function EventDetailPage() {
                 </DialogClose>
                 <Button
                   onClick={handleDelete}
+                  disabled={deletePostLoading}
                   type='submit'
                   className='flex-1 h-10 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm shadow-md shadow-red-200 transition-all active:scale-[0.98]'
                 >
-                  Yes, Delete
+                  Yes, Delete{" "}
+                  {deletePostLoading && <Loader className='animate-spin' />}
                 </Button>
               </DialogFooter>
             </div>

@@ -6,6 +6,7 @@ import Navbar from "@/components/navbar/Navbar";
 import Providers from "@/redux/features/Providers";
 import { Toaster } from "sonner";
 import AppInitializer from "@/components/AppInitializer/AppInitializer";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,13 +40,17 @@ export default function RootLayout({
         className={`${lato.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ fontFamily: lato.style.fontFamily }}
       >
-        <Providers>
-          <AppInitializer>
-            <Toaster />
-            <Navbar />
-            {children}
-          </AppInitializer>
-        </Providers>
+        <GoogleOAuthProvider
+          clientId={process.env.NEXT_PUBLIC_API_KEY_CLIENT_ID || ""}
+        >
+          <Providers>
+            <AppInitializer>
+              <Toaster />
+              <Navbar />
+              {children}
+            </AppInitializer>
+          </Providers>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

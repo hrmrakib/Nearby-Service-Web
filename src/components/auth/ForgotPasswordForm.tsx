@@ -18,7 +18,7 @@ export default function ForgotPasswordForm() {
   const [error, setError] = useState("");
   const [forgotPasswordMutation] = useForgotPasswordMutation();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleForgetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Clear previous errors
@@ -68,7 +68,7 @@ export default function ForgotPasswordForm() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className='space-y-6'>
+        <form onSubmit={handleForgetPassword} className='space-y-6'>
           {/* Email Field */}
           <div className='space-y-2'>
             <label

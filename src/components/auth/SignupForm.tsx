@@ -171,6 +171,7 @@ export default function SignupForm() {
         >
           Location
         </label>
+        
         <CommonLocationInput
           currentLocation={formData?.location}
           onChange={(loc) =>

@@ -172,6 +172,8 @@ function ReviewCard({ review }: { review: Review }) {
 }
 
 export default function ReviewSection({ reviews }: { reviews: Review[] }) {
+  if (reviews?.length === 0) return null;
+
   return (
     <>
       <div

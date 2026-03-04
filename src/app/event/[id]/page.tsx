@@ -57,9 +57,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import RedeemCode from "@/components/event/RedeemCode";
-import { useSocket } from "@/provider/SocketProvider";
+import { SocketProvider, useSocket } from "@/provider/SocketProvider";
 
-export default function EventDetailPage() {
+export function EventDetailPageInner() {
   const router = useRouter();
   const { userLat, userLng, user } = useAuth();
 
@@ -117,6 +117,8 @@ export default function EventDetailPage() {
 
   // sending a quotem request - message
   const handleRequestQuote = async (postId: string) => {
+    console.log({ socket });
+
     try {
       if (!socket) return;
 
@@ -305,38 +307,40 @@ export default function EventDetailPage() {
           {/* Action Bar */}
           <div className='w-full max-w-2xl bg-white rounded-2xl px-4 py-3'>
             <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
-              {/* Attend Button */}
-              {postDetail?.category === "event" && (
-                <button
-                  onClick={() => handleAttend(postDetail._id)}
-                  className={`
-                    flex-1 min-w-0 flex items-center justify-center gap-2
+              <div className='flex-1 w-full'>
+                {/* Attend Button */}
+                {postDetail?.category === "event" && (
+                  <button
+                    onClick={() => handleAttend(postDetail._id)}
+                    disabled={postDetail?.isAttend}
+                    className={`
+                    w-full flex-1 min-w-0 flex items-center justify-center gap-2
                     px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
-                    transition-all duration-200 active:scale-95 select-none
+                    transition-all duration-200 active:scale-95 select-none disabled:opacity-50
                       ${
-                        attended
+                        postDetail?.isAttend
                           ? "bg-green-700 text-white shadow-inner"
                           : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
                       }
                   `}
-                >
-                  <span
-                    className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
                   >
-                    {attended ? "✓" : ""}
-                  </span>
-                  <span className='truncate'>
-                    {attended ? "Attending" : "Attend"}
-                  </span>
-                </button>
-              )}
+                    <span
+                      className={`transition-transform duration-200 ${postDetail?.isAttend ? "scale-110" : ""}`}
+                    >
+                      {postDetail?.isAttend ? "✓" : ""}
+                    </span>
+                    <span className='truncate'>
+                      {postDetail?.isAttend ? "Attending" : "Attend"}
+                    </span>
+                  </button>
+                )}
 
-              {/* Request Quote Button */}
-              {postDetail?.category === "service" && (
-                <button
-                  onClick={() => handleRequestQuote(postDetail._id)}
-                  className={`
-                  flex-1 min-w-0 flex items-center justify-center gap-2
+                {/* Request Quote Button */}
+                {postDetail?.category === "service" && (
+                  <button
+                    onClick={() => handleRequestQuote(postDetail._id)}
+                    className={`
+                  w-full flex-1 min-w-0 flex items-center justify-center gap-2
                   px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
                   transition-all duration-200 active:scale-95 select-none
                     ${
@@ -345,24 +349,24 @@ export default function EventDetailPage() {
                         : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
                     }
                   `}
-                >
-                  <span
-                    className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
                   >
-                    {attended ? "✓" : ""}
-                  </span>
-                  <span className='truncate'>
-                    {attended ? "Requested" : "Request Quote"}
-                  </span>
-                </button>
-              )}
+                    <span
+                      className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
+                    >
+                      {attended ? "✓" : ""}
+                    </span>
+                    <span className='truncate'>
+                      {attended ? "Requested" : "Request Quote"}
+                    </span>
+                  </button>
+                )}
 
-              {/* Get Deal */}
-              {postDetail?.category === "deal" && (
-                <button
-                  onClick={() => handleGetDeal(postDetail._id)}
-                  className={`
-                  flex-1 min-w-0 flex items-center justify-center gap-2
+                {/* Get Deal */}
+                {postDetail?.category === "deal" && (
+                  <button
+                    onClick={() => handleGetDeal(postDetail._id)}
+                    className={`
+                  w-full flex-1 min-w-0 flex items-center justify-center gap-2
                   px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
                   transition-all duration-200 active:scale-95 select-none
                     ${
@@ -371,20 +375,20 @@ export default function EventDetailPage() {
                         : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
                     }
                   `}
-                >
-                  <span
-                    className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
-                  ></span>
-                  <span className='truncate'>Get Deal</span>
-                </button>
-              )}
+                  >
+                    <span
+                      className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
+                    ></span>
+                    <span className='truncate'>Get Deal</span>
+                  </button>
+                )}
 
-              {/* alert post */}
-              {postDetail?.category === "alert" && (
-                <a
-                  href='#see-all'
-                  className={`
-              flex-1 min-w-0 flex items-center justify-center gap-2
+                {/* alert post */}
+                {postDetail?.category === "alert" && (
+                  <a
+                    href='#see-all'
+                    className={`
+              w-full flex-1 min-w-0 flex items-center justify-center gap-2
               px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
               transition-all duration-200 active:scale-95 select-none
               ${
@@ -393,30 +397,32 @@ export default function EventDetailPage() {
                   : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
               }
             `}
-                >
-                  <span className='truncate'>Add Comment</span>
-                </a>
-              )}
-
-              {!showReportBtn ? (
-                <div className='flex items-center gap-2'>
-                  {/* Message start Button */}
-                  <button
-                    onClick={() => handleChatStart()}
-                    disabled={newChatLoading}
-                    className='flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-50 active:scale-95 transition-all duration-200'
                   >
-                    {newChatLoading ? (
-                      <Loader2 className='animate-spin' />
-                    ) : (
-                      <MessageSquareText />
-                    )}
-                  </button>
+                    <span className='truncate'>Add Comment</span>
+                  </a>
+                )}
+              </div>
 
-                  {/* Save Button */}
-                  <button
-                    onClick={handleSave}
-                    className={`
+              <div className='flex-1'>
+                {!showReportBtn ? (
+                  <div className='flex items-center gap-2'>
+                    {/* Message start Button */}
+                    <button
+                      onClick={() => handleChatStart()}
+                      disabled={newChatLoading}
+                      className='flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-50 active:scale-95 transition-all duration-200'
+                    >
+                      {newChatLoading ? (
+                        <Loader2 className='animate-spin' />
+                      ) : (
+                        <MessageSquareText />
+                      )}
+                    </button>
+
+                    {/* Save Button */}
+                    <button
+                      onClick={handleSave}
+                      className={`
               flex-shrink-0 flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
               transition-all duration-200 active:scale-95 select-none
@@ -426,20 +432,22 @@ export default function EventDetailPage() {
                   : "border-green-500 text-green-500 hover:bg-green-50"
               }
             `}
-                  >
-                    <Bookmark />
-                    <span className='hidden sm:inline'>
-                      {postDetail?.isSaved ? "Saved" : "Save"}
-                    </span>
-                    <span className='text-xs text-green-400'>
-                      {postDetail?.totalSaved > 0 ? postDetail?.totalSaved : 0}
-                    </span>
-                  </button>
+                    >
+                      <Bookmark />
+                      <span className='hidden sm:inline'>
+                        {postDetail?.isSaved ? "Saved" : "Save"}
+                      </span>
+                      <span className='text-xs text-green-400'>
+                        {postDetail?.totalSaved > 0
+                          ? postDetail?.totalSaved
+                          : 0}
+                      </span>
+                    </button>
 
-                  {/* Like Button */}
-                  <button
-                    onClick={handleLike}
-                    className={`
+                    {/* Like Button */}
+                    <button
+                      onClick={handleLike}
+                      className={`
               flex-shrink-0 flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
               transition-all duration-200 active:scale-95 select-none
@@ -449,41 +457,42 @@ export default function EventDetailPage() {
                   : "border-green-500 text-green-500 hover:bg-green-50"
               }
             `}
-                  >
-                    <svg
-                      width='16'
-                      height='16'
-                      viewBox='0 0 24 24'
-                      fill={postDetail?.liked ? "currentColor" : "none"}
-                      stroke='currentColor'
-                      strokeWidth='2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      className={`transition-all duration-200 ${postDetail?.liked ? "scale-110" : ""}`}
                     >
-                      <path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' />
-                    </svg>
-                    <span className='hidden sm:inline'>Like</span>
-                    <span className='text-xs text-green-400'>
-                      {postDetail?.likes > 0 ? postDetail?.likes : 0}
-                    </span>
-                  </button>
-                </div>
-              ) : (
-                <div className='flex-1'>
-                  {/* Report Button */}
-                  <button
-                    onClick={() => setReportOpen(true)}
-                    className={`flex-1 w-full flex items-center justify-center gap-1.5
+                      <svg
+                        width='16'
+                        height='16'
+                        viewBox='0 0 24 24'
+                        fill={postDetail?.liked ? "currentColor" : "none"}
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        className={`transition-all duration-200 ${postDetail?.liked ? "scale-110" : ""}`}
+                      >
+                        <path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' />
+                      </svg>
+                      <span className='hidden sm:inline'>Like</span>
+                      <span className='text-xs text-green-400'>
+                        {postDetail?.likes > 0 ? postDetail?.likes : 0}
+                      </span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className='flex-1'>
+                    {/* Report Button */}
+                    <button
+                      onClick={() => setReportOpen(true)}
+                      className={`flex-1 w-full flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm sm:text-base
               transition-all duration-200 active:scale-95 select-none
               border-green-500 text-green-500 hover:bg-green-50`}
-                  >
-                    <MessageSquareWarning size={16} />
-                    <span className=''>Report</span>
-                  </button>
-                </div>
-              )}
+                    >
+                      <MessageSquareWarning size={16} />
+                      <span className=''>Report</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* More Options */}
               <div className='relative flex-shrink-0'>
@@ -531,9 +540,11 @@ export default function EventDetailPage() {
           {/* Left Column */}
           <div className='lg:col-span-4 space-y-6'>
             <div>
-              <h2 className='text-lg font-bold text-[#1F2937] tracking-tight mb-3'>
-                Attending{" "}
-              </h2>
+              {postDetail?.attenders?.length > 0 && (
+                <h2 className='text-lg font-bold text-[#1F2937] tracking-tight mb-3'>
+                  Attending{" "}
+                </h2>
+              )}
               <div className='flex items-center gap-1'>
                 {postDetail?.attenders?.length > 0 && (
                   <>
@@ -661,5 +672,13 @@ export default function EventDetailPage() {
       {/* Redeem Modal */}
       {/* <RedeemCode /> */}
     </div>
+  );
+}
+
+export default function EventDetailPage() {
+  return (
+    <SocketProvider>
+      <EventDetailPageInner />
+    </SocketProvider>
   );
 }

@@ -143,9 +143,7 @@ export default function LocationCard({
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY!;
 
   return (
-    <div
-      className={`flex items-center font-[system-ui] ${className}`}
-    >
+    <div className={`flex items-center font-[system-ui] ${className}`}>
       <div className='w-full max-w-[68%]'>
         {/* Card */}
         <Link href='/map'>

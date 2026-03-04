@@ -616,6 +616,8 @@ export default function CommentSection({ id, postId }: CommentSectionProps) {
     // Handled internally by CommentInput for type="comment"
   };
 
+  if (comments?.length === 0) return null;
+
   return (
     <div id='see-all' className='h-auto flex items-start justify-center'>
       <div className='w-full'>

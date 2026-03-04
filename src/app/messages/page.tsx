@@ -19,6 +19,7 @@ import {
   MapPin,
   Star,
   ChevronDown,
+  BadgeInfo,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +51,8 @@ import { IServiceForOfferCreation } from "./message.type";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { useDispatch, useSelector } from "react-redux";
 import { setChatId, setSelectedUser } from "@/redux/features/chat/chatSlice";
-
+import CustomFormatDate from "@/utils/formatDate";
+import { timeAgo } from "@/utils/timeAgo";
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 interface ConversationMember {
   _id: string;
@@ -1084,8 +1086,6 @@ function MessagesPageInner() {
   const { socket, onlineUsers } = useSocket();
   const { user } = useAuth();
 
-  console.log(user?._id);
-
   // ── Offer modal state ──────────────────────────────────────────────────────
   const [modalView, setModalView] = useState<ModalView | null>(null);
   const [offerData, setOfferData] = useState<OfferData>(defaultOfferData());
@@ -1101,6 +1101,8 @@ function MessagesPageInner() {
   const chatId = useSelector((state: any) => state.chat.chatId);
   const newChatStart = useSelector((state: any) => state.chat.newChatStart);
   const dispatch = useDispatch();
+
+  console.log({ socket });
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const {
@@ -1196,6 +1198,7 @@ function MessagesPageInner() {
       sender: user?._id,
       message: finalMessage,
       type: type || "text",
+      isOwner: true,
       ...(isOffer && { offer: offerId }),
     });
 
@@ -1261,8 +1264,6 @@ function MessagesPageInner() {
       items: formattedItems,
       discount: Number(offerData?.discount),
     };
-
-    console.log("payload", payload);
 
     try {
       if (editingOfferId) {
@@ -1489,10 +1490,24 @@ function MessagesPageInner() {
                   key={m._id ?? m.id}
                   className={cn(
                     "flex",
-                    m.isOwner ? "justify-end" : "justify-start",
+                    m.type === "quote"
+                      ? "justify-center"
+                      : m.isOwner
+                        ? "justify-end"
+                        : "justify-start",
                   )}
                 >
-                  {m.type === "offer" && m.offer ? (
+                  {m.type === "quote" ? (
+                    <div className='px-4 py-2 rounded-2xl bg-gray-50 border border-gray-200 text-center max-w-[75%] sm:max-w-xs lg:max-w-md'>
+                      <p className='flex items-center gap-1.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1'>
+                        <BadgeInfo size={12} /> Quote -{" "}
+                        {CustomFormatDate(m.createdAt)} - {timeAgo(m.createdAt)}
+                      </p>
+                      <p className='text-sm text-gray-700'>
+                        {m.message ?? m.text}
+                      </p>
+                    </div>
+                  ) : m.type === "offer" && m.offer ? (
                     <div className='flex flex-col gap-1 max-w-[75%] sm:max-w-xs lg:max-w-md'>
                       {m.message && (
                         <div
@@ -1506,15 +1521,14 @@ function MessagesPageInner() {
                           <p className='text-sm'>{m.message}</p>
                         </div>
                       )}
+
                       <OfferCard
                         offer={m.offer}
-                        // Sender gets Edit button
                         onEdit={
                           m.isOwner
                             ? () => handleOpenEditOffer(m.offer)
                             : undefined
                         }
-                        // Receiver gets "View Offer" → accept/reject modal
                         onViewOffer={
                           !m.isOwner
                             ? () => handleOpenAcceptReject(m.offer)
@@ -1548,6 +1562,73 @@ function MessagesPageInner() {
                   )}
                 </div>
               ))}
+
+            {/* {!messagesFetching &&
+              messages.map((m: any) => (
+                <div
+                  key={m._id ?? m.id}
+                  className={cn(
+                    "flex",
+                    m.isOwner ? "justify-end" : "justify-start",
+                  )}
+                >
+                  {m.type === "offer" && m.offer ? (
+                    <div className='flex flex-col gap-1 max-w-[75%] sm:max-w-xs lg:max-w-md'>
+                      {m.message && (
+                        <div
+                          className={cn(
+                            "px-4 py-2 rounded-2xl",
+                            m.isOwner
+                              ? "bg-[#0A5512] text-white self-end"
+                              : "bg-gray-100 self-start",
+                          )}
+                        >
+                          <p className='text-sm'>{m.message}</p>
+                        </div>
+                      )}
+
+                      <OfferCard
+                        offer={m.offer}
+                        // Sender gets Edit button
+                        onEdit={
+                          m.isOwner
+                            ? () => handleOpenEditOffer(m.offer)
+                            : undefined
+                        }
+                        // Receiver gets "View Offer" → accept/reject modal
+                        onViewOffer={
+                          !m.isOwner
+                            ? () => handleOpenAcceptReject(m.offer)
+                            : undefined
+                        }
+                      />
+                      <p className='text-xs opacity-50 pl-1'>
+                        {m.timestamp ??
+                          new Date(m.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
+                        m.isOwner ? "bg-[#0A5512] text-white" : "bg-gray-100",
+                      )}
+                    >
+                      <p className='text-sm'>{m.message ?? m.text} </p>
+                      <p className='text-xs mt-1 opacity-70'>
+                        {m.timestamp ??
+                          new Date(m.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))} */}
 
             {isTyping && (
               <div className='flex justify-start'>

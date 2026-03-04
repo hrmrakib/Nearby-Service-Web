@@ -141,7 +141,7 @@ export default function PostEventModal({
       startDate: isoStartDate,
       startTime: isoStartDate,
       address: location,
-      category: "Event",
+      category: "event",
       location: {
         type: "Point",
         coordinates: [lng ?? 0, lat ?? 0],

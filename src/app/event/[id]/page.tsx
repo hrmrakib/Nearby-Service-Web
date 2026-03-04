@@ -59,7 +59,7 @@ import {
 import RedeemCode from "@/components/event/RedeemCode";
 import { SocketProvider, useSocket } from "@/provider/SocketProvider";
 
-export function EventDetailPageInner() {
+function EventDetailPageInner() {
   const router = useRouter();
   const { userLat, userLng, user } = useAuth();
 

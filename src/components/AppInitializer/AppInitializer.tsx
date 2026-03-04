@@ -1,5 +1,7 @@
 "use client";
-
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setUser } from "@/redux/features/auth/authSlice";
 import { useGetProfileQuery } from "@/redux/features/profile/profileAPI";
 
 export default function AppInitializer({
@@ -7,9 +9,17 @@ export default function AppInitializer({
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoading } = useGetProfileQuery(undefined);
+  const dispatch = useDispatch();
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
 
-  if (isLoading) return null;
+  const { data } = useGetProfileQuery({}, { skip: !token });
 
-  return <>{children}</>;
+  useEffect(() => {
+    if (data?.data) {
+      dispatch(setUser({ user: data.data, token }));
+    }
+  }, [data]);
+
+  return children;
 }

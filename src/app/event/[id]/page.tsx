@@ -586,6 +586,7 @@ export default function EventDetailPage() {
               lat={90.39064309999999}
               lng={23.7511665}
               haveServiceAreas={false}
+              className='justify-end'
             />
 
             <RelatedCard

@@ -3,14 +3,16 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { setSelectedCategory } from "@/redux/features/post/postSlice";
 
 export function HeroSection() {
   const [isHovered, setIsHovered] = useState(false);
-
+  const dispatch = useDispatch();
   const handleExplore = () => {
-    // Implement your navigation logic here
-    console.log("Exploring events...");
-    // Example: router.push('/events')
+    dispatch(setSelectedCategory("event"));
+    const section = document.getElementById("all-post");
+    section?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (

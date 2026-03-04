@@ -79,21 +79,12 @@ export default function Navbar() {
   const [hasToken, setHasToken] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const userToggle = useSelector((state: any) => state.auth.userToggle);
+  const user = useSelector((state: any) => state.auth.user);
+
+  console.log({ user });
 
   useEffect(() => {
     setHasToken(!!localStorage?.getItem("accessToken"));
-  }, []);
-
-  const {
-    data: profile,
-    isFetching,
-    refetch,
-  } = useGetProfileQuery({}, { skip: !hasToken });
-
-  useEffect(() => {
-    if (hasToken) {
-      refetch();
-    }
   }, [userToggle]);
 
   const { data, isFetching: isFetchingNotifications } =
@@ -513,7 +504,7 @@ export default function Navbar() {
               </Popover>
 
               {/* Login button if not authenticated */}
-              {!isFetching && !profile?.data && (
+              {!user && (
                 <Link
                   href='/login'
                   className='bg-[#15B826] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#13a522] transition'
@@ -523,16 +514,16 @@ export default function Navbar() {
               )}
 
               {/* User Dropdown */}
-              {profile?.data && (
+              {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Avatar
-                      title={profile.data.name}
+                      title={user.name}
                       className='relative w-12 h-12 cursor-pointer ring-2 ring-offset-1 ring-[#15B826] hover:ring-[#13a522] transition'
                     >
-                      <AvatarImage src={profile.data.image || "/avatar.png"} />
+                      <AvatarImage src={user.image || "/avatar.png"} />
                       <AvatarFallback className='bg-[#15B826] text-white font-semibold'>
-                        {profile.data.name
+                        {user.name
                           ?.split(" ")
                           .map((n: string) => n[0])
                           .join("")
@@ -550,10 +541,10 @@ export default function Navbar() {
                     <Link href={`/profile`}>
                       <div className='px-3 py-2 mb-1'>
                         <p className='text-sm font-semibold text-gray-900 truncate'>
-                          {profile.data.name}
+                          {user.name}
                         </p>
                         <p className='text-xs text-gray-400 truncate'>
-                          {profile.data.email}
+                          {user.email}
                         </p>
                       </div>
                     </Link>

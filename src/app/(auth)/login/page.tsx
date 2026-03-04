@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { saveTokens } from "@/service/authService";
-import { userTrack } from "@/redux/features/auth/authSlice";
+import { setUser, userTrack } from "@/redux/features/auth/authSlice";
 import { useDispatch } from "react-redux";
 import { toast } from "sonner";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -58,8 +58,13 @@ export default function LoginForm() {
       const data = await res.json();
 
       if (res?.ok) {
-        console.log(data);
         dispatch(userTrack());
+        dispatch(
+          setUser({
+            user: data?.data?.user,
+            token: data?.data?.accessToken,
+          }),
+        );
         await saveTokens(data?.data?.accessToken);
         localStorage.setItem("accessToken", data?.data?.accessToken);
         router.push("/");

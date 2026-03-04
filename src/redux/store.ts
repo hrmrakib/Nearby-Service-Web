@@ -4,6 +4,7 @@ import globalSearchReducer from "./features/search/globalSearchSlice";
 import authReducer from "./features/auth/authSlice";
 import chatReducer from "./features/chat/chatSlice";
 import postModalReducer from "./features/postModal/postModalSlice";
+import postReducer from "./features/post/postSlice";
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     [baseAPI.reducerPath]: baseAPI.reducer,
     globalSearch: globalSearchReducer,
     postModal: postModalReducer,
+    postCategory: postReducer,
   },
 
   middleware: (getDefaultMiddleware) =>

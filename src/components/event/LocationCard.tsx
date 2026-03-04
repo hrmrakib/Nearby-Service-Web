@@ -10,6 +10,7 @@ interface LocationCardProps {
   address?: string;
   servicingAreas?: string;
   haveServiceAreas?: boolean;
+  className?: string;
 }
 
 function GoogleMap({
@@ -137,12 +138,15 @@ export default function LocationCard({
   address = "3517 W. Gray St. Utica, Pennsylvania 57867",
   servicingAreas = "Los Angeles, IE and Orange Country",
   haveServiceAreas,
+  className,
 }: LocationCardProps) {
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY!;
 
   return (
-    <div className='flex items-center justify-end font-[system-ui]'>
-      <div className='w-full max-w-sm'>
+    <div
+      className={`flex items-center font-[system-ui] ${className}`}
+    >
+      <div className='w-full max-w-[68%]'>
         {/* Card */}
         <Link href='/map'>
           <div className='bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100'>

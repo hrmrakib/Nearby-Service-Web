@@ -291,10 +291,12 @@ const renderStars = (count: number) => {
 };
 
 export default function DashboardLayout() {
+  const hasSelectedCategory = useSelector(
+    (state: any) => state.postCategory.selectedCategory,
+  );
   const { userLat, userLng } = useAuth();
   const router = useRouter();
-
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(hasSelectedCategory);
   const [distanceRadius, setDistanceRadius] = useState([50]);
   const [minPrice, setMinPrice] = useState([150]);
   const [maxPrice, setMaxPrice] = useState([150]);
@@ -322,6 +324,10 @@ export default function DashboardLayout() {
 
   const [page, setPage] = useState(1);
   const limit = 50;
+
+  useEffect(() => {
+    setSelectedCategory(hasSelectedCategory);
+  }, [hasSelectedCategory]);
 
   const { data, isFetching, refetch } = useGetAllPostQuery({
     category: selectedCategory,
@@ -704,9 +710,9 @@ export default function DashboardLayout() {
         </div>
 
         {/* Right Column - Map & Contacts */}
-        <div className='sticky top-20 w-80 bg-transparent hidden xl:block h-[calc(100vh-80px)] overflow-y-auto'>
+        <div className='sticky top-20 w-80 bg-transparent hidden xl:block h-[calc(100vh-80px)] overflow-y-auto mt-5'>
           <ScrollArea className='h-[calc(100vh-100px)]'>
-            <div className='p-1.5 space-y-6'>
+            <div className='space-y-6'>
               {/* Map Section */}
               <div className='space-y-3'>
                 <LocationCard

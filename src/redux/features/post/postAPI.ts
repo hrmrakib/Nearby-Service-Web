@@ -155,6 +155,15 @@ const postAPI = baseAPI.injectEndpoints({
       invalidatesTags: ["Post"],
     }),
 
+    updatePost: builder.mutation({
+      query: ({ postId, body }) => ({
+        url: `/post/${postId}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Post"],
+    }),
+
     suggestionPost: builder.query({
       query: () => ({
         url: `/post/side-data`,
@@ -184,6 +193,7 @@ export const {
   useUserJoinedEventsQuery,
 
   useDeletePostMutation,
+  useUpdatePostMutation,
 
   useSuggestionPostQuery,
 } = postAPI;

@@ -60,6 +60,7 @@ import RedeemCode from "@/components/event/RedeemCode";
 import { SocketProvider, useSocket } from "@/provider/SocketProvider";
 
 function EventDetailPageInner() {
+  const [redeemOpen, setRedeemOpen] = useState(false);
   const router = useRouter();
   const { userLat, userLng, user } = useAuth();
 
@@ -179,7 +180,9 @@ function EventDetailPageInner() {
     setReportOpen(true);
   };
 
-  const handleGetDeal = (id: string) => {};
+  const handleGetDeal = (id: string) => {
+    setRedeemOpen(true);
+  };
 
   const handleChatStart = async () => {
     try {
@@ -549,7 +552,7 @@ function EventDetailPageInner() {
                 {postDetail?.attenders?.length > 0 && (
                   <>
                     <AvatarGroup className='grayscale'>
-                      {postDetail.attenders
+                      {postDetail?.attenders
                         .slice(0, 2)
                         .map((attender: any, index: number) => (
                           <Avatar key={index}>
@@ -625,7 +628,7 @@ function EventDetailPageInner() {
           <DialogHeader className='p-4 pb-2 border-b'>
             <div className='flex items-center justify-between'>
               <DialogTitle className='text-lg font-semibold'>
-                Attending ({postDetail.attenders?.length})
+                Attending ({postDetail?.attenders?.length})
               </DialogTitle>
               <button
                 onClick={() => setShowAttendingModal(false)}
@@ -637,7 +640,7 @@ function EventDetailPageInner() {
           </DialogHeader>
           <div className='overflow-y-auto max-h-96 p-4'>
             <div className='space-y-3'>
-              {postDetail.attenders?.map((user: any, index: number) => (
+              {postDetail?.attenders?.map((user: any, index: number) => (
                 <div
                   key={index}
                   className='flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors'
@@ -670,7 +673,7 @@ function EventDetailPageInner() {
       </Dialog>
 
       {/* Redeem Modal */}
-      {/* <RedeemCode /> */}
+      <RedeemCode open={redeemOpen} onClose={() => setRedeemOpen(false)} />
     </div>
   );
 }

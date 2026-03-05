@@ -46,7 +46,7 @@ import {
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -62,6 +62,7 @@ import {
   openPostModal,
   selectPostType,
   setDataForPostUpdate,
+  setIsEditMode,
 } from "@/redux/features/postModal/postModalSlice";
 
 export default function EventDetailPage() {
@@ -90,6 +91,15 @@ export default function EventDetailPage() {
   const postDetail = data?.data?.detail;
   const relevantPosts = data?.data?.relevantPosts;
 
+  const {
+    isOpen,
+    selectedPostType,
+    data: postData,
+    isEditMode,
+  } = useSelector((state: any) => state.postModal);
+
+  console.log({ isOpen, selectedPostType, postData, isEditMode });
+
   const thumbnails = postDetail?.media?.filter((m: string) =>
     /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
   );
@@ -103,8 +113,6 @@ export default function EventDetailPage() {
   const handleReport = () => {
     setReportOpen(true);
   };
-
-  const handleGetDeal = (id: string) => {};
 
   const handleChatStart = async () => {
     try {
@@ -249,7 +257,7 @@ export default function EventDetailPage() {
             <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
               {/* Get Deal */}
               <button
-                onClick={() => handleGetDeal(postDetail._id)}
+                onClick={() => router.push(`/boost-post/${postDetail?._id}`)}
                 className={`
                   flex-1 min-w-0 flex items-center justify-center gap-2
                   px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
@@ -274,6 +282,7 @@ export default function EventDetailPage() {
                     dispatch(openPostModal());
                     dispatch(selectPostType(postDetail?.category));
                     dispatch(setDataForPostUpdate(postDetail));
+                    dispatch(setIsEditMode(true));
                   }}
                   className={`flex-1 w-full flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm sm:text-base
@@ -379,6 +388,7 @@ export default function EventDetailPage() {
               lat={90.39064309999999}
               lng={23.7511665}
               haveServiceAreas={false}
+              className="justify-end"
             />
 
             <RelatedCard

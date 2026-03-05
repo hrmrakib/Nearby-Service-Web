@@ -32,12 +32,14 @@ type TAuthState = {
   userToggle: boolean;
   user: TUser | null;
   token: string | null;
+  profileLoading?: boolean;
 };
 
 const initialState: TAuthState = {
   userToggle: false,
   user: null,
   token: null,
+  profileLoading: false,
 };
 
 const authSlice = createSlice({
@@ -58,8 +60,13 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
     },
+
+    setProfileLoading: (state, action) => {
+      state.profileLoading = action.payload;
+    },
   },
 });
 
-export const { userTrack, setUser, logout } = authSlice.actions;
+export const { userTrack, setUser, logout, setProfileLoading } =
+  authSlice.actions;
 export default authSlice.reducer;

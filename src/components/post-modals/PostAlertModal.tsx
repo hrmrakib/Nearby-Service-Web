@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import CommonLocationInput from "../location/CommonLocationInput";
+import { useSelector } from "react-redux";
 
 interface PostEventModalProps {
   isOpen: boolean;
@@ -85,6 +86,48 @@ export default function PostEventModal({
     lastSeenDate: "",
     lastSeenTime: "",
   });
+
+  const { data, isEditMode } = useSelector((state: any) => state.postModal);
+
+  useEffect(() => {
+    if (!data || !isEditMode) return;
+
+    // Cover image
+    setCoverImagePreview(data.image ?? null);
+
+    // media is null in this case, but handle array for other alert types
+    if (Array.isArray(data.media) && data.media.length > 0) {
+      const videoUrls: string[] = [];
+      let firstVideo: string | null = null;
+
+      data.media.forEach((url: string) => {
+        if (url.includes("/video/")) {
+          if (!firstVideo) {
+            firstVideo = url;
+          } else {
+            videoUrls.push(url);
+          }
+        }
+      });
+
+      if (firstVideo) setCoverVideoPreview(firstVideo);
+    }
+
+    // Basic fields
+    setTitle(data.title ?? "");
+    setDescription(data.description ?? "");
+    setLocation(data.address ?? "");
+
+    // Coordinates — backend stores as [lng, lat]
+    setLng(data.location?.coordinates?.[0] ?? null);
+    setLat(data.location?.coordinates?.[1] ?? null);
+
+    // Category
+    if (data.subcategory) setSelectedCategory(data.subcategory);
+
+    // Hashtags
+    if (Array.isArray(data.hasTag)) setHashtags(data.hasTag);
+  }, [data, isEditMode]);
 
   const locationTimeout = useRef<any>(null);
   const [createAlertPostMutation, { isLoading }] = useCreateAlertPostMutation();

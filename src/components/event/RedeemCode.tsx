@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 interface RedeemCodeProps {
+  open?: boolean;
+  onClose?: () => void;
   discount?: string;
   collection?: string;
   validFrom?: string;
@@ -12,6 +14,8 @@ interface RedeemCodeProps {
 }
 
 export default function RedeemCode({
+  open = true,
+  onClose,
   discount = "50%",
   collection = "All Summer Collection",
   validFrom = "July 15",
@@ -19,12 +23,29 @@ export default function RedeemCode({
   code = "DEAL-BDL-ZYZ555",
 }: RedeemCodeProps) {
   const [copied, setCopied] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (open) {
+      // Small delay to trigger entrance animation
+      const t = setTimeout(() => setMounted(true), 10);
+      return () => clearTimeout(t);
+    } else {
+      setMounted(false);
+    }
+  }, [open]);
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   const handleCopy = async () => {
     try {
@@ -32,7 +53,6 @@ export default function RedeemCode({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
       const el = document.createElement("textarea");
       el.value = code;
       document.body.appendChild(el);
@@ -44,31 +64,26 @@ export default function RedeemCode({
     }
   };
 
-  if (!isOpen) {
-    return (
-      <div className='bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4'>
-        <button
-          onClick={() => setIsOpen(true)}
-          className='px-6 py-3 bg-emerald-600 text-white rounded-2xl font-semibold text-sm shadow-lg hover:bg-emerald-700 active:scale-95 transition-all duration-150'
-        >
-          Show Offer
-        </button>
-      </div>
-    );
-  }
+  const handleClose = () => {
+    onClose?.();
+  };
+
+  if (!open) return null;
 
   return (
-    <div className='bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
       {/* Backdrop */}
       <div
-        className='fixed inset-0 bg-black/20 backdrop-blur-sm'
-        onClick={() => setIsOpen(false)}
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+          mounted ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={handleClose}
       />
 
       {/* Modal */}
       <div
         className={`
-          relative z-10 bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-auto
+          relative z-10 bg-white rounded-3xl shadow-2xl w-full max-w-md mx-auto
           overflow-hidden
           transition-all duration-500 ease-out
           ${mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95"}
@@ -78,23 +93,14 @@ export default function RedeemCode({
             "0 25px 50px -12px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)",
         }}
       >
-        {/* Top accent bar */}
-        <div className='h-1 w-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400' />
-
         {/* Header */}
         <div className='flex items-center justify-between px-5 pt-4 pb-2'>
           <div className='w-8' />
-          <span
-            className='text-sm font-semibold tracking-widest uppercase text-gray-400'
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              letterSpacing: "0.12em",
-            }}
-          >
+          <span className='text-sm font-semibold text-[#1F2937]'>
             Redeem Code
           </span>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             className='w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 active:scale-90 transition-all duration-150 text-gray-500'
             aria-label='Close'
           >
@@ -113,13 +119,7 @@ export default function RedeemCode({
         <div className='px-6 pb-8 flex flex-col items-center gap-6'>
           {/* Offer Text */}
           <div className='text-center mt-2'>
-            <div className='inline-flex items-center gap-2 mb-3'>
-              <span className='text-4xl'>☀️</span>
-            </div>
-            <h2
-              className='text-2xl font-black text-gray-900 leading-tight'
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
+            <h2 className='text-2xl font-black text-gray-900 leading-tight'>
               {discount} Off on
               <br />
               <span className='text-emerald-600'>{collection}</span>
@@ -141,7 +141,7 @@ export default function RedeemCode({
             >
               Valid Through
             </span>
-            <div className='flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-full'>
+            <div className='flex items-center gap-2 px-4 py-2 rounded-full'>
               <svg
                 width='14'
                 height='14'
@@ -179,7 +179,7 @@ export default function RedeemCode({
           </div>
 
           {/* Code Section */}
-          <div className='w-full flex flex-col items-center gap-3'>
+          {/* <div className='w-full flex flex-col items-center gap-3'>
             <span
               className='text-xs font-medium uppercase tracking-widest text-gray-400'
               style={{ letterSpacing: "0.15em" }}
@@ -255,7 +255,7 @@ export default function RedeemCode({
                 )}
               </span>
             </button>
-          </div>
+          </div> */}
 
           {/* QR Code */}
           <div className='flex flex-col items-center gap-3'>

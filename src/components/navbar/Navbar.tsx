@@ -79,9 +79,9 @@ export default function Navbar() {
   const [hasToken, setHasToken] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const userToggle = useSelector((state: any) => state.auth.userToggle);
-  const user = useSelector((state: any) => state.auth.user);
-
-  console.log({ user });
+  const { user, token, profileLoading } = useSelector(
+    (state: any) => state.auth,
+  );
 
   useEffect(() => {
     setHasToken(!!localStorage?.getItem("accessToken"));
@@ -504,7 +504,7 @@ export default function Navbar() {
               </Popover>
 
               {/* Login button if not authenticated */}
-              {!user && (
+              {!user && !profileLoading && (
                 <Link
                   href='/login'
                   className='bg-[#15B826] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#13a522] transition'

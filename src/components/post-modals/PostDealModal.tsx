@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,12 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Upload, MapPin, Video, Loader } from "lucide-react";
+import { Plus, Upload, Video, Loader } from "lucide-react";
 import Image from "next/image";
-import {
-  useCreateDealPostMutation,
-  useCreateEventPostMutation,
-} from "@/redux/features/post/postAPI";
+import { useCreateDealPostMutation } from "@/redux/features/post/postAPI";
 import { toast } from "sonner";
 import CommonLocationInput from "../location/CommonLocationInput";
 
@@ -43,8 +40,8 @@ export default function PostDealModal({
   const [description, setDescription] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [locationQuery, setLocationQuery] = useState("");
   const [location, setLocation] = useState("");
+  const [couponCode, setCouponCode] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
 
@@ -119,12 +116,13 @@ export default function PostDealModal({
       description,
       startDate: isoStartDateTime,
       endDate: isoEndDateTime,
-      address: locationQuery,
+      address: location,
       category: "deal",
       location: {
         type: "Point",
         coordinates: [lng ?? 0, lat ?? 0],
       },
+      couponCode,
       hasTag: hashtags,
     };
   };
@@ -424,6 +422,7 @@ export default function PostDealModal({
             </div>
           </div>
 
+          {/* Location */}
           <div className='relative'>
             <label className='text-sm font-bold mb-2 block'>
               Location (Type your full address)
@@ -447,6 +446,20 @@ export default function PostDealModal({
             </div>
           </div>
 
+          {/* Coupon Code */}
+          <div>
+            <label className='text-sm font-bold mb-2 block'>
+              Coupon Code <span className='text-xs text-gray-500'>(Optional)</span>
+            </label>
+            <Input
+              placeholder='Enter Coupon Code'
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Hashtags */}
           <div>
             <label className='text-sm font-bold mb-2 block'>
               Hashtags{" "}

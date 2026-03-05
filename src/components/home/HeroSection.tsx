@@ -16,11 +16,11 @@ export function HeroSection() {
   };
 
   return (
-    <section className='min-h-[94vh] w-full bg-[#005865] overflow-hidden'>
+    <section className='max-h-[80vh] w-full bg-[#005865] overflow-hidden'>
       {/* Container */}
-      <div className='container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-28'>
+      <div className='container mx-auto'>
         {/* Grid Layout - Mobile first */}
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center'>
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center justify-between'>
           {/* Left Content */}
           <div className='flex flex-col justify-center space-y-6 md:space-y-8'>
             {/* Heading */}
@@ -29,7 +29,7 @@ export function HeroSection() {
             </h1>
 
             {/* Description */}
-            <p className='text-lg sm:text-xl text-gray-100 leading-relaxed max-w-lg text-balance'>
+            <p className='text-lg sm:text-xl text-gray-100 leading-relaxed text-balance'>
               Uncover local gems, connect with your community, and make every
               day an adventure. Jurnee helps you find events, deals, and
               services tailored to your interests.
@@ -57,18 +57,20 @@ export function HeroSection() {
 
           {/* Right Image - Hidden on mobile, visible on lg */}
           <div className='hidden lg:flex justify-center items-center'>
-            <div className='relative w-full aspect-square max-w-lg'>
+            <div className='relative w-full flex justify-center items-center aspect-square h-full max-w-3xl shadow-3xl'>
               {/* Image Container with shadow and rounded corners */}
-              <div className='absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 rounded-3xl shadow-2xl overflow-hidden'>
-                <Image
-                  src='/hero-bg.jpg'
-                  alt='Festival Community Event'
-                  fill
-                  className='object-cover w-full h-full'
-                  priority
-                  sizes='(max-width: 1024px) 100vw, 50vw'
-                />
-              </div>
+              {/* <div className='absolute inset-0 bg-gradient-to-br from-teal-500 to-teal-700 rounded-3xl shadow-2xl overflow-hidden'> */}
+              <Image
+                src='/hero-bg.jpg'
+                alt='Festival Community Event'
+                // fill
+                width={800}
+                height={800}
+                className='object-cover w-full h-[60%] rounded-3xl'
+                priority
+                sizes='(max-width: 1024px) 100vw, 50vw'
+              />
+              {/* </div> */}
 
               {/* Decorative accent */}
               <div className='absolute -bottom-4 -right-4 w-32 h-32 bg-white/5 rounded-full blur-3xl'></div>

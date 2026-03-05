@@ -18,18 +18,18 @@ export function HeroSection() {
   return (
     <section className='max-h-[80vh] w-full bg-[#005865] overflow-hidden'>
       {/* Container */}
-      <div className='container mx-auto'>
+      <div className='container mx-auto py-6 md:py-0'>
         {/* Grid Layout - Mobile first */}
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center justify-between'>
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-center justify-center md:justify-between'>
           {/* Left Content */}
-          <div className='flex flex-col justify-center space-y-6 md:space-y-8'>
+          <div className='flex flex-col items-center justify-center space-y-6 md:space-y-8'>
             {/* Heading */}
-            <h1 className='text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-bold text-white leading-tight text-balance'>
+            <h1 className='text-center md:text-left text-3xl sm:text-5xl md:text-6xl lg:text-6xl font-bold text-white leading-tight text-balance'>
               Your Next Discovery Starts Here
             </h1>
 
             {/* Description */}
-            <p className='text-lg sm:text-xl text-gray-100 leading-relaxed text-balance'>
+            <p className='text-center md:text-left text-sm sm:text-xl text-gray-100 leading-relaxed text-balance'>
               Uncover local gems, connect with your community, and make every
               day an adventure. Jurnee helps you find events, deals, and
               services tailored to your interests.

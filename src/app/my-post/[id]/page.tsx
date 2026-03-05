@@ -258,10 +258,11 @@ export default function EventDetailPage() {
               {/* Get Deal */}
               <button
                 onClick={() => router.push(`/boost-post/${postDetail?._id}`)}
+                disabled={postDetail?.boost}
                 className={`
                   flex-1 min-w-0 flex items-center justify-center gap-2
                   px-4 py-3 rounded-xl font-semibold text-sm sm:text-base
-                  transition-all duration-200 active:scale-95 select-none
+                  transition-all duration-200 active:scale-95 select-none disabled:opacity-50 
                     ${
                       attended
                         ? "bg-green-700 text-white shadow-inner"
@@ -272,7 +273,7 @@ export default function EventDetailPage() {
                 <span
                   className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
                 ></span>
-                <span className='truncate'>Boast Post</span>
+                <span className='truncate'>{postDetail?.boost ? "Boosted" : "Boost"}</span>
               </button>
 
               <div className='flex-1 flex items-center gap-6'>
@@ -388,7 +389,7 @@ export default function EventDetailPage() {
               lat={90.39064309999999}
               lng={23.7511665}
               haveServiceAreas={false}
-              className="justify-end"
+              className='justify-end'
             />
 
             <RelatedCard

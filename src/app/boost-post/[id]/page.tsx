@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -8,9 +9,10 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useGetPostDetailByIdQuery } from "@/redux/features/post/postAPI";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
-import { useCreateBoastPaymentIntentMutation } from "@/redux/features/boast/boastAPI";
+import { useCreateBoostPaymentIntentMutation } from "@/redux/features/boost/boostAPI";
 import getDistanceKm from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
+import { toast } from "sonner";
 
 export default function BoostPostPage() {
   const id = useParams().id as string;
@@ -18,23 +20,23 @@ export default function BoostPostPage() {
   const { userLat, userLng } = useAuth();
 
   const { data, isLoading } = useGetPostDetailByIdQuery(id);
-  const [createBoastPaymentIntentMutation] =
-    useCreateBoastPaymentIntentMutation();
+  const [createBoastPaymentIntentMutationm, { isLoading: boostLoading }] =
+    useCreateBoostPaymentIntentMutation();
   const postDetail = data?.data?.detail;
-
-  console.log({ postDetail });
 
   const handleBoostPost = async () => {
     try {
-      const res = await createBoastPaymentIntentMutation({
-        serviceId: id,
+      const res = await createBoastPaymentIntentMutationm({
+        offerId: id,
         amount: 5,
       }).unwrap();
 
-      if (res?.success) {
-        window.open(res?.data?.url, "_blank");
+      if (res?.url) {
+        window.open(res?.url, "_blank");
       }
-    } catch (error) {}
+    } catch (error: any) {
+      toast.error(error?.data?.message);
+    }
   };
 
   const requirements = [
@@ -46,8 +48,6 @@ export default function BoostPostPage() {
   if (isLoading) {
     return <LoadingSpinner text='Boastable post' />;
   }
-
-  console.log(id);
 
   return (
     <div className='min-h- bg-transparent py-8 px-4'>
@@ -127,10 +127,14 @@ export default function BoostPostPage() {
 
             <Button
               onClick={handleBoostPost}
-              disabled={isLoading}
+              disabled={boostLoading || postDetail?.boost}
               className='w-full h-11 bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-colors'
             >
-              {isLoading ? "Boosting..." : "Boost Now - $5"}
+              {boostLoading
+                ? "Processing Payment..."
+                : postDetail?.boost
+                  ? "Already Boosted"
+                  : "Boost Post · $5"}
             </Button>
           </div>
         </Card>

@@ -204,7 +204,7 @@ export default function Home() {
                 <span>8:00 PM - 11:00 PM</span>
               </div>
               <div className='flex items-center gap-2'>
-                <MapPin className='w-4 h-4' />
+                <MapPin className='w-4 h-4 text-[#108F1E]' />
                 <span>Casa Verde, San Francisco</span>
               </div>
               <div className='flex items-center gap-2'>

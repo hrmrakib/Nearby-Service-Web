@@ -966,7 +966,7 @@ function OfferCard({
 
         <div className='flex items-center gap-3 mt-1 text-xs text-gray-500'>
           <span className='flex items-center gap-0.5'>
-            <MapPin className='w-3 h-3 text-[#15B826]' />
+            <MapPin className='w-3 h-3 text-[#108F1E]' />
             {offer.service?.subcategory ?? "Service"}
           </span>
           <span className='flex items-center gap-0.5'>

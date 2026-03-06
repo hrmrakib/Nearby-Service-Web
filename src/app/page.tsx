@@ -17,7 +17,7 @@ import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import CommonLocationInput from "@/components/location/CommonLocationInput";
 import MinStarRating from "@/components/home/Minstarrating";
-import getDistanceKm from "@/utils/getDistanceMiles";
+import getDistanceMiles from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { useRouter } from "next/navigation";
 import LocationCard from "@/components/event/LocationCard";
@@ -602,12 +602,13 @@ export default function DashboardLayout() {
             ref={scrollRef}
           >
             {allPosts?.map((item: IPost) => (
-              <div key={item._id} className='p-6 space-y-6'>
+              <div
+                onClick={() => router.push(`/event/${item?._id}`)}
+                key={item._id}
+                className='p-6 space-y-6'
+              >
                 <Card className='overflow-hidden !border-none p-0'>
-                  <div
-                    onClick={() => router.push(`/event/${item?._id}`)}
-                    className='aspect-vide relative cursor-pointer!'
-                  >
+                  <div className='aspect-vide relative cursor-pointer!'>
                     {item?.image && (
                       <Image
                         width={600}
@@ -629,15 +630,15 @@ export default function DashboardLayout() {
                       <div className='flex items-center space-x-4'>
                         <div className='flex items-center gap-5 text-base text-gray-600'>
                           <div className='flex items-center gap-1'>
-                            <MapPin className='w-4 h-4 text-[#15B826] flex-shrink-0' />
+                            <MapPin className='w-4 h-4 text-[#108F1E] flex-shrink-0' />
                             <p className='text-sm'>
-                              {getDistanceKm(
+                              {getDistanceMiles(
                                 userLat!,
                                 userLng!,
                                 item?.location?.coordinates[1],
                                 item?.location?.coordinates[0],
                               ).toFixed(1)}{" "}
-                              km
+                              miles
                             </p>
                           </div>
 
@@ -663,7 +664,10 @@ export default function DashboardLayout() {
                         {item.description}
                       </p>
 
-                      <div className='flex items-center space-x-3 pt-2'>
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className='flex items-center space-x-3 pt-2'
+                      >
                         {(item?.category === "event" ||
                           item?.category === "service" ||
                           item?.category === "deal" ||

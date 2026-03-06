@@ -150,7 +150,7 @@ const AttendingEvents = () => {
                 </h3>
               </div>
               <div className='flex items-center gap-4 mb-3 text-sm text-[#4B5563]'>
-                <MapPin className='w-4 h-4 text-[#15B826]' />
+                <MapPin className='w-4 h-4 text-[#108F1E]' />
                 <span>{event.address}</span>
               </div>
               <p className='text-sm text-[#4B5563] leading-relaxed'>

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import getDistanceKm from "@/utils/getDistanceMiles";
+import getDistanceMiles from "@/utils/getDistanceMiles";
 import { MapPin, Star, Tag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,13 +41,13 @@ export default function RelatedCard({ userLng, userLat, relevantPosts }: any) {
               {/* Distance */}
               <span className='flex items-center gap-1 text-[#374151] text-sm'>
                 <MapPin className='w-4 h-4 text-[#108F1E]' />
-                {getDistanceKm(
+                {getDistanceMiles(
                   userLat,
                   userLng,
                   post?.location?.coordinates[1],
                   post?.location?.coordinates[0],
                 ).toFixed(1)}{" "}
-                km
+                miles
               </span>
 
               {/* Rating */}

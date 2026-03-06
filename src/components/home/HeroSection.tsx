@@ -36,7 +36,7 @@ export function HeroSection() {
             </p>
 
             {/* CTA Button */}
-            <div className='pt-2'>
+            <div className='w-full flex items-center md:items-start justify-center md:justify-start pt-2'>
               <button
                 onClick={handleExplore}
                 onMouseEnter={() => setIsHovered(true)}

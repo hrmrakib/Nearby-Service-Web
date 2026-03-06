@@ -10,7 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useGetPostDetailByIdQuery } from "@/redux/features/post/postAPI";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import { useCreateBoostPaymentIntentMutation } from "@/redux/features/boost/boostAPI";
-import getDistanceKm from "@/utils/getDistanceMiles";
+import getDistanceMiles from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { toast } from "sonner";
 
@@ -112,15 +112,15 @@ export default function BoostPostPage() {
               </div>
 
               <div className='flex items-center gap-1 text-gray-600'>
-                <MapPin className='w-4 h-4' />
+                <MapPin className='w-4 h-4 text-[#108F1E]' />
                 <span className='text-sm'>
-                  {getDistanceKm(
+                  {getDistanceMiles(
                     userLat!,
                     userLng!,
                     postDetail?.location?.coordinates[1],
                     postDetail?.location?.coordinates[0],
                   ).toFixed(1)}{" "}
-                  km
+                  miles
                 </span>
               </div>
             </div>

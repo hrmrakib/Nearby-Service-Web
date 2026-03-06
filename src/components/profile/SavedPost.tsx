@@ -106,7 +106,7 @@ export default function SavedPost() {
                 </div>
 
                 <div className='flex items-center gap-4 mb-3 text-sm text-[#4B5563]'>
-                  <MapPin className='w-4 h-4 text-[#15B826]' />
+                  <MapPin className='w-4 h-4 text-[#108F1E]' />
                   <span>{event?.postId?.address}</span>
                 </div>
 

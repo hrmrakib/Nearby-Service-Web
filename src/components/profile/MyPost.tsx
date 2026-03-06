@@ -136,7 +136,7 @@ const MyPost = () => {
               </div>
               <div className='flex items-center gap-2.5 mb-3 text-sm text-[#4B5563]'>
                 <div className='w-6 h-6'>
-                  <MapPin className='w-4 h-4 text-[#15B826]' />
+                  <MapPin className='w-4 h-4 text-[#108F1E]' />
                 </div>
                 <p>{post.address}</p>
               </div>

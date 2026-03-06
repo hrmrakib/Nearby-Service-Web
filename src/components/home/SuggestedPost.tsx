@@ -14,7 +14,7 @@ import {
 import Image from "next/image";
 import { useSuggestionPostQuery } from "@/redux/features/post/postAPI";
 import Link from "next/link";
-import getDistanceKm from "@/utils/getDistanceMiles";
+import getDistanceMiles from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
 
 const categoryColors: Record<string, string> = {
@@ -160,13 +160,13 @@ export function SuggestedPost() {
                             <MapPin size={11} />
                             <span className='truncate max-w-[120px]'>
                               {/* {item.address} */}
-                              {getDistanceKm(
+                              {getDistanceMiles(
                                 userLat!,
                                 userLng!,
                                 item?.location?.coordinates[1],
                                 item?.location?.coordinates[0],
                               ).toFixed(1)}{" "}
-                              km
+                              miles
                             </span>
                           </span>
                         )}
@@ -337,7 +337,7 @@ export function SuggestedPost2() {
 
                     {/* Distance */}
                     <div className='flex items-center gap-1.5 text-xs sm:text-sm text-teal-600'>
-                      <MapPin size={16} className='flex-shrink-0' />
+                      <MapPin size={16} className='flex-shrink-0 text-[#108F1E]' />
                       <span>{event.distance} miles</span>
                     </div>
                   </div>

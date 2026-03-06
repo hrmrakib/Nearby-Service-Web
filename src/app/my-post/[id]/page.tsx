@@ -24,7 +24,7 @@ import {
 } from "@/redux/features/post/postAPI";
 import { useGetReviewsByPostIdQuery } from "@/redux/features/review/reviewAPI";
 import formatDate from "@/utils/formatDate";
-import getDistanceKm from "@/utils/getDistanceMiles";
+import getDistanceMiles from "@/utils/getDistanceMiles";
 import {
   Avatar,
   AvatarFallback,
@@ -193,16 +193,16 @@ export default function EventDetailPage() {
               </div>
 
               <div className='flex items-center gap-2'>
-                <MapPin className='w-5 h-5' />
+                <MapPin className='w-5 h-5 text-[#108F1E]' />
                 <span className='font-semibold'>
                   {" "}
-                  {getDistanceKm(
+                  {getDistanceMiles(
                     userLat!,
                     userLng!,
                     postDetail?.location?.coordinates[1],
                     postDetail?.location?.coordinates[0],
                   ).toFixed(1)}{" "}
-                  km
+                  miles
                 </span>
                 <span>•</span>
                 <AddressDisplay
@@ -273,7 +273,9 @@ export default function EventDetailPage() {
                 <span
                   className={`transition-transform duration-200 ${attended ? "scale-110" : ""}`}
                 ></span>
-                <span className='truncate'>{postDetail?.boost ? "Boosted" : "Boost"}</span>
+                <span className='truncate'>
+                  {postDetail?.boost ? "Boosted" : "Boost"}
+                </span>
               </button>
 
               <div className='flex-1 flex items-center gap-6'>

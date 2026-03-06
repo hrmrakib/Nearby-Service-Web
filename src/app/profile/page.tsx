@@ -340,7 +340,7 @@ export default function ProfilePage() {
 
           {/* Location */}
           <div className='flex items-center justify-center gap-1 text-[#4B5563] mb-6'>
-            <MapPin className='w-4 h-4' />
+            <MapPin className='w-4 h-4 text-[#108F1E]' />
             <span className='text-sm'>
               {profile?.address || "No address provided"}
             </span>

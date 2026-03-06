@@ -1,10 +1,10 @@
-function getDistanceKm(
+function getDistanceMiles(
   lat1: number,
   lng1: number,
   lat2: number,
   lng2: number,
 ): number {
-  const R = 6371; // Earth's radius in km
+  const R = 3958.8; // Earth's radius in miles
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
 
@@ -17,4 +17,4 @@ function getDistanceKm(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default getDistanceKm;
+export default getDistanceMiles;

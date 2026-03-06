@@ -121,7 +121,7 @@ export default function ReviewPage() {
                   </div>
 
                   <div className='flex items-center gap-1 text-gray-600'>
-                    <MapPin className='w-4 h-4' />
+                    <MapPin className='w-4 h-4 text-[#108F1E]' />
                     <span className='text-sm'>2.3 miles</span>
                   </div>
                 </div>

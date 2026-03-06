@@ -27,7 +27,7 @@ import {
 import { useGetReviewsByPostIdQuery } from "@/redux/features/review/reviewAPI";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import formatDate from "@/utils/formatDate";
-import getDistanceKm from "@/utils/getDistanceMiles";
+import getDistanceMiles from "@/utils/getDistanceMiles";
 import {
   Avatar,
   AvatarFallback,
@@ -72,8 +72,10 @@ function EventDetailPageInner() {
   const [showReportBtn, setShowReportBtn] = useState(false);
   const [showAttendingModal, setShowAttendingModal] = useState(false);
 
-  const [toggleSaveMutation] = useToggleSaveMutation();
-  const [toggleLikeMutation] = useToggleLikeMutation();
+  const [toggleSaveMutation, { isLoading: saveLoading }] =
+    useToggleSaveMutation();
+  const [toggleLikeMutation, { isLoading: likeLoading }] =
+    useToggleLikeMutation();
   const [newChatMutation, { isLoading: newChatLoading }] = useNewChatMutation();
   const [attendEventMutation] = useAttendEventMutation();
 
@@ -97,6 +99,9 @@ function EventDetailPageInner() {
   const thumbnails = postDetail?.media?.filter((m: string) =>
     /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
   );
+
+  console.log({ postDetail });
+  console.log({ thumbnails });
 
   useEffect(() => {
     if (postDetail?.image) {
@@ -248,16 +253,16 @@ function EventDetailPageInner() {
               </div>
 
               <div className='flex items-center gap-2'>
-                <MapPin className='w-5 h-5' />
+                <MapPin className='w-5 h-5 text-[#108F1E]' />
                 <span className='font-semibold'>
                   {" "}
-                  {getDistanceKm(
+                  {getDistanceMiles(
                     userLat!,
                     userLng!,
                     postDetail?.location?.coordinates[1],
                     postDetail?.location?.coordinates[0],
                   ).toFixed(1)}{" "}
-                  km
+                  miles
                 </span>
                 <span>•</span>
                 <AddressDisplay
@@ -425,10 +430,11 @@ function EventDetailPageInner() {
                     {/* Save Button */}
                     <button
                       onClick={handleSave}
+                      disabled={saveLoading}
                       className={`
               flex-shrink-0 flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
-              transition-all duration-200 active:scale-95 select-none
+              transition-all duration-200 active:scale-95 select-none disabled:opacity-50
               ${
                 postDetail?.isSaved
                   ? "border-green-500 bg-green-100 text-green-600"
@@ -450,10 +456,11 @@ function EventDetailPageInner() {
                     {/* Like Button */}
                     <button
                       onClick={handleLike}
+                      disabled={likeLoading}
                       className={`
               flex-shrink-0 flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
-              transition-all duration-200 active:scale-95 select-none
+              transition-all duration-200 active:scale-95 select-none disabled:opacity-50 disabled:cursor-not-allowed 
               ${
                 postDetail?.liked
                   ? "border-green-500 bg-green-50 text-green-600"
@@ -474,7 +481,9 @@ function EventDetailPageInner() {
                       >
                         <path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' />
                       </svg>
-                      <span className='hidden sm:inline'>Like</span>
+                      <span className='hidden sm:inline'>
+                        {postDetail?.liked ? "Liked" : "Like"}
+                      </span>
                       <span className='text-xs text-green-400'>
                         {postDetail?.likes > 0 ? postDetail?.likes : 0}
                       </span>

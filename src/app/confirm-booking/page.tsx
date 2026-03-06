@@ -61,7 +61,7 @@ export default function ConfirmBookingPage() {
                   at {bookingDetails.time}
                 </div>
                 <div className='flex items-center gap-2 text-gray-600 mt-4'>
-                  <MapPin className='w-4 h-4 text-green-600' />
+                  <MapPin className='w-4 h-4 text-[#108F1E]' />
                   <span>123 Maple Street</span>
                 </div>
               </div>
@@ -111,7 +111,7 @@ export default function ConfirmBookingPage() {
                   </div>
 
                   <div className='flex items-center gap-1 text-gray-600'>
-                    <MapPin className='w-4 h-4' />
+                    <MapPin className='w-4 h-4 text-[#108F1E]' />
                     <span className='text-sm'>2.3 miles</span>
                   </div>
                 </div>

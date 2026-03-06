@@ -610,7 +610,7 @@ export default function PostEventModal({
                     }
                     required
                   />
-                  <MapPin className='absolute right-3 top-1/2 -translate-y-1/2 text-green-600 w-4 h-4' />
+                  <MapPin className='absolute right-3 top-1/2 -translate-y-1/2 text-[#108F1E] w-4 h-4' />
                 </div>
 
                 {missingPLocationResults.length > 0 && (

@@ -210,7 +210,7 @@ export default function Navbar() {
     },
     {
       label: "Terms of Services",
-      href: "/terms",
+      href: "/terms-of-services",
       icon: (
         <svg
           viewBox='0 0 24 24'
@@ -226,7 +226,7 @@ export default function Navbar() {
     },
     {
       label: "Privacy Policy",
-      href: "/privacy",
+      href: "/privacy-policy",
       icon: (
         <svg
           viewBox='0 0 24 24'
@@ -323,7 +323,7 @@ export default function Navbar() {
             {/* Logo + Search */}
             <div className='flex items-center gap-4'>
               <Link href='/' className='flex items-center'>
-                <Image src='/logo.png' alt='Logo' width={42} height={48} />
+                <Image src='/logo.svg' alt='Logo' width={42} height={48} />
               </Link>
               <div className='hidden md:flex items-center relative'>
                 <Search className='absolute left-3 w-4 h-4 text-muted-foreground' />

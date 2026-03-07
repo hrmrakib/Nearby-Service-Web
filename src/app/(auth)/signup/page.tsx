@@ -15,7 +15,7 @@ export default function SignupPage() {
         {/* Logo Section */}
         <div className='flex flex-col items-center mb-8'>
           <div className='w-32 h-32 flex items-center justify-center'>
-            <Image src='/logo.svg' alt='Jurnee Logo' width={100} height={100} />
+            <Image src='/logo.png' alt='Jurnee Logo' width={100} height={100} />
           </div>
         </div>
 

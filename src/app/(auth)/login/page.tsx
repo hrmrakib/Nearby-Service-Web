@@ -138,7 +138,7 @@ export default function LoginForm() {
     <div className='w-full h-screen grid grid-cols-1 lg:grid-cols-2 gap-8 items-center'>
       <div className='hidden lg:flex flex-col items-center justify-center space-y-6'>
         <div className='w-32 h-32 flex items-center justify-center'>
-          <Image src='/logo.svg' alt='Jurnee Logo' width={100} height={100} />
+          <Image src='/logo.png' alt='Jurnee Logo' width={100} height={100} />
         </div>
         <h1 className='text-5xl font-bold text-[#15B826]'>Jurnee</h1>
         <p className='text-gray-600 text-center text-lg'>

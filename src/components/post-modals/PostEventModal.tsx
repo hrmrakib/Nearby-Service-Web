@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Upload, Video, Loader } from "lucide-react";
 import Image from "next/image";
-import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
+import {
+  useCreateEventPostMutation,
+  useUpdatePostMutation,
+} from "@/redux/features/post/postAPI";
 import { toast } from "sonner";
 import CommonLocationInput from "../location/CommonLocationInput";
 import { useSelector } from "react-redux";
@@ -37,12 +40,15 @@ export default function PostEventModal({
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
     null,
   );
-
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverVideo, setCoverVideo] = useState<File | null>(null);
 
   const [images, setImages] = useState<File[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
+
+  // Existing URL-based previews populated in edit mode
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [existingVideoUrls, setExistingVideoUrls] = useState<string[]>([]);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -51,20 +57,18 @@ export default function PostEventModal({
   const [location, setLocation] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
-
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+
   const [createEventPostMutation, { isLoading }] = useCreateEventPostMutation();
+  const [updatePostMutation, { isLoading: isLoadingUpdate }] =
+    useUpdatePostMutation();
 
-  const data = useSelector((state: any) => state.postModal.data);
-
-  console.log(data);
+  const { data, isEditMode } = useSelector((state: any) => state.postModal);
 
   useEffect(() => {
-    if (!data) return;
+    if (!data || !isEditMode) return;
 
-    setCoverImagePreview(data.image ?? null);
-    setCoverVideoPreview(data.media ?? null);
     setTitle(data.title ?? "");
     setDescription(data.description ?? "");
     setLocation(data.address ?? "");
@@ -72,8 +76,36 @@ export default function PostEventModal({
     setLng(data.location?.coordinates?.[0] ?? null);
     setDate(data.startDate ? data.startDate.slice(0, 10) : "");
     setTime(data.startDate ? data.startDate.slice(11, 16) : "");
-    setHashtags(data.hashtags ?? []);
-  }, [data]);
+
+    // Hashtags — data.hasTag is a string array
+    if (Array.isArray(data.hasTag)) setHashtags(data.hasTag);
+
+    // Cover image
+    if (data.image) setCoverImagePreview(data.image);
+
+    // Split media array → first video becomes cover video, rest split by type
+    if (Array.isArray(data.media) && data.media.length > 0) {
+      const mediaImageUrls: string[] = [];
+      const mediaVideoUrls: string[] = [];
+      let firstVideoUrl: string | null = null;
+
+      data.media.forEach((url: string) => {
+        if (url.includes("/video/")) {
+          if (!firstVideoUrl) {
+            firstVideoUrl = url;
+          } else {
+            mediaVideoUrls.push(url);
+          }
+        } else if (url.includes("/image/")) {
+          mediaImageUrls.push(url);
+        }
+      });
+
+      if (firstVideoUrl) setCoverVideoPreview(firstVideoUrl);
+      if (mediaImageUrls.length > 0) setExistingImageUrls(mediaImageUrls);
+      if (mediaVideoUrls.length > 0) setExistingVideoUrls(mediaVideoUrls);
+    }
+  }, [data, isEditMode]);
 
   const handleCoverImageUpload = (e: any) => {
     const file = e.target.files?.[0];
@@ -91,16 +123,18 @@ export default function PostEventModal({
 
   const handleMoreImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []) as File[];
-    const imageFiles = files.filter((file) => file.type.startsWith("image"));
-
-    setImages((prev: File[]) => [...prev, ...imageFiles]);
+    setImages((prev) => [
+      ...prev,
+      ...files.filter((f) => f.type.startsWith("image")),
+    ]);
   };
 
   const handleMoreVideos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []) as File[];
-    const videoFiles = files.filter((file) => file.type.startsWith("video"));
-
-    setVideos((prev: File[]) => [...prev, ...videoFiles]);
+    setVideos((prev) => [
+      ...prev,
+      ...files.filter((f) => f.type.startsWith("video")),
+    ]);
   };
 
   const handleLocationChange = ({
@@ -120,11 +154,9 @@ export default function PostEventModal({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
-      const value = inputValue.trim().replace(/^#/, ""); // remove leading #
-      if (value && !hashtags.includes(value)) {
-        setHashtags([...hashtags, value]);
-      }
-      setInputValue(""); // reset input
+      const value = inputValue.trim().replace(/^#/, "");
+      if (value && !hashtags.includes(value)) setHashtags([...hashtags, value]);
+      setInputValue("");
     }
   };
 
@@ -134,7 +166,6 @@ export default function PostEventModal({
 
   const buildPayload = () => {
     const isoStartDate = new Date(`${date}T${time}`).toISOString();
-
     return {
       title,
       description,
@@ -153,27 +184,23 @@ export default function PostEventModal({
   const handlePublish = async () => {
     try {
       const formData = new FormData();
+      formData.append("data", JSON.stringify(buildPayload()));
 
-      const dataObj = buildPayload();
-      formData.append("data", JSON.stringify(dataObj));
+      if (coverImage) formData.append("image", coverImage);
+      if (coverVideo) formData.append("media", coverVideo);
+      images.forEach((img) => formData.append("media", img));
+      videos.forEach((vid) => formData.append("media", vid));
 
-      if (coverImage) {
-        formData.append("image", coverImage);
+      let res;
+
+      if (isEditMode) {
+        res = await updatePostMutation({
+          postId: data._id,
+          body: formData,
+        }).unwrap();
+      } else {
+        res = await createEventPostMutation(formData).unwrap();
       }
-
-      if (coverVideo) {
-        formData.append("media", coverVideo);
-      }
-
-      images.forEach((img) => {
-        formData.append("media", img);
-      });
-
-      videos.forEach((vid) => {
-        formData.append("media", vid);
-      });
-
-      const res = await createEventPostMutation(formData).unwrap();
 
       if (res?.success) {
         toast.success(res?.message);
@@ -185,12 +212,14 @@ export default function PostEventModal({
     }
   };
 
+  const isBusy = isLoading || isLoadingUpdate;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='sm:max-w-lg p-0 max-h-[90vh] overflow-y-auto scrollbar'>
         <DialogHeader className='flex flex-row items-center justify-between p-4 border-b'>
           <DialogTitle className='text-lg font-semibold'>
-            Post Event
+            {isEditMode ? "Edit Event" : "Post Event"}
           </DialogTitle>
         </DialogHeader>
 
@@ -201,7 +230,6 @@ export default function PostEventModal({
             </label>
 
             <div className='grid grid-cols-2 gap-3'>
-              {/* IMAGE UPLOAD */}
               <label
                 htmlFor='cover-image-upload'
                 className='border rounded-lg p-3 flex flex-col items-center cursor-pointer'
@@ -222,7 +250,6 @@ export default function PostEventModal({
                 )}
               </label>
 
-              {/* VIDEO UPLOAD */}
               <label
                 htmlFor='cover-video-upload'
                 className='border rounded-lg p-3 flex flex-col items-center cursor-pointer'
@@ -249,7 +276,6 @@ export default function PostEventModal({
               className='hidden'
               onChange={handleCoverImageUpload}
             />
-
             <input
               id='cover-video-upload'
               type='file'
@@ -259,14 +285,38 @@ export default function PostEventModal({
             />
           </div>
 
+          {/* More Images */}
           <div>
             <label className='text-sm font-bold mb-2 block'>
               Add More Images
             </label>
-
             <div className='flex gap-2 flex-wrap'>
+              {/* Existing image URLs (edit mode) */}
+              {existingImageUrls.map((url, i) => (
+                <div key={`existing-img-${i}`} className='relative w-16 h-16'>
+                  <Image
+                    alt='additional'
+                    width={200}
+                    height={200}
+                    src={url}
+                    className='w-16 h-16 object-cover rounded'
+                  />
+                  <button
+                    className='absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full'
+                    onClick={() =>
+                      setExistingImageUrls(
+                        existingImageUrls.filter((_, idx) => idx !== i),
+                      )
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              {/* Newly picked images */}
               {images.map((img, i) => (
-                <div key={i} className='relative w-16 h-16'>
+                <div key={`new-img-${i}`} className='relative w-16 h-16'>
                   <Image
                     alt='additional'
                     width={200}
@@ -291,7 +341,6 @@ export default function PostEventModal({
               >
                 <Plus className='w-4 h-4 text-gray-400' />
               </label>
-
               <input
                 id='more-images-upload'
                 type='file'
@@ -303,14 +352,32 @@ export default function PostEventModal({
             </div>
           </div>
 
+          {/* More Videos */}
           <div>
             <label className='text-sm font-bold mb-2 block'>
               Add More Videos
             </label>
-
             <div className='flex gap-2 flex-wrap'>
+              {/* Existing video URLs (edit mode) */}
+              {existingVideoUrls.map((url, i) => (
+                <div key={`existing-vid-${i}`} className='relative w-16 h-16'>
+                  <Video className='w-12 h-12 text-gray-400 mx-auto mt-2' />
+                  <button
+                    className='absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full'
+                    onClick={() =>
+                      setExistingVideoUrls(
+                        existingVideoUrls.filter((_, idx) => idx !== i),
+                      )
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+
+              {/* Newly picked videos */}
               {videos.map((vid, i) => (
-                <div key={i} className='relative w-16 h-16'>
+                <div key={`new-vid-${i}`} className='relative w-16 h-16'>
                   <Video className='w-12 h-12 text-gray-400 mx-auto mt-2' />
                   <button
                     className='absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full'
@@ -329,7 +396,6 @@ export default function PostEventModal({
               >
                 <Plus className='w-4 h-4 text-gray-400' />
               </label>
-
               <input
                 id='more-videos-upload'
                 type='file'
@@ -448,15 +514,477 @@ export default function PostEventModal({
           <Button
             type='submit'
             disabled={
-              !title || !description || !date || !time || !location || isLoading
+              !title || !description || !date || !time || !location || isBusy
             }
             onClick={handlePublish}
             className='w-full bg-[#15B826] hover:bg-green-600 text-white'
           >
-            Publish {isLoading && <Loader className='animate-spin' />}
+            {isEditMode ? "Update" : "Publish"}{" "}
+            {isBusy && <Loader className='animate-spin' />}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+// /* eslint-disable @typescript-eslint/no-explicit-any */
+// /* eslint-disable @typescript-eslint/no-unused-vars */
+
+// "use client";
+
+// import { useState, useRef, useEffect } from "react";
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogHeader,
+//   DialogTitle,
+// } from "@/components/ui/dialog";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Textarea } from "@/components/ui/textarea";
+// import { Plus, Upload, Video, Loader } from "lucide-react";
+// import Image from "next/image";
+// import { useCreateEventPostMutation } from "@/redux/features/post/postAPI";
+// import { toast } from "sonner";
+// import CommonLocationInput from "../location/CommonLocationInput";
+// import { useSelector } from "react-redux";
+
+// interface PostEventModalProps {
+//   isOpen: boolean;
+//   onClose: () => void;
+//   onBack: () => void;
+// }
+
+// export default function PostEventModal({
+//   isOpen,
+//   onClose,
+//   onBack,
+// }: PostEventModalProps) {
+//   const [coverVideoPreview, setCoverVideoPreview] = useState<string | null>(
+//     null,
+//   );
+//   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
+//     null,
+//   );
+
+//   const [coverImage, setCoverImage] = useState<File | null>(null);
+//   const [coverVideo, setCoverVideo] = useState<File | null>(null);
+
+//   const [images, setImages] = useState<File[]>([]);
+//   const [videos, setVideos] = useState<File[]>([]);
+
+//   const [title, setTitle] = useState("");
+//   const [description, setDescription] = useState("");
+//   const [hashtags, setHashtags] = useState<string[]>([]);
+//   const [inputValue, setInputValue] = useState("");
+//   const [location, setLocation] = useState("");
+//   const [lat, setLat] = useState<number | null>(null);
+//   const [lng, setLng] = useState<number | null>(null);
+
+//   const [date, setDate] = useState("");
+//   const [time, setTime] = useState("");
+//   const [createEventPostMutation, { isLoading }] = useCreateEventPostMutation();
+
+//   const data = useSelector((state: any) => state.postModal.data);
+
+//   useEffect(() => {
+//     if (!data) return;
+
+//     setCoverImagePreview(data.image ?? null);
+//     setCoverVideoPreview(data.media ?? null);
+//     setTitle(data.title ?? "");
+//     setDescription(data.description ?? "");
+//     setLocation(data.address ?? "");
+//     setLat(data.location?.coordinates?.[1] ?? null);
+//     setLng(data.location?.coordinates?.[0] ?? null);
+//     setDate(data.startDate ? data.startDate.slice(0, 10) : "");
+//     setTime(data.startDate ? data.startDate.slice(11, 16) : "");
+//     setHashtags(data.hashtags ?? []);
+//   }, [data]);
+
+//   const handleCoverImageUpload = (e: any) => {
+//     const file = e.target.files?.[0];
+//     if (!file || !file.type.startsWith("image")) return;
+//     setCoverImage(file);
+//     setCoverImagePreview(URL.createObjectURL(file));
+//   };
+
+//   const handleCoverVideoUpload = (e: any) => {
+//     const file = e.target.files?.[0];
+//     if (!file || !file.type.startsWith("video")) return;
+//     setCoverVideo(file);
+//     setCoverVideoPreview(URL.createObjectURL(file));
+//   };
+
+//   const handleMoreImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const files = Array.from(e.target.files ?? []) as File[];
+//     const imageFiles = files.filter((file) => file.type.startsWith("image"));
+
+//     setImages((prev: File[]) => [...prev, ...imageFiles]);
+//   };
+
+//   const handleMoreVideos = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const files = Array.from(e.target.files ?? []) as File[];
+//     const videoFiles = files.filter((file) => file.type.startsWith("video"));
+
+//     setVideos((prev: File[]) => [...prev, ...videoFiles]);
+//   };
+
+//   const handleLocationChange = ({
+//     location,
+//     lat,
+//     lng,
+//   }: {
+//     location: string;
+//     lat: number | null;
+//     lng: number | null;
+//   }) => {
+//     setLocation(location);
+//     setLat(lat);
+//     setLng(lng);
+//   };
+
+//   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+//     if (e.key === "Enter" || e.key === ",") {
+//       e.preventDefault();
+//       const value = inputValue.trim().replace(/^#/, ""); // remove leading #
+//       if (value && !hashtags.includes(value)) {
+//         setHashtags([...hashtags, value]);
+//       }
+//       setInputValue(""); // reset input
+//     }
+//   };
+
+//   const handleRemove = (tag: string) => {
+//     setHashtags(hashtags.filter((t) => t !== tag));
+//   };
+
+//   const buildPayload = () => {
+//     const isoStartDate = new Date(`${date}T${time}`).toISOString();
+
+//     return {
+//       title,
+//       description,
+//       startDate: isoStartDate,
+//       startTime: isoStartDate,
+//       address: location,
+//       category: "event",
+//       location: {
+//         type: "Point",
+//         coordinates: [lng ?? 0, lat ?? 0],
+//       },
+//       hasTag: hashtags,
+//     };
+//   };
+
+//   const handlePublish = async () => {
+//     try {
+//       const formData = new FormData();
+
+//       const dataObj = buildPayload();
+//       formData.append("data", JSON.stringify(dataObj));
+
+//       if (coverImage) {
+//         formData.append("image", coverImage);
+//       }
+
+//       if (coverVideo) {
+//         formData.append("media", coverVideo);
+//       }
+
+//       images.forEach((img) => {
+//         formData.append("media", img);
+//       });
+
+//       videos.forEach((vid) => {
+//         formData.append("media", vid);
+//       });
+
+//       const res = await createEventPostMutation(formData).unwrap();
+
+//       if (res?.success) {
+//         toast.success(res?.message);
+//         onClose();
+//       }
+//     } catch (err) {
+//       console.error("Upload Failed:", err);
+//       toast.error("Upload failed.");
+//     }
+//   };
+
+//   return (
+//     <Dialog open={isOpen} onOpenChange={onClose}>
+//       <DialogContent className='sm:max-w-lg p-0 max-h-[90vh] overflow-y-auto scrollbar'>
+//         <DialogHeader className='flex flex-row items-center justify-between p-4 border-b'>
+//           <DialogTitle className='text-lg font-semibold'>
+//             Post Event
+//           </DialogTitle>
+//         </DialogHeader>
+
+//         <div className='p-4 space-y-6'>
+//           <div>
+//             <label className='text-sm font-bold mb-2 block'>
+//               Cover Image / Cover Video
+//             </label>
+
+//             <div className='grid grid-cols-2 gap-3'>
+//               {/* IMAGE UPLOAD */}
+//               <label
+//                 htmlFor='cover-image-upload'
+//                 className='border rounded-lg p-3 flex flex-col items-center cursor-pointer'
+//               >
+//                 {coverImagePreview ? (
+//                   <Image
+//                     alt='Cover'
+//                     width={300}
+//                     height={300}
+//                     src={coverImagePreview}
+//                     className='w-full h-32 object-cover rounded'
+//                   />
+//                 ) : (
+//                   <>
+//                     <Upload className='w-6 h-6 text-gray-400' />
+//                     <p className='text-xs text-gray-500 mt-2'>Upload Image</p>
+//                   </>
+//                 )}
+//               </label>
+
+//               {/* VIDEO UPLOAD */}
+//               <label
+//                 htmlFor='cover-video-upload'
+//                 className='border rounded-lg p-3 flex flex-col items-center cursor-pointer'
+//               >
+//                 {coverVideoPreview ? (
+//                   <video
+//                     src={coverVideoPreview}
+//                     controls
+//                     className='w-full h-32 rounded'
+//                   />
+//                 ) : (
+//                   <>
+//                     <Video className='w-6 h-6 text-gray-400' />
+//                     <p className='text-xs text-gray-500 mt-2'>Upload Video</p>
+//                   </>
+//                 )}
+//               </label>
+//             </div>
+
+//             <input
+//               id='cover-image-upload'
+//               type='file'
+//               accept='image/*'
+//               className='hidden'
+//               onChange={handleCoverImageUpload}
+//             />
+
+//             <input
+//               id='cover-video-upload'
+//               type='file'
+//               accept='video/*'
+//               className='hidden'
+//               onChange={handleCoverVideoUpload}
+//             />
+//           </div>
+
+//           <div>
+//             <label className='text-sm font-bold mb-2 block'>
+//               Add More Images
+//             </label>
+
+//             <div className='flex gap-2 flex-wrap'>
+//               {images.map((img, i) => (
+//                 <div key={i} className='relative w-16 h-16'>
+//                   <Image
+//                     alt='additional'
+//                     width={200}
+//                     height={200}
+//                     src={URL.createObjectURL(img)}
+//                     className='w-16 h-16 object-cover rounded'
+//                   />
+//                   <button
+//                     className='absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full'
+//                     onClick={() =>
+//                       setImages(images.filter((_, idx) => idx !== i))
+//                     }
+//                   >
+//                     ×
+//                   </button>
+//                 </div>
+//               ))}
+
+//               <label
+//                 htmlFor='more-images-upload'
+//                 className='w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer'
+//               >
+//                 <Plus className='w-4 h-4 text-gray-400' />
+//               </label>
+
+//               <input
+//                 id='more-images-upload'
+//                 type='file'
+//                 multiple
+//                 accept='image/*'
+//                 className='hidden'
+//                 onChange={handleMoreImages}
+//               />
+//             </div>
+//           </div>
+
+//           <div>
+//             <label className='text-sm font-bold mb-2 block'>
+//               Add More Videos
+//             </label>
+
+//             <div className='flex gap-2 flex-wrap'>
+//               {videos.map((vid, i) => (
+//                 <div key={i} className='relative w-16 h-16'>
+//                   <Video className='w-12 h-12 text-gray-400 mx-auto mt-2' />
+//                   <button
+//                     className='absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full'
+//                     onClick={() =>
+//                       setVideos(videos.filter((_, idx) => idx !== i))
+//                     }
+//                   >
+//                     ×
+//                   </button>
+//                 </div>
+//               ))}
+
+//               <label
+//                 htmlFor='more-videos-upload'
+//                 className='w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer'
+//               >
+//                 <Plus className='w-4 h-4 text-gray-400' />
+//               </label>
+
+//               <input
+//                 id='more-videos-upload'
+//                 type='file'
+//                 multiple
+//                 accept='video/*'
+//                 className='hidden'
+//                 onChange={handleMoreVideos}
+//               />
+//             </div>
+//           </div>
+
+//           <div>
+//             <label className='text-sm font-bold mb-2 block'>Title</label>
+//             <Input
+//               placeholder='Enter title'
+//               value={title}
+//               onChange={(e) => setTitle(e.target.value)}
+//             />
+//           </div>
+
+//           <div>
+//             <label className='text-sm font-bold mb-2 block'>Description</label>
+//             <Textarea
+//               rows={4}
+//               value={description}
+//               onChange={(e) => setDescription(e.target.value)}
+//               className='w-full resize-none'
+//               placeholder='Write event details...'
+//             />
+//           </div>
+
+//           <div className='grid grid-cols-2 gap-3'>
+//             <div
+//               className='relative cursor-pointer'
+//               onClick={() =>
+//                 (
+//                   document.getElementById("date") as HTMLInputElement
+//                 )?.showPicker()
+//               }
+//             >
+//               <label className='text-sm font-bold mb-2 block'>Date</label>
+//               <Input
+//                 id='date'
+//                 type='date'
+//                 value={date}
+//                 onChange={(e) => setDate(e.target.value)}
+//               />
+//             </div>
+
+//             <div
+//               className='relative cursor-pointer'
+//               onClick={() =>
+//                 (
+//                   document.getElementById("time") as HTMLInputElement
+//                 )?.showPicker()
+//               }
+//             >
+//               <label className='text-sm font-bold mb-2 block'>Time</label>
+//               <Input
+//                 id='time'
+//                 type='time'
+//                 value={time}
+//                 onChange={(e) => setTime(e.target.value)}
+//               />
+//             </div>
+//           </div>
+
+//           <div className='relative'>
+//             <label className='text-sm font-bold mb-2 block'>
+//               Location (Type your full address)
+//             </label>
+//             <div className='relative'>
+//               <CommonLocationInput
+//                 onChange={handleLocationChange}
+//                 currentLocation={location}
+//               />
+//             </div>
+//           </div>
+
+//           <div className='grid grid-cols-2 gap-3'>
+//             <div>
+//               <label className='text-sm font-bold mb-2 block'>Latitude</label>
+//               <Input value={lat ?? ""} readOnly className='bg-gray-100' />
+//             </div>
+//             <div>
+//               <label className='text-sm font-bold mb-2 block'>Longitude</label>
+//               <Input value={lng ?? ""} readOnly className='bg-gray-100' />
+//             </div>
+//           </div>
+
+//           <div>
+//             <label className='text-sm font-bold mb-2 block'>
+//               Hashtags{" "}
+//               <span className='text-xs'>(Type tag and press Enter)</span>
+//             </label>
+//             <Input
+//               type='text'
+//               placeholder='Type a hashtag and press Enter'
+//               value={inputValue}
+//               onChange={(e) => setInputValue(e.target.value)}
+//               onKeyDown={handleKeyDown}
+//             />
+//             <div className='mt-2 flex flex-wrap gap-2'>
+//               {hashtags.map((tag, index) => (
+//                 <span
+//                   key={index}
+//                   className='bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm cursor-pointer'
+//                   onClick={() => handleRemove(tag)}
+//                 >
+//                   #{tag} ×
+//                 </span>
+//               ))}
+//             </div>
+//           </div>
+
+//           <Button
+//             type='submit'
+//             disabled={
+//               !title || !description || !date || !time || !location || isLoading
+//             }
+//             onClick={handlePublish}
+//             className='w-full bg-[#15B826] hover:bg-green-600 text-white'
+//           >
+//             Publish {isLoading && <Loader className='animate-spin' />}
+//           </Button>
+//         </div>
+//       </DialogContent>
+//     </Dialog>
+//   );
+// }

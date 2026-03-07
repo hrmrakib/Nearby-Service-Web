@@ -127,6 +127,11 @@ const MyPost = () => {
                   Boosted
                 </div>
               )}
+              {post?.category && (
+                <div className='absolute top-2 right-2 bg-[#108F1E] text-[#374151] text-base py-1 px-2 rounded-full'>
+                  {post?.category}
+                </div>
+              )}
             </div>
             <CardContent className='p-4'>
               <div className='flex items-start justify-between mb-2'>

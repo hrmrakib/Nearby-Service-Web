@@ -73,26 +73,11 @@ export default function SupportPage() {
   const errorInput = "border-red-400 focus:border-red-400 focus:ring-red-100";
 
   return (
-    <main className='min-h-screen bg-gray-100 flex items-center justify-center px-4 py-6'>
+    <main className='min-h- bg-[#F3F4F6] flex items-center justify-center px-4 py-4'>
       <div className='w-full max-w-lg'>
         <div className='rounded-3xl bg-white shadow-xl px-6 py-10 sm:px-10'>
           {/* Header */}
           <div className='mb-8 text-center'>
-            <div className='inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-green-50 mb-4'>
-              <svg
-                className='w-6 h-6 text-green-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z'
-                />
-              </svg>
-            </div>
             <h1 className='text-2xl font-bold text-gray-900 tracking-tight'>
               Support
             </h1>
@@ -134,7 +119,7 @@ export default function SupportPage() {
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate className='space-y-5'>
+            <form onSubmit={handleSubmit} noValidate className='space-y-4'>
               {/* Name */}
               <div>
                 <label className='block text-base font-bold text-gray-700 mb-1.5'>

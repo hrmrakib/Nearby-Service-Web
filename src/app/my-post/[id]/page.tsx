@@ -143,11 +143,11 @@ export default function EventDetailPage() {
 
       if (res?.success) {
         toast.success(res?.message);
+        setShowDeleteModal(false);
         router.push("/profile");
       }
     } catch (error: any) {
       toast.error(error?.data?.message);
-    } finally {
       setShowDeleteModal(false);
     }
   };
@@ -255,7 +255,7 @@ export default function EventDetailPage() {
           {/* Action Bar */}
           <div className='w-full max-w-2xl bg-white rounded-2xl px-4 py-3'>
             <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
-              {/* Get Deal */}
+              {/* Action - Boost Button */}
               <button
                 onClick={() => router.push(`/boost-post/${postDetail?._id}`)}
                 disabled={postDetail?.boost}

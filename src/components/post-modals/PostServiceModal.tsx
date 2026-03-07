@@ -383,8 +383,6 @@ export default function PostServiceModal({
     }
   };
 
-  console.log(data2._id);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='sm:max-w-lg p-0 max-h-[90vh] overflow-y-auto scrollbar'>

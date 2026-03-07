@@ -447,7 +447,7 @@ export default function DashboardLayout() {
 
       <div
         id='all-post'
-        className='container mx-auto grid grid-cols-1 lg:grid-cols-[20rem_1fr] xl:grid-cols-[20rem_1fr_20rem] gap-6 mt-8'
+        className='container mx-auto grid grid-cols-1 lg:grid-cols-[20rem_1fr] xl:grid-cols-[20rem_1fr_20rem] gap-6 lg:gap-24 mt-8'
       >
         {/* Left Column - Filters */}
         <div className='sticky top-20 w-80 bg-transparent hidden lg:block h-[calc(100vh-80px)] overflow-y-auto'>
@@ -602,24 +602,26 @@ export default function DashboardLayout() {
             ref={scrollRef}
           >
             {allPosts?.map((item: IPost) => (
-              <div
-                onClick={() => router.push(`/event/${item?._id}`)}
-                key={item._id}
-                className='p-6 space-y-6'
-              >
+              <div key={item._id} className='p-6 space-y-6'>
                 <Card className='overflow-hidden !border-none p-0'>
-                  <div className='aspect-vide relative cursor-pointer!'>
+                  <div
+                    onClick={() => router.push(`/event/${item?._id}`)}
+                    className='relative cursor-pointer'
+                  >
                     {item?.image && (
                       <Image
                         width={600}
                         height={600}
                         src={item.image || ""}
                         alt={item.title}
-                        className='w-full h-[232px] object-cover'
+                        className='w-full h-[300px] object-cover'
                       />
                     )}
                   </div>
-                  <CardContent className='p-6'>
+                  <CardContent
+                    onClick={() => router.push(`/event/${item?._id}`)}
+                    className='p-6 cursor-pointer gap-0'
+                  >
                     <div className='space-y-4'>
                       <div className='flex items-start justify-between'>
                         <h3 className='text-xl font-semibold text-gray-900'>

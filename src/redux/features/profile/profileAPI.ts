@@ -39,6 +39,7 @@ const profileAPI = baseAPI.injectEndpoints({
         url: `/post/my-post?page=${page}&limit=${limit}`,
         method: "GET",
       }),
+      providesTags: ["Post"],
     }),
 
     getAttendingEvent: builder.query({

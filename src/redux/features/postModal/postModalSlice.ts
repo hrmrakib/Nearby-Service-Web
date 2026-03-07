@@ -24,6 +24,8 @@ const postModalSlice = createSlice({
     openPostModal: (state) => {
       state.isOpen = true;
       state.selectedPostType = null;
+      state.data = null;
+      state.isEditMode = false;
     },
     closePostModal: (state) => {
       state.isOpen = false;

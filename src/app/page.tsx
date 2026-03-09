@@ -441,6 +441,10 @@ export default function DashboardLayout() {
     console.log(minStarRating);
   };
 
+  const handleApplyFilters = () => {
+    refetch();
+  };
+
   return (
     <div className='min-h-[calc(100vh-60px)] bg-[#F3F4F6]'>
       <HeroSection />
@@ -477,11 +481,14 @@ export default function DashboardLayout() {
 
                 {/* City Filter */}
                 <div className='space-y-2'>
-                  <Label className='text-sm font-medium text-gray-700'>
+                  <Label className='text-sm font-medium text-[#374151]'>
                     City
                   </Label>
 
-                  <CommonLocationInput onChange={handleLocationChange} />
+                  <CommonLocationInput
+                    onChange={handleLocationChange}
+                    className='border-[#6B7280]'
+                  />
                 </div>
 
                 {/* Date Range Filter */}
@@ -489,6 +496,7 @@ export default function DashboardLayout() {
                   <Label className='text-sm font-medium text-gray-700'>
                     Date
                   </Label>
+
                   <Button
                     variant='outline'
                     onClick={() => setShowCalendar(!showCalendar)}
@@ -591,6 +599,14 @@ export default function DashboardLayout() {
 
                 <MinStarRating onChange={handleMinStarRatingChange} />
               </div>
+
+              {/* Apply Filters Button */}
+              <Button
+                onClick={handleApplyFilters}
+                className='w-full bg-[#15B826] hover:bg-[#0bb61c] text-white'
+              >
+                Apply Filters
+              </Button>
             </div>
           </ScrollArea>
         </div>
@@ -725,6 +741,7 @@ export default function DashboardLayout() {
                   address={"3517 W. Gray St. Utica, Pennsylvania 57867"}
                   lat={90.39064309999999}
                   lng={23.7511665}
+                  width='max-w-[55%]'
                 />
               </div>
 

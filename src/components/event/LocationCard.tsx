@@ -11,6 +11,7 @@ interface LocationCardProps {
   servicingAreas?: string;
   haveServiceAreas?: boolean;
   className?: string;
+  width?: string;
 }
 
 function GoogleMap({
@@ -139,12 +140,13 @@ export default function LocationCard({
   servicingAreas = "Los Angeles, IE and Orange Country",
   haveServiceAreas,
   className,
+  width,
 }: LocationCardProps) {
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY!;
 
   return (
     <div className={`flex items-center font-[system-ui] ${className}`}>
-      <div className='w-full max-w-[68%]'>
+      <div className={`w-full ${width}`}>
         {/* Card */}
         <Link href='/map'>
           <div className='bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100'>

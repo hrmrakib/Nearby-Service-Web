@@ -200,8 +200,8 @@ export default function CalendarDatePicker({
                     ? "text-[#6B7280] cursor-not-allowed"
                     : "text-gray-900 hover:bg-gray-100 cursor-pointer"
                 }
-                ${isStartDate(day.date) ? "bg-green-500 text-white hover:bg-green-600 rounded-l-full" : ""}
-                ${isEndDate(day.date) ? "bg-green-500 text-white hover:bg-green-600 rounded-r-full" : ""}
+                ${isStartDate(day.date) ? "bg-[#108F1E] text-white hover:bg-green-600 rounded-l-full" : ""}
+                ${isEndDate(day.date) ? "bg-[#108F1E] text-white hover:bg-green-600 rounded-r-full" : ""}
                 ${isInRange && !isSelected ? "bg-[#E5E7EB] text-[#6B7280]" : ""}
               `}
             >
@@ -216,13 +216,13 @@ export default function CalendarDatePicker({
         <Button
           variant='outline'
           onClick={handleReset}
-          className='flex-1 border-green-500 text-green-500 hover:bg-green-50 bg-transparent'
+          className='flex-1 border-[#108F1E] text-[#108F1E] hover:bg-green-50 bg-transparent'
         >
           Reset
         </Button>
         <Button
           onClick={handleApply}
-          className='flex-1 bg-green-500 hover:bg-green-600 text-white'
+          className='flex-1 bg-[#108F1E] hover:bg-green-600 text-white'
         >
           Apply
         </Button>

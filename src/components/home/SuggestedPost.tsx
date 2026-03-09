@@ -93,7 +93,7 @@ export function SuggestedPost() {
         return (
           <div
             key={sectionKey}
-            className='max-w-[68%] bg-white rounded-2xl shadow-sm overflow-hidden'
+            className='max-w-[55%] bg-white rounded-2xl shadow-sm overflow-hidden'
           >
             {/* Section Header */}
             <div className='px-5 py-4 border-b border-gray-100 flex items-center justify-between'>
@@ -337,7 +337,10 @@ export function SuggestedPost2() {
 
                     {/* Distance */}
                     <div className='flex items-center gap-1.5 text-xs sm:text-sm text-teal-600'>
-                      <MapPin size={16} className='flex-shrink-0 text-[#108F1E]' />
+                      <MapPin
+                        size={16}
+                        className='flex-shrink-0 text-[#108F1E]'
+                      />
                       <span>{event.distance} miles</span>
                     </div>
                   </div>

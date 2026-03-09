@@ -610,6 +610,7 @@ function EventDetailPageInner() {
               lng={23.7511665}
               haveServiceAreas={false}
               className='justify-end'
+              width="max-w-[68%]"
             />
 
             <RelatedCard

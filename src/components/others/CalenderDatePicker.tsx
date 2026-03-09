@@ -17,9 +17,9 @@ export default function CalendarDatePicker({
   onDateRangeChange,
   onClose,
 }: CalendarDatePickerProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2025, 8)); // September 2025
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [tempStartDate, setTempStartDate] = useState<Date | null>(
-    startDate || null
+    startDate || null,
   );
   const [tempEndDate, setTempEndDate] = useState<Date | null>(endDate || null);
 
@@ -134,6 +134,14 @@ export default function CalendarDatePicker({
 
   const days = getDaysInMonth(currentMonth);
 
+  const isStartDate = (date: Date) => {
+    return tempStartDate?.toDateString() === date.toDateString();
+  };
+
+  const isEndDate = (date: Date) => {
+    return tempEndDate?.toDateString() === date.toDateString();
+  };
+
   return (
     <div className='bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-72'>
       {/* Header */}
@@ -148,7 +156,7 @@ export default function CalendarDatePicker({
         </Button>
 
         <h3 className='text-lg font-semibold text-gray-900'>
-          {monthNames[currentMonth.getMonth()]}
+          {monthNames[currentMonth.getMonth()]} {" - "}{" "}
           {currentMonth.getFullYear()}
         </h3>
 
@@ -186,16 +194,15 @@ export default function CalendarDatePicker({
               onClick={() => day.isCurrentMonth && handleDateClick(day.date)}
               disabled={!day.isCurrentMonth}
               className={`
-                h-10 w-10 text-sm rounded-full flex items-center justify-center transition-colors
+                h-9 w-9 text-sm flex items-center justify-center transition-colors
                 ${
                   !day.isCurrentMonth
-                    ? "text-gray-300 cursor-not-allowed"
+                    ? "text-[#6B7280] cursor-not-allowed"
                     : "text-gray-900 hover:bg-gray-100 cursor-pointer"
                 }
-                ${
-                  isSelected ? "bg-green-500 text-white hover:bg-green-600" : ""
-                }
-                ${isInRange && !isSelected ? "bg-green-100 text-green-800" : ""}
+                ${isStartDate(day.date) ? "bg-green-500 text-white hover:bg-green-600 rounded-l-full" : ""}
+                ${isEndDate(day.date) ? "bg-green-500 text-white hover:bg-green-600 rounded-r-full" : ""}
+                ${isInRange && !isSelected ? "bg-[#E5E7EB] text-[#6B7280]" : ""}
               `}
             >
               {day.date.getDate()}

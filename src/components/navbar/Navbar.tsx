@@ -175,7 +175,7 @@ export default function Navbar() {
     },
     {
       label: "Boosted Posts",
-      href: "/posts/boosted",
+      href: "/boost-results",
       icon: (
         <svg
           viewBox='0 0 24 24'

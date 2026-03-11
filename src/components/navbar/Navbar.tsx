@@ -29,10 +29,7 @@ import {
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  useGetNotificationsQuery,
-  useGetProfileQuery,
-} from "@/redux/features/profile/profileAPI";
+import { useGetNotificationsQuery } from "@/redux/features/profile/profileAPI";
 import { useDispatch, useSelector } from "react-redux";
 import { setSearchValue } from "@/redux/features/search/globalSearchSlice";
 import { getTimeDifference } from "@/lib/getTimeDifferent";
@@ -83,6 +80,8 @@ export default function Navbar() {
     (state: any) => state.auth,
   );
 
+  // console.log({ user });
+
   useEffect(() => {
     setHasToken(!!localStorage?.getItem("accessToken"));
   }, [userToggle]);
@@ -129,7 +128,7 @@ export default function Navbar() {
     },
     {
       label: "My Bookings",
-      href: "/bookings/my",
+      href: "/my-booking",
       icon: (
         <svg
           viewBox='0 0 24 24'

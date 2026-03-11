@@ -56,6 +56,8 @@ const customBaseQuery: BaseQueryFn<
       }
     }
   } else if (result.error && result.error.status === 403) {
+    console.log("result.error", result.error);
+
     alert("You need to verify your email to use this feature.");
     if (window?.location?.href) window.location.href = "/profile";
   } else if (result.error && result.error.status === 402) {

@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, X, Calendar, Clock, Tag, ChevronRight } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface ServiceItem {
   name: string;
   quantity: number;
@@ -24,8 +22,6 @@ interface Order {
   serviceItems: ServiceItem[];
   priceSummary: { service: number; discount: number; total: number };
 }
-
-// ─── Mock Data ─────────────────────────────────────────────────────────────────
 
 const ORDERS: Order[] = [
   {
@@ -86,8 +82,6 @@ const ORDERS: Order[] = [
   },
 ];
 
-// ─── Order Card ────────────────────────────────────────────────────────────────
-
 function OrderCard({
   order,
   index,
@@ -145,8 +139,6 @@ function OrderCard({
     </button>
   );
 }
-
-// ─── Detail Modal ──────────────────────────────────────────────────────────────
 
 function OrderDetailModal({
   order,
@@ -378,8 +370,6 @@ function OrderDetailModal({
     </div>
   );
 }
-
-// ─── Main Export ───────────────────────────────────────────────────────────────
 
 export default function OrdersPage() {
   const [selected, setSelected] = useState<Order | null>(null);

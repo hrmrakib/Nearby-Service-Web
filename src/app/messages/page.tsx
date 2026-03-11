@@ -711,7 +711,6 @@ function CreateOfferView({
   );
 }
 
-// ─── Preview Offer Modal ──────────────────────────────────────────────────────
 function PreviewOfferView({
   offerData,
   onEdit,
@@ -789,7 +788,6 @@ function PreviewOfferView({
   );
 }
 
-// ─── Accept / Reject Modal ────────────────────────────────────────────────────
 function AcceptRejectView({
   offerData,
   offerId,
@@ -1067,8 +1065,6 @@ function OfferCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 function MessagesPageInner() {
-  // const [chatId, setChatId] = useState("");
-  // const [selectedUser, setSelectedUser] = useState<Conversation>();
   const [messageText, setMessageText] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
   const [searchMessageQuery, setSearchMessageQuery] = useState("");
@@ -1102,7 +1098,7 @@ function MessagesPageInner() {
   const newChatStart = useSelector((state: any) => state.chat.newChatStart);
   const dispatch = useDispatch();
 
-  console.log({ socket });
+  console.log({ chatId });
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const {
@@ -1562,73 +1558,6 @@ function MessagesPageInner() {
                   )}
                 </div>
               ))}
-
-            {/* {!messagesFetching &&
-              messages.map((m: any) => (
-                <div
-                  key={m._id ?? m.id}
-                  className={cn(
-                    "flex",
-                    m.isOwner ? "justify-end" : "justify-start",
-                  )}
-                >
-                  {m.type === "offer" && m.offer ? (
-                    <div className='flex flex-col gap-1 max-w-[75%] sm:max-w-xs lg:max-w-md'>
-                      {m.message && (
-                        <div
-                          className={cn(
-                            "px-4 py-2 rounded-2xl",
-                            m.isOwner
-                              ? "bg-[#0A5512] text-white self-end"
-                              : "bg-gray-100 self-start",
-                          )}
-                        >
-                          <p className='text-sm'>{m.message}</p>
-                        </div>
-                      )}
-
-                      <OfferCard
-                        offer={m.offer}
-                        // Sender gets Edit button
-                        onEdit={
-                          m.isOwner
-                            ? () => handleOpenEditOffer(m.offer)
-                            : undefined
-                        }
-                        // Receiver gets "View Offer" → accept/reject modal
-                        onViewOffer={
-                          !m.isOwner
-                            ? () => handleOpenAcceptReject(m.offer)
-                            : undefined
-                        }
-                      />
-                      <p className='text-xs opacity-50 pl-1'>
-                        {m.timestamp ??
-                          new Date(m.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                      </p>
-                    </div>
-                  ) : (
-                    <div
-                      className={cn(
-                        "px-4 py-2 rounded-2xl max-w-[75%] sm:max-w-xs lg:max-w-md",
-                        m.isOwner ? "bg-[#0A5512] text-white" : "bg-gray-100",
-                      )}
-                    >
-                      <p className='text-sm'>{m.message ?? m.text} </p>
-                      <p className='text-xs mt-1 opacity-70'>
-                        {m.timestamp ??
-                          new Date(m.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))} */}
 
             {isTyping && (
               <div className='flex justify-start'>

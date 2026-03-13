@@ -1,5 +1,6 @@
 "use client";
 
+import { useCreateSupportMutation } from "@/redux/features/support/supportAPI";
 import { useState, ChangeEvent, FormEvent } from "react";
 
 interface FormState {
@@ -23,6 +24,7 @@ export default function SupportPage() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<SubmitStatus>("idle");
+  const [createSupportMutation] = useCreateSupportMutation();
 
   const validate = (): FormErrors => {
     const newErrors: FormErrors = {};
@@ -51,21 +53,30 @@ export default function SupportPage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     const validationErrors = validate();
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
-    setStatus("loading");
-    // Replace with your actual API call, e.g. fetch("/api/support", { method: "POST", body: JSON.stringify(form) })
-    await new Promise<void>((resolve) => setTimeout(resolve, 1500));
-    setStatus("success");
-    setForm({
-      name: "",
-      email: "",
-      subject: "",
-      description: "",
-      transactionId: "",
-    });
+    try {
+      setStatus("loading");
+
+      const res = await createSupportMutation(form).unwrap();
+
+      if (res?.success) {
+        setStatus("success");
+        setForm({
+          name: "",
+          email: "",
+          subject: "",
+          description: "",
+          transactionId: "",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      setStatus("idle");
+    }
   };
 
   const inputBase =
@@ -73,7 +84,7 @@ export default function SupportPage() {
   const errorInput = "border-red-400 focus:border-red-400 focus:ring-red-100";
 
   return (
-    <main className='min-h- bg-[#F3F4F6] flex items-center justify-center px-4 py-4'>
+    <main className='min-h-[90vh] bg-[#F3F4F6] flex items-center justify-center px-4 py-4'>
       <div className='w-full max-w-lg'>
         <div className='rounded-3xl bg-white shadow-xl px-6 py-10 sm:px-10'>
           {/* Header */}

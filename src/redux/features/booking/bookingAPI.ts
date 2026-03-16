@@ -4,14 +4,14 @@ const bookingAPI = baseAPI.injectEndpoints({
   endpoints: (build) => ({
     getUpcomingBookings: build.query({
       query: () => ({
-        url: "/bookings/upcoming",
+        url: "/offer/upcoming",
         method: "GET",
       }),
     }),
 
     getPastBookings: build.query({
       query: () => ({
-        url: "/bookings/past",
+        url: "/offer/past",
         method: "GET",
       }),
     }),

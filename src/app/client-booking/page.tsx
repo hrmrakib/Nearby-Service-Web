@@ -155,17 +155,17 @@ export default function OrdersPage() {
         <main className='py-4 sm:py-6'>
           {isLoading ? (
             <p className='text-gray-500 text-sm'>Loading bookings…</p>
-          ) : displayedBookings.length === 0 ? (
+          ) : displayedBookings?.length === 0 ? (
             <p className='text-gray-500 text-sm'>No bookings found.</p>
           ) : (
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6'>
-              {displayedBookings.map((booking) => (
+              {displayedBookings?.map((booking) => (
                 <Card
                   key={booking._id}
-                  className='overflow-hidden hover:shadow-lg transition-shadow cursor-pointer'
+                  className='overflow-hidden hover:shadow-lg transition-shadow cursor-pointer border-none'
                   onClick={() => handleCardClick(booking)}
                 >
-                  <div className='px-4 sm:px-5 py-4'>
+                  <div className='px-4 sm:px-5'>
                     <div className='flex gap-4'>
                       {/* Provider image */}
                       <div className='flex-shrink-0'>

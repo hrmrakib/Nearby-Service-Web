@@ -741,7 +741,7 @@ export default function DashboardLayout() {
                   address={"3517 W. Gray St. Utica, Pennsylvania 57867"}
                   lat={90.39064309999999}
                   lng={23.7511665}
-                  width='max-w-[55%]'
+                  width='max-w-[70%]'
                 />
               </div>
 

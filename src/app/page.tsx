@@ -25,7 +25,7 @@ import { SuggestedPost } from "@/components/home/SuggestedPost";
 
 const categories = [
   {
-    id: "all",
+    id: "",
     label: "All",
     icon: (
       <svg

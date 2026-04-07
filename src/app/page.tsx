@@ -290,6 +290,10 @@ const renderStars = (count: number) => {
   ));
 };
 
+const today = new Date();
+const next7Days = new Date();
+next7Days.setDate(today.getDate() + 7);
+
 export default function DashboardLayout() {
   const hasSelectedCategory = useSelector(
     (state: any) => state.postCategory.selectedCategory,
@@ -304,8 +308,8 @@ export default function DashboardLayout() {
     startDate: Date | null;
     endDate: Date | null;
   }>({
-    startDate: new Date(2025, 8, 6),
-    endDate: new Date(2025, 8, 15),
+    startDate: today,
+    endDate: next7Days,
   });
   const [location, setLocation] = useState<string>("");
   const [showCalendar, setShowCalendar] = useState(false);
@@ -443,6 +447,12 @@ export default function DashboardLayout() {
 
   const handleApplyFilters = () => {
     refetch();
+  };
+
+  const handleActionOnPost = async (id: string, category: string) => {
+    if (category === "event") {
+      const res = await toggleSaveMutation({});
+    }
   };
 
   return (
@@ -614,12 +624,12 @@ export default function DashboardLayout() {
         {/* Middle Column - Content Feed */}
         <div className='min-w-0 min-h-0'>
           <ScrollArea
-            className='h-auto [&>[data-radix-scroll-area-scrollbar]]:hidden'
+            className='h-auto [&>[data-radix-scroll-area-scrollbar]]:hidden !space-y-2'
             ref={scrollRef}
           >
             {allPosts?.map((item: IPost) => (
               <div key={item._id} className='p-6 space-y-6'>
-                <Card className='overflow-hidden !border-none p-0'>
+                <Card className='overflow-hidden !border-none p-0 shadow-md'>
                   <div
                     onClick={() => router.push(`/event/${item?._id}`)}
                     className='relative cursor-pointer'
@@ -636,20 +646,20 @@ export default function DashboardLayout() {
                   </div>
                   <CardContent
                     onClick={() => router.push(`/event/${item?._id}`)}
-                    className='p-6 cursor-pointer gap-0'
+                    className='p-6 cursor-pointer gap-0 pt-0'
                   >
-                    <div className='space-y-4'>
+                    <div className='space-y-3'>
                       <div className='flex items-start justify-between'>
-                        <h3 className='text-xl font-semibold text-gray-900'>
+                        <h3 className='text-base font-semibold text-gray-900'>
                           {item.title}
                         </h3>
                       </div>
 
                       <div className='flex items-center space-x-4'>
-                        <div className='flex items-center gap-5 text-base text-gray-600'>
+                        <div className='flex items-center gap-5 text-base text-[#374151]'>
                           <div className='flex items-center gap-1'>
                             <MapPin className='w-4 h-4 text-[#108F1E] flex-shrink-0' />
-                            <p className='text-sm'>
+                            <p className='text-[13px] font-medium'>
                               {getDistanceMiles(
                                 userLat!,
                                 userLng!,
@@ -665,21 +675,24 @@ export default function DashboardLayout() {
                               {renderStars(
                                 Math.floor(item?.averageRating || 0),
                               )}
-                              <span className='text-sm font-medium text-gray-900'>
+                              <span className='text-sm font-medium text-[#374151]'>
                                 {item?.averageRating}
                               </span>
                             </div>
                           )}
 
-                          <div className='flex items-center gap-1 text-[#030712] text-sm'>
+                          <div className='flex items-center gap-1 text-[#374151] text-sm capitalize'>
                             <Tag className='w-4 h-4 text-[#108F1E]' />
                             {item?.category}
                           </div>
                         </div>
                       </div>
 
-                      <p className='text-[#374151] text-base leading-relaxed'>
-                        {item.description}
+                      <p className='text-[#374151] text-sm leading-relaxed'>
+                        {item.description.split(" ").length > 28
+                          ? item.description.split(" ").slice(0, 28).join(" ") +
+                            "..."
+                          : item.description}
                       </p>
 
                       <div
@@ -691,7 +704,10 @@ export default function DashboardLayout() {
                           item?.category === "deal" ||
                           item?.category === "alert") && (
                           <button
-                            onClick={() => router.push(`/event/${item?._id}`)}
+                            onClick={() =>
+                              handleActionOnPost(item?._id, item?.category)
+                            }
+                            // onClick={() => router.push(`/event/${item?._id}`)}
                             className='w-[88%] h-11 flex-1 flex items-center justify-center font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600'
                           >
                             {item?.category === "event" && "Attend"}
@@ -700,17 +716,18 @@ export default function DashboardLayout() {
                             {item?.category === "alert" && "Add Comment"}
                           </button>
                         )}
+
                         <Button
                           variant='outline'
                           disabled={isSaving && item?._id === savingItemId}
-                          className={`w-[10%] h-11 px-6 bg-transparent font-semibold text-[#15B826] border border-[#15B826] ${
+                          className={`w-[16%] h-11 px-6 bg-transparent font-semibold text-[#15B826] border border-[#15B826] ${
                             item?.isSaved ? "bg-[#15B826] text-white" : ""
                           }`}
                           onClick={() => handleSaveToggle(item?._id)}
                         >
                           {item?.isSaved ? "Saved" : "Save"}{" "}
                           {isSaving && item?._id === savingItemId && (
-                            <Loader2 className='animate-spin' />
+                            <Loader2 className='w-4 h-4 animate-spin' />
                           )}
                         </Button>
                       </div>

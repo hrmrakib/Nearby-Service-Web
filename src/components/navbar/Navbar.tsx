@@ -318,19 +318,19 @@ export default function Navbar() {
             <div className='hidden md:flex items-center gap-8'>
               <Link
                 href='/'
-                className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
+                className='text-base font-medium text-[#1F2937] hover:text-[#15B826]'
               >
                 Home
               </Link>
               <Link
                 href='/#all-post'
-                className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
+                className='text-base font-medium text-[#1F2937] hover:text-[#15B826]'
               >
                 Recommended
               </Link>
               <button
                 type='button'
-                className='text-lg font-medium text-[#1F2937] hover:text-[#15B826]'
+                className='text-base font-medium text-[#1F2937] hover:text-[#15B826]'
                 // onClick={() => setIsCreatePostOpen(true)}`
                 onClick={() => dispatch(openPostModal())}
               >
@@ -637,10 +637,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <CreatePostModal
-      // isOpen={isCreatePostOpen}
-      // onClose={() => setIsCreatePostOpen(false)}
-      />
+      <CreatePostModal />
 
       {/* Logout Confirmation Dialog */}
       <Dialog open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>

@@ -231,17 +231,17 @@ function EventDetailPageInner() {
           <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent'></div>
 
           {/* Title */}
-          <div className='absolute bottom-6 left-6 md:left-8'>
-            <h1 className='text-3xl md:text-4xl font-bold text-white mb-2'>
+          <div className='absolute bottom-6 left-8 md:left-12'>
+            <h1 className='text-xl md:text-2xl font-bold text-white mb-2'>
               {postDetail?.title || "No title"}
             </h1>
-            <h1 className='text-base md:text-xl font-medium text-white mb-2 capitalize'>
+            <h1 className='text-sm font-normal text-white mb-2 capitalize'>
               {postDetail?.category || "No category"}
             </h1>
             <div className='flex flex-wrap gap-2 text-white text-xs md:text-sm'>
               <div className='flex items-center gap-2'>
                 <MessageSquareText className='w-5 h-5' />
-                <span className='font-semibold'>
+                <span className='font-medium'>
                   {postDetail?.category === "event"
                     ? postDetail?.reviewsCount + " comments"
                     : postDetail?.reviewsCount + " reviews"}
@@ -254,7 +254,7 @@ function EventDetailPageInner() {
 
               <div className='flex items-center gap-2'>
                 <MapPin className='w-5 h-5 text-[#108F1E]' />
-                <span className='font-semibold'>
+                <span className='font-medium text-sm'>
                   {" "}
                   {getDistanceMiles(
                     userLat!,
@@ -265,21 +265,22 @@ function EventDetailPageInner() {
                   miles
                 </span>
                 <span>•</span>
-                <AddressDisplay
+                <p>{postDetail?.address ?? ""}</p>
+                {/* <AddressDisplay
                   key={postDetail?.address}
                   address={postDetail?.address ?? ""}
-                />
+                /> */}
               </div>
 
               <div className='flex items-center gap-2'>
                 <Calendar className='w-5 h-5' />
-                <span className='font-semibold'>
+                <span className='font-medium text-sm'>
                   {formatDate(postDetail?.createdAt)}
                 </span>
               </div>
               <div className='flex items-center gap-2'>
                 <Eye className='w-5 h-5' />
-                <span className='font-semibold'>
+                <span className='font-medium text-sm'>
                   {postDetail?.views}+ Views
                 </span>
               </div>
@@ -313,7 +314,7 @@ function EventDetailPageInner() {
       >
         <div className='container mx-auto bg-white flex flex-col items-start justify-center p-4 font-sans'>
           {/* Action Bar */}
-          <div className='w-full max-w-2xl bg-white rounded-2xl px-4 py-3'>
+          <div className='w-full max-w-[700px] bg-white rounded-2xl px- py-3'>
             <div className='flex flex-wrap items-center gap-2 sm:gap-3'>
               <div className='flex-1 w-full'>
                 {/* Attend Button */}
@@ -328,7 +329,7 @@ function EventDetailPageInner() {
                       ${
                         postDetail?.isAttend
                           ? "bg-green-700 text-white shadow-inner"
-                          : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+                          : "bg-[#17CA2A] hover:bg-green-600 text-white shadow-md hover:shadow-lg"
                       }
                   `}
                   >
@@ -354,7 +355,7 @@ function EventDetailPageInner() {
                     ${
                       attended
                         ? "bg-green-700 text-white shadow-inner"
-                        : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+                        : "bg-[#17CA2A] hover:bg-green-600 text-white shadow-md hover:shadow-lg"
                     }
                   `}
                   >
@@ -380,7 +381,7 @@ function EventDetailPageInner() {
                     ${
                       attended
                         ? "bg-green-700 text-white shadow-inner"
-                        : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+                        : "bg-[#17CA2A] hover:bg-green-600 text-white shadow-md hover:shadow-lg"
                     }
                   `}
                   >
@@ -402,7 +403,7 @@ function EventDetailPageInner() {
               ${
                 attended
                   ? "bg-green-700 text-white shadow-inner"
-                  : "bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg"
+                  : "bg-[#17CA2A] hover:bg-green-600 text-white shadow-md hover:shadow-lg"
               }
             `}
                   >
@@ -418,7 +419,7 @@ function EventDetailPageInner() {
                     <button
                       onClick={() => handleChatStart()}
                       disabled={newChatLoading}
-                      className='flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl border-2 border-green-500 text-green-500 hover:bg-green-50 active:scale-95 transition-all duration-200'
+                      className='flex-shrink-0 flex items-center justify-center w-11 h-11 sm:w-14 sm:h-12 rounded-xl border-2 border-[#17CA2A] text-[#17CA2A] hover:bg-green-50 active:scale-95 transition-all duration-200'
                     >
                       {newChatLoading ? (
                         <Loader2 className='animate-spin' />
@@ -433,23 +434,23 @@ function EventDetailPageInner() {
                       disabled={saveLoading}
                       className={`
               flex-shrink-0 flex items-center justify-center gap-1.5
-              px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
+              px-3 sm:px-6 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
               transition-all duration-200 active:scale-95 select-none disabled:opacity-50
               ${
                 postDetail?.isSaved
-                  ? "border-green-500 bg-green-100 text-green-600"
-                  : "border-green-500 text-green-500 hover:bg-green-50"
+                  ? "border-[#17CA2A] bg-green-100 text-green-600"
+                  : "border-[#17CA2A] text-[#17CA2A] hover:bg-green-50"
               }
             `}
                     >
                       <Bookmark />
-                      <span className='hidden sm:inline'>
+                      <span className='hidden sm:inline text-[#1F2937]'>
                         {postDetail?.isSaved ? "Saved" : "Save"}
                       </span>
-                      <span className='text-xs text-green-400'>
+                      <span className='text-xs text-[#1F2937]'>
                         {postDetail?.totalSaved > 0
                           ? postDetail?.totalSaved
-                          : 0}
+                          : null}
                       </span>
                     </button>
 
@@ -459,12 +460,12 @@ function EventDetailPageInner() {
                       disabled={likeLoading}
                       className={`
               flex-shrink-0 flex items-center justify-center gap-1.5
-              px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
+              px-3 sm:px-6 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm
               transition-all duration-200 active:scale-95 select-none disabled:opacity-50 disabled:cursor-not-allowed 
               ${
                 postDetail?.liked
-                  ? "border-green-500 bg-green-50 text-green-600"
-                  : "border-green-500 text-green-500 hover:bg-green-50"
+                  ? "border-[#17CA2A] bg-green-50 text-green-600"
+                  : "border-[#17CA2A] text-[#17CA2A] hover:bg-green-50"
               }
             `}
                     >
@@ -481,11 +482,11 @@ function EventDetailPageInner() {
                       >
                         <path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z' />
                       </svg>
-                      <span className='hidden sm:inline'>
+                      <span className='hidden sm:inline text-[#1F2937]'>
                         {postDetail?.liked ? "Liked" : "Like"}
                       </span>
-                      <span className='text-xs text-green-400'>
-                        {postDetail?.likes > 0 ? postDetail?.likes : 0}
+                      <span className='text-xs text-[#1F2937]'>
+                        {postDetail?.likes > 0 ? postDetail?.likes : null}
                       </span>
                     </button>
                   </div>
@@ -497,10 +498,10 @@ function EventDetailPageInner() {
                       className={`flex-1 w-full flex items-center justify-center gap-1.5
               px-3 sm:px-4 py-3 h-11 sm:h-12 rounded-xl border-2 font-medium text-sm sm:text-base
               transition-all duration-200 active:scale-95 select-none
-              border-green-500 text-green-500 hover:bg-green-50`}
+              border-[#17CA2A] text-[#17CA2A] hover:bg-green-50`}
                     >
                       <MessageSquareWarning size={16} />
-                      <span className=''>Report</span>
+                      <span className='text-[#1F2937]'>Report Post</span>
                     </button>
                   </div>
                 )}
@@ -610,7 +611,7 @@ function EventDetailPageInner() {
               lng={23.7511665}
               haveServiceAreas={false}
               className='justify-end'
-              width="max-w-[68%]"
+              width='max-w-[68%]'
             />
 
             <RelatedCard

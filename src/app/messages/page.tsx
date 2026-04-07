@@ -20,6 +20,7 @@ import {
   Star,
   ChevronDown,
   BadgeInfo,
+  PlusIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1065,6 +1066,7 @@ function OfferCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 function MessagesPageInner() {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [messageText, setMessageText] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
   const [searchMessageQuery, setSearchMessageQuery] = useState("");
@@ -1082,6 +1084,8 @@ function MessagesPageInner() {
   const { socket, onlineUsers } = useSocket();
   const { user } = useAuth();
 
+  console.log({ selectedFiles });
+
   // ── Offer modal state ──────────────────────────────────────────────────────
   const [modalView, setModalView] = useState<ModalView | null>(null);
   const [offerData, setOfferData] = useState<OfferData>(defaultOfferData());
@@ -1097,8 +1101,7 @@ function MessagesPageInner() {
   const chatId = useSelector((state: any) => state.chat.chatId);
   const newChatStart = useSelector((state: any) => state.chat.newChatStart);
   const dispatch = useDispatch();
-
-  console.log({ chatId });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Queries ────────────────────────────────────────────────────────────────
   const {
@@ -1317,6 +1320,14 @@ function MessagesPageInner() {
     }
 
     setActiveOffer(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length) {
+      setSelectedFiles((prev) => [...prev, ...files]);
+    }
+    e.target.value = "";
   };
 
   const isModalOpen = modalView !== null;
@@ -1575,6 +1586,21 @@ function MessagesPageInner() {
 
           {/* Input */}
           <div className='p-4 bg-white border-t flex gap-2'>
+            <input
+              type='file'
+              ref={fileInputRef}
+              className='hidden'
+              accept='image/*,.pdf,.doc,.docx,.txt'
+              multiple
+              onChange={handleFileChange}
+            />
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <PlusIcon className='h-5 w-5' />
+            </Button>
             <Input
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}

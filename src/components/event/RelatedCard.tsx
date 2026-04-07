@@ -32,14 +32,14 @@ export default function RelatedCard({ userLng, userLat, relevantPosts }: any) {
 
           {/* Content */}
           <div className='bg-white p-5'>
-            <h2 className='display-font text-[#374151] text-2xl font-black leading-tight mb-1'>
+            <h2 className='display-font text-[#374151] text-base font-bold leading-tight mb-1'>
               {post?.title}
             </h2>
 
             {/* Meta row */}
             <div className='flex items-center gap-3 mt-5 flex-wrap'>
               {/* Distance */}
-              <span className='flex items-center gap-1 text-[#374151] text-sm'>
+              <span className='flex items-center gap-1 text-[#374151] font-medium text-sm'>
                 <MapPin className='w-4 h-4 text-[#108F1E]' />
                 {getDistanceMiles(
                   userLat,
@@ -59,7 +59,7 @@ export default function RelatedCard({ userLng, userLat, relevantPosts }: any) {
               </div>
 
               {/* Tag */}
-              <span className='flex items-center gap-1 text-[#030712] text-sm'>
+              <span className='flex items-center gap-1 text-[#030712] font-medium text-sm'>
                 <Tag className='w-4 h-4 text-[#108F1E]' />
                 {post?.category}
               </span>

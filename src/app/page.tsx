@@ -339,7 +339,7 @@ export default function DashboardLayout() {
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
     lat: coordinates?.lat ?? undefined,
     lng: coordinates?.lng ?? undefined,
-    maxDistance: 50,
+    maxDistance: 100,
     minPrice: 0,
     maxPrice: 500,
     dateFrom: today.toISOString(),

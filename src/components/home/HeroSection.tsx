@@ -63,7 +63,6 @@ export function HeroSection() {
               <Image
                 src='/hero-bg.jpg'
                 alt='Festival Community Event'
-                // fill
                 width={800}
                 height={800}
                 className='object-cover w-full h-[60%] rounded-3xl'

@@ -148,8 +148,8 @@ function GoogleMap({
 export default function LocationCard({
   lat = 23.7761516,
   lng = 90.4068457,
-  address = "3517 W. Gray St. Utica, Pennsylvania 57867",
-  servicingAreas = "Los Angeles, IE and Orange Country",
+  address = "",
+  servicingAreas = "",
   haveServiceAreas,
   className,
   width,

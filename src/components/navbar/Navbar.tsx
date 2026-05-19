@@ -34,6 +34,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setSearchValue } from "@/redux/features/search/globalSearchSlice";
 import { getTimeDifference } from "@/lib/getTimeDifferent";
 import { openPostModal } from "@/redux/features/postModal/postModalSlice";
+import useDebounce from "@/hooks/useDebounce";
 
 interface INotification {
   _id: string;
@@ -79,8 +80,16 @@ export default function Navbar() {
   const { user, token, profileLoading } = useSelector(
     (state: any) => state.auth,
   );
+  const [localSearch, setLocalSearch] = useState("");
+  const dispatch = useDispatch();
 
-  // console.log({ user });
+  const debouncedSearchValue = useDebounce(localSearch, 1000); // 1000ms delay
+
+  useEffect(() => {
+    if (debouncedSearchValue !== undefined) {
+      dispatch(setSearchValue(debouncedSearchValue));
+    }
+  }, [debouncedSearchValue, dispatch]);
 
   useEffect(() => {
     setHasToken(!!localStorage?.getItem("accessToken"));
@@ -96,8 +105,6 @@ export default function Navbar() {
       setNotifications((prev) => [...prev, ...notificationsData]);
     }
   }, [notificationsData]);
-
-  const dispatch = useDispatch();
 
   const handleLogout = (): void => {
     localStorage.removeItem("accessToken");
@@ -308,7 +315,8 @@ export default function Navbar() {
                 <Search className='absolute left-3 w-4 h-4 text-muted-foreground' />
                 <Input
                   placeholder='Search nearby...'
-                  onChange={(e) => dispatch(setSearchValue(e.target.value))}
+                  // onChange={(e) => dispatch(setSearchValue(e.target.value))}
+                  onChange={(e) => setLocalSearch(e.target.value)}
                   className='pl-10 w-64 bg-[#E5E7EB] border-0'
                 />
               </div>

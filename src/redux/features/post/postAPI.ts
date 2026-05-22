@@ -11,7 +11,9 @@ const postAPI = baseAPI.injectEndpoints({
         maxDistance,
         minPrice,
         maxPrice,
-        date,
+        dateFrom,
+        dateTo,
+        rating,
         search,
         page,
         limit,
@@ -20,14 +22,28 @@ const postAPI = baseAPI.injectEndpoints({
 
         if (category) queryParams.append("category", category);
         if (subcategory) queryParams.append("subcategory", subcategory);
-        if (lat && lng && maxDistance)
-          queryParams.append("maxDistance", maxDistance.toString());
-        if (minPrice) queryParams.append("minPrice", minPrice.toString());
-        if (maxPrice) queryParams.append("maxPrice", maxPrice.toString());
-        if (date) queryParams.append("date", date);
         if (search) queryParams.append("search", search);
         if (page) queryParams.append("page", page.toString());
         if (limit) queryParams.append("limit", limit.toString());
+
+        // Location — only send all three together
+        if (lat && lng) {
+          queryParams.append("lat", lat.toString());
+          queryParams.append("lng", lng.toString());
+          if (maxDistance)
+            queryParams.append("maxDistance", maxDistance.toString());
+        }
+
+        // Price
+        if (minPrice) queryParams.append("minPrice", minPrice.toString());
+        if (maxPrice) queryParams.append("maxPrice", maxPrice.toString());
+
+        // Date range
+        if (dateFrom) queryParams.append("dateFrom", dateFrom);
+        if (dateTo) queryParams.append("dateTo", dateTo);
+
+        // Rating
+        if (rating) queryParams.append("rating", rating.toString());
 
         return {
           url: `/post/all-post?${queryParams.toString()}`,

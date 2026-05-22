@@ -10,7 +10,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MapPin, Calendar, Tag, Loader2, Loader } from "lucide-react";
 import Image from "next/image";
 import { HeroSection } from "@/components/home/HeroSection";
-import { useGetAllPostQuery } from "@/redux/features/post/postAPI";
+import {
+  useAttendEventMutation,
+  useGetAllPostQuery,
+} from "@/redux/features/post/postAPI";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
@@ -126,7 +129,7 @@ export default function DashboardLayout() {
   const hasSelectedCategory = useSelector(
     (state: any) => state.postCategory.selectedCategory,
   );
-  const { userLat, userLng } = useAuth();
+  const { userLat, userLng, user } = useAuth();
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState(hasSelectedCategory);
 
@@ -160,12 +163,15 @@ export default function DashboardLayout() {
 
   const search = useSelector((state: any) => state.globalSearch.searchValue);
   const [toggleSaveMutation, { isLoading: isSaving }] = useToggleSaveMutation();
+  const [attendEventMutation, { isLoading: isAttending }] =
+    useAttendEventMutation();
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const [allPosts, setAllPosts] = useState<IPost[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
+  const [attendingItemId, setAttendingItemId] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
   const limit = 50;
@@ -176,8 +182,6 @@ export default function DashboardLayout() {
 
   const { data, isFetching, refetch } = useGetAllPostQuery({
     category: selectedCategory,
-    // lat: appliedFilters?.lat ?? userLat,
-    // lng: appliedFilters?.lng ?? userLng,
     lat: appliedFilters?.lat,
     lng: appliedFilters?.lng,
     maxDistance: appliedFilters?.maxDistance,
@@ -190,8 +194,6 @@ export default function DashboardLayout() {
     page,
     limit,
   });
-
-  const totalPosts = data?.meta?.total || 0;
 
   // Reset posts when category or search changes
   useEffect(() => {
@@ -300,10 +302,30 @@ export default function DashboardLayout() {
   };
 
   const handleActionOnPost = async (id: string, category: string) => {
-    if (category === "event") {
-      await toggleSaveMutation({ postId: id }).unwrap();
+    try {
+      if (category === "event") {
+        setAttendingItemId(id);
+        const res = await attendEventMutation(id).unwrap();
+        if (res?.success) {
+          refetch();
+          toast.success(res?.message);
+        }
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message);
+    } finally {
+      setAttendingItemId(null);
     }
   };
+
+  const isUserAttending = (
+    attenders: { email: string }[],
+    email: string,
+  ): boolean => {
+    return attenders.some((attender) => attender.email === email);
+  };
+
+  console.log({ user });
 
   return (
     <div className='min-h-[calc(100vh-60px)] bg-[#F3F4F6]'>
@@ -546,7 +568,47 @@ export default function DashboardLayout() {
                         onClick={(e) => e.stopPropagation()}
                         className='flex items-center space-x-3 pt-2'
                       >
-                        {(item?.category === "event" ||
+                        {item?.category === "event" && (
+                          <button
+                            onClick={() =>
+                              handleActionOnPost(item?._id, item?.category)
+                            }
+                            disabled={
+                              attendingItemId === item._id ||
+                              isUserAttending(
+                                item.attenders,
+                                user?.email as string,
+                              )
+                            }
+                            className={`w-[88%] h-11 flex-1 flex items-center justify-center gap-2 font-semibold text-white rounded-md text-center disabled:cursor-not-allowed transition-colors
+                              ${
+                                isUserAttending(
+                                  item.attenders,
+                                  user?.email as string,
+                                )
+                                  ? "bg-green-700 opacity-80"
+                                  : "bg-[#15B826] hover:bg-green-600 disabled:opacity-70"
+                              }`}
+                          >
+                            {attendingItemId === item._id ? (
+                              <>
+                                <Loader2 className='w-4 h-4 animate-spin' />
+                                <span>Attending...</span>
+                              </>
+                            ) : isUserAttending(
+                                item.attenders,
+                                user?.email as string,
+                              ) ? (
+                              <>
+                                <span>✓</span>
+                                <span>Attending</span>
+                              </>
+                            ) : (
+                              "Attend"
+                            )}
+                          </button>
+                        )}
+                        {/* {(item?.category === "event" ||
                           item?.category === "service" ||
                           item?.category === "deal" ||
                           item?.category === "alert") && (
@@ -554,14 +616,23 @@ export default function DashboardLayout() {
                             onClick={() =>
                               handleActionOnPost(item?._id, item?.category)
                             }
-                            className='w-[88%] h-11 flex-1 flex items-center justify-center font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600'
+                            disabled={attendingItemId === item._id}
+                            className='w-[88%] h-11 flex-1 flex items-center justify-center gap-2 font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600 disabled:opacity-70 disabled:cursor-not-allowed'
                           >
-                            {item?.category === "event" && "Attend"}
+                            {item?.category === "event" &&
+                              (attendingItemId === item._id ? (
+                                <>
+                                  <Loader2 className='w-4 h-4 animate-spin' />
+                                  <span>Attending...</span>
+                                </>
+                              ) : (
+                                "Attend"
+                              ))}
                             {item?.category === "service" && "Request Quote"}
                             {item?.category === "deal" && "Get Deal"}
                             {item?.category === "alert" && "Add Comment"}
                           </button>
-                        )}
+                        )} */}
 
                         <Button
                           variant='outline'

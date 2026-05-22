@@ -99,12 +99,6 @@ function EventDetailPageInner() {
 
   const { socket } = useSocket();
 
-  // REMOVE this:
-  const thumbnails = postDetail?.media?.filter((m: string) =>
-    /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
-  );
-
-  // REPLACE with this:
   const allImages: string[] = [
     ...(postDetail?.image ? [postDetail.image] : []),
     ...(postDetail?.media?.filter((m: string) =>

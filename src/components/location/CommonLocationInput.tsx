@@ -25,7 +25,7 @@ declare global {
   }
 }
 
-export function CommonLocationInput({
+export default function CommonLocationInput({
   onChange,
   placeholder = "City or Zip Code",
   className = "",
@@ -35,6 +35,8 @@ export function CommonLocationInput({
   const locationInputRef = useRef<HTMLInputElement>(null);
   const [mapsInstance, setMapsInstance] = useState<any>(null);
 
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_AUTO_SUGGESTION;
+
   useEffect(() => {
     if (window.google?.maps) {
       setMapsInstance(window.google.maps);
@@ -42,7 +44,7 @@ export function CommonLocationInput({
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_AUTO_SUGGESTION}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
     script.async = true;
     script.defer = true;
     script.onload = () => setMapsInstance(window.google.maps);

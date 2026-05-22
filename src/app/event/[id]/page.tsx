@@ -72,6 +72,9 @@ function EventDetailPageInner() {
   const [showReportBtn, setShowReportBtn] = useState(false);
   const [showAttendingModal, setShowAttendingModal] = useState(false);
 
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   const [toggleSaveMutation, { isLoading: saveLoading }] =
     useToggleSaveMutation();
   const [toggleLikeMutation, { isLoading: likeLoading }] =
@@ -96,16 +99,22 @@ function EventDetailPageInner() {
 
   const { socket } = useSocket();
 
+  // REMOVE this:
   const thumbnails = postDetail?.media?.filter((m: string) =>
     /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
   );
 
-  console.log({ postDetail });
-  console.log({ thumbnails });
+  // REPLACE with this:
+  const allImages: string[] = [
+    ...(postDetail?.image ? [postDetail.image] : []),
+    ...(postDetail?.media?.filter((m: string) =>
+      /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
+    ) ?? []),
+  ];
 
   useEffect(() => {
-    if (postDetail?.image) {
-      setImagePreview(postDetail?.image);
+    if (allImages.length > 0) {
+      setImagePreview(allImages[0]);
     }
   }, [postDetail]);
 
@@ -212,6 +221,30 @@ function EventDetailPageInner() {
     }
   };
 
+  // Add these handlers:
+  const handleThumbnailClick = (thumb: string, idx: number) => {
+    setImagePreview(thumb);
+    setLightboxIndex(idx);
+  };
+
+  const handleHeroClick = () => {
+    const currentIndex = allImages.findIndex((t) => t === imagePreview);
+    setLightboxIndex(currentIndex >= 0 ? currentIndex : 0);
+    setLightboxOpen(true);
+  };
+
+  const handleLightboxPrev = () => {
+    const newIndex = (lightboxIndex - 1 + allImages.length) % allImages.length;
+    setLightboxIndex(newIndex);
+    setImagePreview(allImages[newIndex]);
+  };
+
+  const handleLightboxNext = () => {
+    const newIndex = (lightboxIndex + 1) % allImages.length;
+    setLightboxIndex(newIndex);
+    setImagePreview(allImages[newIndex]);
+  };
+
   if (isLoading) {
     return <LoadingSpinner text='event' />;
   }
@@ -220,7 +253,10 @@ function EventDetailPageInner() {
     <div className='min-h-screen bg-[#F3F4F6]'>
       <div className='relative w-full'>
         {/* Hero Section */}
-        <div className='relative w-full h-56 md:h-128 overflow-hidden bg-card'>
+        <div
+          className='relative w-full h-56 md:h-128 overflow-hidden bg-card cursor-zoom-in'
+          onClick={handleHeroClick}
+        >
           <Image
             src={imagePreview}
             alt='Night at Casa Verde'
@@ -228,7 +264,7 @@ function EventDetailPageInner() {
             className='object-cover'
             priority
           />
-          <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent'></div>
+          <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent' />
 
           {/* Title */}
           <div className='absolute bottom-6 left-8 md:left-12'>
@@ -247,7 +283,11 @@ function EventDetailPageInner() {
                     : postDetail?.reviewsCount + " reviews"}
                 </span>
                 <span>•</span>
-                <a href='#see-all' className='hover:underline'>
+                <a
+                  href='#see-all'
+                  className='hover:underline'
+                  onClick={(e) => e.stopPropagation()}
+                >
                   See all
                 </a>
               </div>
@@ -255,7 +295,6 @@ function EventDetailPageInner() {
               <div className='flex items-center gap-2'>
                 <MapPin className='w-5 h-5 text-[#108F1E]' />
                 <span className='font-medium text-sm'>
-                  {" "}
                   {getDistanceMiles(
                     userLat!,
                     userLng!,
@@ -266,10 +305,6 @@ function EventDetailPageInner() {
                 </span>
                 <span>•</span>
                 <p>{postDetail?.address ?? ""}</p>
-                {/* <AddressDisplay
-                  key={postDetail?.address}
-                  address={postDetail?.address ?? ""}
-                /> */}
               </div>
 
               <div className='flex items-center gap-2'>
@@ -288,13 +323,15 @@ function EventDetailPageInner() {
           </div>
         </div>
 
-        {/* Thumbnail Photos Bottom Right — outside overflow-hidden, on top of all */}
+        {/* Thumbnail strip */}
         <div className='absolute -bottom-4 md:-bottom-8 right-6 flex gap-5 z-[500]'>
-          {thumbnails?.map((thumb: string, idx: number) => (
+          {allImages.map((thumb: string, idx: number) => (
             <div
               key={idx}
-              className='w-12 lg:w-24 h-12 lg:h-24 rounded-lg overflow-hidden shadow-lg'
-              onClick={() => setImagePreview(thumb)}
+              className={`w-12 lg:w-24 h-12 lg:h-24 rounded-lg overflow-hidden shadow-lg cursor-pointer ring-2 transition-all ${
+                imagePreview === thumb ? "ring-[#17CA2A]" : "ring-transparent"
+              }`}
+              onClick={() => handleThumbnailClick(thumb, idx)}
             >
               <Image
                 src={thumb}
@@ -307,6 +344,107 @@ function EventDetailPageInner() {
           ))}
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxOpen && allImages.length > 0 && (
+        <div
+          className='fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center'
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className='absolute top-4 right-4 text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition-colors z-10'
+          >
+            <svg
+              width='20'
+              height='20'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+            >
+              <line x1='18' y1='6' x2='6' y2='18' />
+              <line x1='6' y1='6' x2='18' y2='18' />
+            </svg>
+          </button>
+
+          {allImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLightboxPrev();
+              }}
+              className='absolute left-4 text-white bg-black/50 hover:bg-black/80 rounded-full p-3 transition-colors z-10'
+            >
+              <svg
+                width='20'
+                height='20'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2.5'
+              >
+                <polyline points='15 18 9 12 15 6' />
+              </svg>
+            </button>
+          )}
+
+          <div
+            className='relative w-full max-w-4xl max-h-[85vh] mx-16'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={allImages[lightboxIndex]}
+              alt={`Image ${lightboxIndex + 1}`}
+              width={1200}
+              height={800}
+              className='w-full h-full object-contain max-h-[85vh] rounded-lg'
+            />
+            <div className='absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white text-sm px-3 py-1 rounded-full'>
+              {lightboxIndex + 1} / {allImages.length}
+            </div>
+          </div>
+
+          {allImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLightboxNext();
+              }}
+              className='absolute right-4 text-white bg-black/50 hover:bg-black/80 rounded-full p-3 transition-colors z-10'
+            >
+              <svg
+                width='20'
+                height='20'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2.5'
+              >
+                <polyline points='9 18 15 12 9 6' />
+              </svg>
+            </button>
+          )}
+
+          {allImages.length > 1 && (
+            <div className='absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2'>
+              {allImages.map((_: string, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex(idx);
+                    setImagePreview(allImages[idx]);
+                  }}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    idx === lightboxIndex ? "bg-white scale-125" : "bg-white/50"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div
         className='bg-white'

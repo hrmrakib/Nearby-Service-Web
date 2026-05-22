@@ -568,20 +568,25 @@ export default function DashboardLayout() {
                         onClick={(e) => e.stopPropagation()}
                         className='flex items-center space-x-3 pt-2'
                       >
-                        {item?.category === "event" && (
+                        {(item?.category === "event" ||
+                          item?.category === "service" ||
+                          item?.category === "deal" ||
+                          item?.category === "alert") && (
                           <button
                             onClick={() =>
                               handleActionOnPost(item?._id, item?.category)
                             }
                             disabled={
-                              attendingItemId === item._id ||
-                              isUserAttending(
-                                item.attenders,
-                                user?.email as string,
-                              )
+                              item?.category === "event" &&
+                              (attendingItemId === item._id ||
+                                isUserAttending(
+                                  item.attenders,
+                                  user?.email as string,
+                                ))
                             }
                             className={`w-[88%] h-11 flex-1 flex items-center justify-center gap-2 font-semibold text-white rounded-md text-center disabled:cursor-not-allowed transition-colors
                               ${
+                                item?.category === "event" &&
                                 isUserAttending(
                                   item.attenders,
                                   user?.email as string,
@@ -590,21 +595,29 @@ export default function DashboardLayout() {
                                   : "bg-[#15B826] hover:bg-green-600 disabled:opacity-70"
                               }`}
                           >
-                            {attendingItemId === item._id ? (
-                              <>
-                                <Loader2 className='w-4 h-4 animate-spin' />
-                                <span>Attending...</span>
-                              </>
-                            ) : isUserAttending(
-                                item.attenders,
-                                user?.email as string,
-                              ) ? (
-                              <>
-                                <span>✓</span>
-                                <span>Attending</span>
-                              </>
+                            {item?.category === "event" ? (
+                              attendingItemId === item._id ? (
+                                <>
+                                  <Loader2 className='w-4 h-4 animate-spin' />
+                                  <span>Attending...</span>
+                                </>
+                              ) : isUserAttending(
+                                  item.attenders,
+                                  user?.email as string,
+                                ) ? (
+                                <>
+                                  <span>✓</span>
+                                  <span>Attending</span>
+                                </>
+                              ) : (
+                                "Attend"
+                              )
+                            ) : item?.category === "service" ? (
+                              "Request Quote"
+                            ) : item?.category === "deal" ? (
+                              "Get Deal"
                             ) : (
-                              "Attend"
+                              "Add Comment"
                             )}
                           </button>
                         )}
@@ -620,14 +633,22 @@ export default function DashboardLayout() {
                             className='w-[88%] h-11 flex-1 flex items-center justify-center gap-2 font-semibold text-white rounded-md text-center bg-[#15B826] hover:bg-green-600 disabled:opacity-70 disabled:cursor-not-allowed'
                           >
                             {item?.category === "event" &&
-                              (attendingItemId === item._id ? (
-                                <>
-                                  <Loader2 className='w-4 h-4 animate-spin' />
-                                  <span>Attending...</span>
-                                </>
-                              ) : (
-                                "Attend"
-                              ))}
+                            attendingItemId === item._id ? (
+                              <>
+                                <Loader2 className='w-4 h-4 animate-spin' />
+                                <span>Attending...</span>
+                              </>
+                            ) : isUserAttending(
+                                item.attenders,
+                                user?.email as string,
+                              ) ? (
+                              <>
+                                <span>✓</span>
+                                <span>Attending</span>
+                              </>
+                            ) : (
+                              "Attend"
+                            )}
                             {item?.category === "service" && "Request Quote"}
                             {item?.category === "deal" && "Get Deal"}
                             {item?.category === "alert" && "Add Comment"}

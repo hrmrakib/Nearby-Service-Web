@@ -13,6 +13,7 @@ interface LocationResult {
 }
 
 interface LocationInputProps {
+  value?: string | null;
   onChange: (result: LocationResult | null) => void;
   placeholder?: string;
   className?: string;
@@ -26,12 +27,13 @@ declare global {
 }
 
 export default function CommonLocationInput({
+  value,
   onChange,
   placeholder = "City or Zip Code",
   className = "",
   label = "Location",
 }: LocationInputProps) {
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState(value ?? "");
   const locationInputRef = useRef<HTMLInputElement>(null);
   const [mapsInstance, setMapsInstance] = useState<any>(null);
 

@@ -61,9 +61,6 @@ export interface IFollowing {
 
 interface IUser {
   name: string;
-  location: string;
-  lat: number | null;
-  lng: number | null;
   image: string;
   bio: string;
   paypalAccount: string;
@@ -81,13 +78,17 @@ export default function ProfilePage() {
 
   const [user, setUser] = useState<IUser>({
     name: "",
-    location: "",
-    lat: null as number | null,
-    lng: null as number | null,
     image: "",
     bio: "",
     paypalAccount: "",
   });
+
+  const [coordinates, setCoordinates] = useState<{
+    address: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
+
   const { data: userProfile, refetch } = useGetProfileQuery(undefined);
   const [updateProfileMutation, { isLoading }] = useUpdateProfileMutation();
   const { data: myPost } = useGetMyPostQuery({});
@@ -108,16 +109,24 @@ export default function ProfilePage() {
   const profile = userProfile?.data;
 
   useEffect(() => {
-    setUser({
-      name: profile?.name,
-      location: profile?.address,
-      lat: profile?.location?.coordinates[0],
-      lng: profile?.location?.coordinates[1],
-      image: profile?.image,
-      bio: profile?.bio,
-      paypalAccount: profile?.paypalAccount,
-    });
+    if (profile) {
+      setUser({
+        name: profile?.name,
+
+        image: profile?.image,
+        bio: profile?.bio,
+        paypalAccount: profile?.paypalAccount,
+      });
+
+      setCoordinates({
+        address: profile?.address,
+        lat: profile?.location?.coordinates[0],
+        lng: profile?.location?.coordinates[1],
+      });
+    }
   }, [profile]);
+
+  console.log({ profile });
 
   const handleSaveChanges = async () => {
     try {
@@ -125,7 +134,11 @@ export default function ProfilePage() {
 
       const data = {
         name: user.name,
-        address: user.location,
+        address: coordinates?.address,
+        location: {
+          type: "Point",
+          coordinates: [coordinates?.lng, coordinates?.lat],
+        },
         bio: user.bio,
         paypalAccount: user.paypalAccount,
       };
@@ -246,21 +259,11 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label className='block text-lg font-bold text-[#030712] mb-2'>
-                  Location
-                </label>
-
                 <CommonLocationInput
-                  onChange={(location) =>
-                    setUser({
-                      ...user,
-                      location: location.location,
-                      lat: location.lat,
-                      lng: location.lng,
-                    })
-                  }
-                  className='bg-white!'
-                  currentLocation={user?.location}
+                  value={coordinates?.address}
+                  onChange={(result) => setCoordinates(result)}
+                  label='Location'
+                  placeholder='City or Zip Code'
                 />
               </div>
 

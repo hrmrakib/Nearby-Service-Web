@@ -15,9 +15,6 @@ export default function SignupForm() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
-    location: "",
-    lng: null as number | null,
-    lat: null as number | null,
     email: "",
     password: "",
     confirmPassword: "",
@@ -30,6 +27,11 @@ export default function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [createAccountMutation] = useCreateAccountMutation();
+  const [coordinates, setCoordinates] = useState<{
+    address: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -38,7 +40,7 @@ export default function SignupForm() {
       newErrors.name = "Name is required";
     }
 
-    if (!formData.location.trim()) {
+    if (!coordinates?.address?.trim()) {
       newErrors.location = "Location is required";
     }
 
@@ -98,10 +100,10 @@ export default function SignupForm() {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        address: formData.location,
+        address: coordinates?.address,
         location: {
           type: "Point",
-          coordinates: [formData.lng, formData.lat], // long, latt
+          coordinates: [coordinates?.lng, coordinates?.lat], // long, latt
         },
       }).unwrap();
 
@@ -115,13 +117,11 @@ export default function SignupForm() {
 
         setFormData({
           name: "",
-          location: "",
-          lng: null,
-          lat: null,
           email: "",
           password: "",
           confirmPassword: "",
         });
+        setCoordinates(null);
         setTermsAccepted(false);
       }
     } catch (error: any) {
@@ -165,23 +165,11 @@ export default function SignupForm() {
 
       {/* Location Field */}
       <div>
-        <label
-          htmlFor='location'
-          className='block text-sm font-semibold text-gray-800 mb-2'
-        >
-          Location
-        </label>
-        
         <CommonLocationInput
-          currentLocation={formData?.location}
-          onChange={(loc) =>
-            setFormData({
-              ...formData,
-              location: loc.location,
-              lat: loc.lat,
-              lng: loc.lng,
-            })
-          }
+          value={coordinates?.address}
+          onChange={(result) => setCoordinates(result)}
+          label='Location'
+          placeholder='City or Zip Code'
         />
       </div>
 

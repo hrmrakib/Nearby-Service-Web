@@ -154,16 +154,9 @@ export default function PostDealModal({
     ]);
   };
 
-  const handleLocationChange = ({
-    location,
-    lat,
-    lng,
-  }: {
-    location: string;
-    lat: number | null;
-    lng: number | null;
-  }) => {
-    setLocation(location);
+  const handleLocationChange = (result: any) => {
+    const { address, lat, lng } = result;
+    setLocation(address);
     setLat(lat);
     setLng(lng);
   };
@@ -551,8 +544,8 @@ export default function PostDealModal({
             </label>
             <div className='relative'>
               <CommonLocationInput
-                onChange={handleLocationChange}
-                currentLocation={location}
+                onChange={(result) => handleLocationChange(result)}
+                value={location}
               />
             </div>
           </div>

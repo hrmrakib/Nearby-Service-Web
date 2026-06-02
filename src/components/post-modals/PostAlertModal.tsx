@@ -209,28 +209,8 @@ export default function PostAlertModal({
     setHashtags(hashtags.filter((t) => t !== tag));
 
   // ── Location handlers ───────────────────────────────────────────────────────
-  const handleLocationChange = ({
-    location,
-    lat,
-    lng,
-  }: {
-    location: string;
-    lat: number | null;
-    lng: number | null;
-  }) => {
-    setLocation(location);
-    setLat(lat);
-    setLng(lng);
-  };
-
-  const handleMissingPLocationChange = ({
-    lat,
-    lng,
-  }: {
-    location: string;
-    lat: number | null;
-    lng: number | null;
-  }) => {
+  const handleMissingPLocationChange = (result: any) => {
+    const { address, lat, lng } = result;
     setMissingLat(lat);
     setMissingLng(lng);
   };
@@ -246,7 +226,10 @@ export default function PostAlertModal({
         category: "alert",
         subcategory: selectedCategory,
         address: location,
-        location: { type: "Point", coordinates: [lng, lat] },
+        location: {
+          type: "Point",
+          coordinates: [coordinates!.lng, coordinates!.lat],
+        },
         hasTag: hashtags,
         contactInfo: contact,
         expireLimit: Number(autoExpire),
@@ -636,8 +619,9 @@ export default function PostAlertModal({
                   Last Seen Location
                 </label>
                 <CommonLocationInput
-                  onChange={handleMissingPLocationChange}
-                  currentLocation={missingPersonInfo.lastSeenLocation}
+                  onChange={(result) => handleMissingPLocationChange(result)}
+                  // currentLocation={missingPersonInfo.lastSeenLocation}
+                  value={missingPersonInfo.lastSeenLocation}
                 />
 
                 {/* <CommonLocationInput

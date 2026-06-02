@@ -137,16 +137,9 @@ export default function PostEventModal({
     ]);
   };
 
-  const handleLocationChange = ({
-    location,
-    lat,
-    lng,
-  }: {
-    location: string;
-    lat: number | null;
-    lng: number | null;
-  }) => {
-    setLocation(location);
+  const handleLocationChange = (result: any) => {
+    const { address, lat, lng } = result;
+    setLocation(address);
     setLat(lat);
     setLng(lng);
   };
@@ -469,8 +462,9 @@ export default function PostEventModal({
             </label>
             <div className='relative'>
               <CommonLocationInput
-                onChange={handleLocationChange}
-                currentLocation={location}
+                onChange={(result) => handleLocationChange(result)}
+                placeholder='Type your full address'
+                value={location}
               />
             </div>
           </div>

@@ -611,13 +611,12 @@ export default function PostServiceModal({
           />
 
           <div className='relative'>
-            {/* <label className='text-sm font-bold mb-2 block'>
+            <label className='text-sm font-bold mb-2 block'>
               Location (Type your full address)
-            </label> */}
+            </label>
             <div className='relative'>
               <CommonLocationInput
                 onChange={(result) => setCoordinates(result)}
-                label='Location'
                 placeholder='City or Zip Code'
               />
             </div>

@@ -31,7 +31,7 @@ export default function CommonLocationInput({
   onChange,
   placeholder = "City or Zip Code",
   className = "",
-  label = "Location",
+  label = "",
 }: LocationInputProps) {
   const [location, setLocation] = useState(value ?? "");
   const locationInputRef = useRef<HTMLInputElement>(null);

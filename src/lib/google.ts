@@ -5,7 +5,7 @@ export const autoComplete = async (input: string) => {
   const sessionToken = crypto.randomUUID();
 
   const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-    input
+    input,
   )}&key=${apiKey}&sessiontoken=${sessionToken}`;
 
   const res = await fetch(url);
@@ -34,7 +34,6 @@ export const autoComplete = async (input: string) => {
 //     });
 //     return res.data.predictions;
 //   } catch (error) {
-//     console.log(error);
 //     return [];
 //   }
 // };

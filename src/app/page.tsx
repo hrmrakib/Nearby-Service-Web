@@ -325,8 +325,6 @@ export default function DashboardLayout() {
     return attenders.some((attender) => attender.email === email);
   };
 
-  console.log({ user });
-
   return (
     <div className='min-h-[calc(100vh-60px)] bg-[#F3F4F6]'>
       <HeroSection />

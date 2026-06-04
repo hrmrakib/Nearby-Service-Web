@@ -70,8 +70,6 @@ export default function PostDealModal({
 
   const { data, isEditMode } = useSelector((state: any) => state.postModal);
 
-  console.log({ data });
-
   useEffect(() => {
     if (!data || !isEditMode) return;
 

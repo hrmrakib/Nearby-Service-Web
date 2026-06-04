@@ -98,8 +98,6 @@ export default function EventDetailPage() {
     isEditMode,
   } = useSelector((state: any) => state.postModal);
 
-  console.log({ isOpen, selectedPostType, postData, isEditMode });
-
   const thumbnails = postDetail?.media?.filter((m: string) =>
     /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
   );
@@ -119,8 +117,6 @@ export default function EventDetailPage() {
       const res = await newChatMutation({
         member: postDetail?.author?._id,
       }).unwrap();
-
-      console.log({ res });
 
       if (res?.success) {
         dispatch(setChatId(res?.data?._id));
@@ -392,7 +388,7 @@ export default function EventDetailPage() {
               lng={23.7511665}
               haveServiceAreas={false}
               className='justify-end'
-              width="max-w-[68%]"
+              width='max-w-[68%]'
             />
 
             <RelatedCard

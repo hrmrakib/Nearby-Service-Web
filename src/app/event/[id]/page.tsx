@@ -126,8 +126,6 @@ function EventDetailPageInner() {
 
   // sending a quotem request - message
   const handleRequestQuote = async (postId: string) => {
-    console.log({ socket });
-
     try {
       if (!socket) return;
 
@@ -162,9 +160,8 @@ function EventDetailPageInner() {
         refetch();
         toast.success(res?.message);
       }
-      console.log(res, res?.message);
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      toast.error(error?.data?.message);
     }
   };
 
@@ -178,9 +175,8 @@ function EventDetailPageInner() {
         refetch();
         toast.success(res?.message);
       }
-      console.log(res, res?.message);
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      toast.error(error?.data?.message);
     }
   };
 
@@ -197,8 +193,6 @@ function EventDetailPageInner() {
       const res = await newChatMutation({
         member: postDetail?.author?._id,
       }).unwrap();
-
-      console.log({ res });
 
       if (res?.success) {
         dispatch(setChatId(res?.data?._id));

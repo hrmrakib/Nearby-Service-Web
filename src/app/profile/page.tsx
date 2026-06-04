@@ -126,8 +126,6 @@ export default function ProfilePage() {
     }
   }, [profile]);
 
-  console.log({ profile });
-
   const handleSaveChanges = async () => {
     try {
       const formData = new FormData();
@@ -155,8 +153,8 @@ export default function ProfilePage() {
         toast.success(res?.message);
         refetch();
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      toast.error(error?.data?.message);
     } finally {
       setIsEditMode(false);
     }
@@ -191,8 +189,6 @@ export default function ProfilePage() {
       toast.error(error?.data?.message);
     }
   };
-
-  console.log(profile);
 
   if (isEditMode) {
     return (

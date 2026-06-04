@@ -1084,8 +1084,6 @@ function MessagesPageInner() {
   const { socket, onlineUsers } = useSocket();
   const { user } = useAuth();
 
-  console.log({ selectedFiles });
-
   // ── Offer modal state ──────────────────────────────────────────────────────
   const [modalView, setModalView] = useState<ModalView | null>(null);
   const [offerData, setOfferData] = useState<OfferData>(defaultOfferData());

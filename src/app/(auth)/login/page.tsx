@@ -71,11 +71,8 @@ export default function LoginForm() {
       } else {
         toast.error(data?.message);
       }
-
-      console.log(await res.json());
     } catch (err: any) {
-      console.log({ err });
-      // toast.error(err?.data?.message);
+      toast.error(err?.data?.message);
       // setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
@@ -83,7 +80,6 @@ export default function LoginForm() {
   };
 
   const handleSocialLogin = (provider: string) => {
-    console.log("[v0] Social login with:", provider);
     alert(`${provider} login not yet implemented`);
   };
 
@@ -94,7 +90,6 @@ export default function LoginForm() {
       },
     });
     const data = await res.json();
-    console.log(data);
     return data;
   };
 
@@ -103,7 +98,6 @@ export default function LoginForm() {
       "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
     onSuccess: async (tokenResponse) => {
       const userInfo = await getUserInfo(tokenResponse.access_token);
-      console.log("Google user:", userInfo);
 
       try {
         const res = await fetch(
@@ -118,8 +112,6 @@ export default function LoginForm() {
             }),
           },
         ).then((res) => res.json());
-
-        console.log("res", res);
 
         if (res?.success) {
           await saveTokens(res?.data?.access_token);

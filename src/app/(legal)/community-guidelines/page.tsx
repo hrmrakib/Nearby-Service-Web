@@ -6,8 +6,6 @@ import { useGetCommunityGuidelinesQuery } from "@/redux/features/community/commu
 const CommunityGuidelinePage = () => {
   const { data, isLoading } = useGetCommunityGuidelinesQuery({});
 
-  console.log({ data });
-
   return (
     <div className='bg-[#F3F4F6] min-h-[90vh]'>
       <div className='container mx-auto'>

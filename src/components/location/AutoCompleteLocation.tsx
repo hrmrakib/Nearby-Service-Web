@@ -37,8 +37,6 @@ export default function AutoCompleteLocation() {
     return () => clearTimeout(load);
   }, [query]);
 
-  // console.log({ predictions });
-
   return (
     <Command className='rounded-lg border shadow-md md:min-w-[450px] h-auto'>
       <CommandInput

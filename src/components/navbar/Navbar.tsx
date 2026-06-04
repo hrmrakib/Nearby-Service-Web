@@ -99,6 +99,7 @@ export default function Navbar() {
     useGetNotificationsQuery({ page, limit });
   const notificationsData = data?.data;
   const totalCount: number = data?.meta?.total ?? data?.meta?.total ?? 0;
+  console.log({ totalCount });
 
   useEffect(() => {
     if (notificationsData) {
@@ -478,12 +479,17 @@ export default function Navbar() {
                           <path d='M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83' />
                         </svg>
                       ) : (
-                        <button
-                          onClick={() => setLimit((prev) => prev + 10)}
-                          className='text-sm font-semibold text-[#15B826] hover:underline px-4 py-2'
-                        >
-                          Show more
-                        </button>
+                        totalCount > limit && (
+                          <button
+                            onClick={() => {
+                              setNotifications([]);
+                              setLimit((prev) => prev + 10);
+                            }}
+                            className='text-sm font-semibold text-[#15B826] hover:underline px-4 py-2'
+                          >
+                            Show more
+                          </button>
+                        )
                       )}
                     </div>
                   </div>

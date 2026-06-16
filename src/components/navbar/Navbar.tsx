@@ -99,7 +99,6 @@ export default function Navbar() {
     useGetNotificationsQuery({ page, limit });
   const notificationsData = data?.data;
   const totalCount: number = data?.meta?.total ?? data?.meta?.total ?? 0;
-  console.log({ totalCount });
 
   useEffect(() => {
     if (notificationsData) {

@@ -22,7 +22,7 @@ import MinStarRating from "@/components/home/Minstarrating";
 import getDistanceMiles from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { useRouter } from "next/navigation";
-import LocationCard from "@/components/event/LocationCard";
+// import LocationCard from "@/components/event/LocationCard";
 import { SuggestedPost } from "@/components/home/SuggestedPost";
 import CommonLocationInput from "@/components/location/CommonLocationInput";
 import { categories } from "@/constants";
@@ -701,11 +701,12 @@ export default function DashboardLayout() {
                   lng={23.7511665}
                   width='max-w-[70%]'
                 /> */}
+
                 <MiniMap
                   lat={23.8103}
                   lng={90.4125}
                   label='Dhaka'
-                  width={400}
+                  width={"98%"}
                   height={350}
                 />
               </div>

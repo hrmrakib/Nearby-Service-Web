@@ -1204,6 +1204,7 @@ function MessagesPageInner() {
   };
 
   const handleConversationSelect = (conv: Conversation) => {
+    console.log({ conv });
     setMessages([]);
     dispatch(setSelectedUser(conv));
     setShowChat(true);

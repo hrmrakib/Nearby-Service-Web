@@ -26,6 +26,7 @@ import LocationCard from "@/components/event/LocationCard";
 import { SuggestedPost } from "@/components/home/SuggestedPost";
 import CommonLocationInput from "@/components/location/CommonLocationInput";
 import { categories } from "@/constants";
+import MiniMap from "@/components/home/MiniMap";
 
 type TAuthor = {
   _id: string;
@@ -695,10 +696,17 @@ export default function DashboardLayout() {
           <ScrollArea className='h-[calc(100vh-100px)]'>
             <div className='space-y-6'>
               <div className='space-y-3'>
-                <LocationCard
+                {/* <LocationCard
                   lat={90.39064309999999}
                   lng={23.7511665}
                   width='max-w-[70%]'
+                /> */}
+                <MiniMap
+                  lat={23.8103}
+                  lng={90.4125}
+                  label='Dhaka'
+                  width={400}
+                  height={350}
                 />
               </div>
 

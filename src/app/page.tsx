@@ -696,12 +696,6 @@ export default function DashboardLayout() {
           <ScrollArea className='h-[calc(100vh-100px)]'>
             <div className='space-y-6'>
               <div className='space-y-3'>
-                {/* <LocationCard
-                  lat={90.39064309999999}
-                  lng={23.7511665}
-                  width='max-w-[70%]'
-                /> */}
-
                 <MiniMap
                   lat={23.8103}
                   lng={90.4125}

@@ -1204,6 +1204,7 @@ function MessagesPageInner() {
   };
 
   const handleConversationSelect = (conv: Conversation) => {
+    if (conv?._id === chatId) return;
     console.log({ conv });
     setMessages([]);
     dispatch(setSelectedUser(conv));
@@ -1653,12 +1654,6 @@ function MessagesPageInner() {
             />
           )}
 
-          {/*
-            AcceptRejectView needs:
-            - offerId  → activeOffer._id
-            - customerId → activeOffer.customer
-              (the customer field your backend stores on the offer document)
-          */}
           {modalView === "accept-reject" && activeOffer && (
             <AcceptRejectView
               offerData={offerData}

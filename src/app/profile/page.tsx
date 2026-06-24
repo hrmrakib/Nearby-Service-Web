@@ -63,7 +63,7 @@ interface IUser {
   name: string;
   image: string;
   bio: string;
-  paypalAccount: string;
+  cardNumber: string;
 }
 
 export default function ProfilePage() {
@@ -80,7 +80,7 @@ export default function ProfilePage() {
     name: "",
     image: "",
     bio: "",
-    paypalAccount: "",
+    cardNumber: "",
   });
 
   const [coordinates, setCoordinates] = useState<{
@@ -115,7 +115,7 @@ export default function ProfilePage() {
 
         image: profile?.image,
         bio: profile?.bio,
-        paypalAccount: profile?.paypalAccount,
+        cardNumber: profile?.card,
       });
 
       setCoordinates({
@@ -135,10 +135,10 @@ export default function ProfilePage() {
         address: coordinates?.address,
         location: {
           type: "Point",
-          coordinates: [coordinates?.lng, coordinates?.lat],
+          coordinates: [coordinates?.lat, coordinates?.lng],
         },
         bio: user.bio,
-        paypalAccount: user.paypalAccount,
+        card: user.cardNumber,
       };
 
       formData.append("data", JSON.stringify(data));
@@ -161,7 +161,6 @@ export default function ProfilePage() {
   };
 
   const handleCancelEdit = () => {
-    // setEditData(profileData);
     setIsEditMode(false);
   };
 
@@ -175,18 +174,6 @@ export default function ProfilePage() {
     if (file) {
       setImage(file);
       setImagePreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleConnectStripe = async () => {
-    try {
-      const res = await connectStripeMutation({}).unwrap();
-
-      if (res?.success) {
-        window.open(res?.data?.url, "_blank");
-      }
-    } catch (error: any) {
-      toast.error(error?.data?.message);
     }
   };
 
@@ -242,15 +229,15 @@ export default function ProfilePage() {
 
               <div>
                 <label className='block text-lg font-bold text-[#030712] mb-2'>
-                  Paypal Account (Email) <span className='text-red-500'>*</span>
+                  Card Number <span className='text-red-500'>*</span>
                 </label>
                 <Input
-                  value={user?.paypalAccount}
+                  value={user?.cardNumber}
                   onChange={(e) =>
-                    setUser({ ...user, paypalAccount: e.target.value })
+                    setUser({ ...user, cardNumber: e.target.value })
                   }
                   className='w-full h-12 bg-white border-2 border-gray-300 rounded-lg px-4 py-2 text-lg'
-                  placeholder='Enter your Paypal Account (Email)'
+                  placeholder='Card number without spaces - e.g. 4242424242424242'
                 />
               </div>
 
@@ -275,7 +262,7 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <Button
+              {/* <Button
                 onClick={handleConnectStripe}
                 disabled={profile?.isStripeConnected || isConnectLoading}
                 className='w-full flex-1 h-12 bg-[#15B826] hover:bg-[#0bca1e] text-base text-white rounded-full py-3'
@@ -284,7 +271,7 @@ export default function ProfilePage() {
                   ? "Connected with Stripe"
                   : "Stripe Connect"}
                 {isConnectLoading && <Loader className='animate-spin' />}
-              </Button>
+              </Button> */}
 
               <div className='flex gap-3 mt-4'>
                 <Button

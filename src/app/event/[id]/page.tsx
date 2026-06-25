@@ -753,10 +753,6 @@ function EventDetailPageInner() {
               />
             </Link>
 
-            <div>
-              Lat: {lat} ---- Lng: {lng}
-            </div>
-
             <RelatedCard
               userLng={userLng}
               userLat={userLat}

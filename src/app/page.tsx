@@ -22,7 +22,6 @@ import MinStarRating from "@/components/home/Minstarrating";
 import getDistanceMiles from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { useRouter } from "next/navigation";
-// import LocationCard from "@/components/event/LocationCard";
 import { SuggestedPost } from "@/components/home/SuggestedPost";
 import CommonLocationInput from "@/components/location/CommonLocationInput";
 import { categories } from "@/constants";

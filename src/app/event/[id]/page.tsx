@@ -58,6 +58,7 @@ import {
 import RedeemCode from "@/components/event/RedeemCode";
 import { SocketProvider, useSocket } from "@/provider/SocketProvider";
 import MiniMap from "@/components/home/MiniMap";
+import Link from "next/link";
 
 function EventDetailPageInner() {
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -97,9 +98,9 @@ function EventDetailPageInner() {
   const postDetail = data?.data?.detail;
   const relevantPosts = data?.data?.relevantPosts;
 
-  const lat = data?.detail?.location?.coordinates?.[1];
-  const lng = data?.detail?.location?.coordinates?.[0];
-  const address = data?.detail?.address;
+  const lat = data?.data?.detail?.location?.coordinates?.[1];
+  const lng = data?.data?.detail?.location?.coordinates?.[0];
+  const address = data?.data?.detail?.address;
 
   const { socket } = useSocket();
 
@@ -735,7 +736,13 @@ function EventDetailPageInner() {
 
           {/* Right Sidebar */}
           <div className='lg:col-span-3 space-y-4'>
-            <div className='flex flex-col items-end justify-end'>
+            <Link
+              href={{
+                pathname: "/map",
+                query: { lat: 23.4578, lng: 90.3563, address },
+              }}
+              className='flex flex-col items-end justify-end'
+            >
               <MiniMap
                 lat={lat}
                 lng={lng}
@@ -744,6 +751,10 @@ function EventDetailPageInner() {
                 height={350}
                 className=''
               />
+            </Link>
+
+            <div>
+              Lat: {lat} ---- Lng: {lng}
             </div>
 
             <RelatedCard

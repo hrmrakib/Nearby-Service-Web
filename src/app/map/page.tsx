@@ -1,746 +1,993 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useRef, useState, useCallback, JSX } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Loader2, MapPin } from "lucide-react";
 
-type FilterType = "All" | "Events" | "Deals" | "Services" | "Alerts";
-
-interface CardItem {
-  id: number;
-  title: string;
-  category: FilterType;
-  image: string;
-  distance: string;
-  rating: number;
-  tag: string;
-  description: string;
-  lat: number;
-  lng: number;
-  shopIcon: string;
+// ✅ FIX: Declare google as `any` — never reference `typeof google` or `google.maps.*`
+//    at the top level, as the google namespace does not exist at build/compile time.
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    google: any;
+  }
 }
 
-const CARDS: CardItem[] = [
-  {
-    id: 1,
-    title: "Cozy Coffee Spot",
-    category: "Deals",
-    image:
-      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&q=80",
-    distance: "2.3 mi",
-    rating: 4.9,
-    tag: "Deals",
-    description:
-      "Artisan espresso crafted from single-origin beans. Signature cinnamon latte in a warm, sunlit corner surrounded by good books.",
-    lat: 40.7282,
-    lng: -73.8803,
-    shopIcon: "☕",
-  },
-  {
-    id: 2,
-    title: "Live Jazz Night",
-    category: "Events",
-    image:
-      "https://images.unsplash.com/photo-1501386761578-eaa54b4e9d57?w=600&q=80",
-    distance: "1.1 mi",
-    rating: 4.7,
-    tag: "Events",
-    description:
-      "Saturday nights come alive with live jazz, craft cocktails, and a crowd that knows how to move. Doors open at 8 PM.",
-    lat: 40.7328,
-    lng: -73.8753,
-    shopIcon: "🎷",
-  },
-  {
-    id: 3,
-    title: "Quick Bike Repair",
-    category: "Services",
-    image:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
-    distance: "0.8 mi",
-    rating: 4.8,
-    tag: "Services",
-    description:
-      "Flat tire? Chain slipped? Our certified mechanics get you back on the road in under 30 minutes — most repairs under $20.",
-    lat: 40.7255,
-    lng: -73.8833,
-    shopIcon: "🔧",
-  },
-  {
-    id: 4,
-    title: "Flash Sale: 50% Off",
-    category: "Deals",
-    image:
-      "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=80",
-    distance: "3.0 mi",
-    rating: 4.5,
-    tag: "Deals",
-    description:
-      "Today only — half price on all outerwear. Dozens of styles, all sizes in stock at the Atlas Street location.",
-    lat: 40.731,
-    lng: -73.878,
-    shopIcon: "🛍",
-  },
-  {
-    id: 5,
-    title: "Road Closure Alert",
-    category: "Alerts",
-    image:
-      "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80",
-    distance: "0.5 mi",
-    rating: 0,
-    tag: "Alerts",
-    description:
-      "Queens Blvd between 63rd Dr and Woodhaven is closed until 6 PM for utility work. Expect detours via Junction Blvd.",
-    lat: 40.727,
-    lng: -73.877,
-    shopIcon: "⚠️",
-  },
-  {
-    id: 6,
-    title: "Yoga in the Park",
-    category: "Events",
-    image:
-      "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?w=600&q=80",
-    distance: "1.6 mi",
-    rating: 4.6,
-    tag: "Events",
-    description:
-      "Free Sunday morning yoga at Juniper Valley Park. All levels welcome — bring your mat, we supply the good vibes.",
-    lat: 40.73,
-    lng: -73.882,
-    shopIcon: "🧘",
-  },
-];
+// ✅ FIX: Use `any` instead of google.maps.* type aliases.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GMMap = any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GMMarker = any;
 
-const FILTERS: { label: FilterType; icon: JSX.Element }[] = [
-  { label: "All", icon: <AllIcon /> },
-  { label: "Events", icon: <CalIcon /> },
-  { label: "Deals", icon: <TagIcon /> },
-  { label: "Services", icon: <WrenchIcon /> },
-  { label: "Alerts", icon: <BellIcon /> },
-];
+// --- Utility: load the script once, share across all MiniMap instances ---
+let mapsScriptPromise: Promise<void> | null = null;
 
-const TAG_STYLES: Record<string, string> = {
-  Deals: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  Events: "bg-violet-50 text-violet-700 border border-violet-200",
-  Services: "bg-sky-50 text-sky-700 border border-sky-200",
-  Alerts: "bg-rose-50 text-rose-700 border border-rose-200",
-};
+function loadGoogleMapsScript(apiKey: string): Promise<void> {
+  if (window.google?.maps) return Promise.resolve();
 
-const MARKER_COLORS: Record<string, string> = {
-  Deals: "#059669",
-  Events: "#7c3aed",
-  Services: "#0284c7",
-  Alerts: "#dc2626",
-  All: "#16a34a",
-};
-
-function buildMarkerSvg(
-  emoji: string,
-  color: string,
-  selected: boolean,
-): string {
-  const W = selected ? 52 : 44;
-  const H = selected ? 62 : 52;
-  const cx = W / 2;
-  const r = W * 0.36;
-  const cy = r + 4;
-  const tipY = H - 2;
-
-  // Teardrop / map-pin path
-  const d = [
-    `M ${cx} ${tipY}`,
-    `C ${cx - 4} ${tipY - 10}, ${cx - r - 4} ${cy + r * 0.6}, ${cx - r} ${cy}`,
-    `A ${r} ${r} 0 1 1 ${cx + r} ${cy}`,
-    `C ${cx + r + 4} ${cy + r * 0.6}, ${cx + 4} ${tipY - 10}, ${cx} ${tipY}`,
-    `Z`,
-  ].join(" ");
-
-  const ringR = r + (selected ? 9 : 6);
-  const pulse = selected
-    ? `<circle cx="${cx}" cy="${cy}" r="${ringR}" fill="${color}" opacity="0.15"><animate attributeName="r" values="${ringR - 2};${ringR + 8};${ringR - 2}" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.2;0;0.2" dur="1.8s" repeatCount="indefinite"/></circle>`
-    : "";
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-    ${pulse}
-    <path d="${d}" fill="${color}" stroke="${selected ? "#fff" : "rgba(255,255,255,0.85)"}" stroke-width="${selected ? 2.5 : 2}" filter="drop-shadow(0 3px 8px rgba(0,0,0,${selected ? "0.45" : "0.28"}))"/>
-    <text x="${cx}" y="${cy + 1.5}" font-size="${r * 0.98}" text-anchor="middle" dominant-baseline="central">${emoji}</text>
-  </svg>`;
-
-  return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
-}
-
-function buildUserDot(): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-    <circle cx="20" cy="20" r="16" fill="#3b82f6" opacity="0.15">
-      <animate attributeName="r" values="10;18;10" dur="2.2s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0.2;0;0.2" dur="2.2s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="20" cy="20" r="10" fill="#3b82f6" stroke="#ffffff" stroke-width="3" filter="drop-shadow(0 2px 6px rgba(59,130,246,0.6))"/>
-    <circle cx="20" cy="20" r="4" fill="#ffffff"/>
-    <!-- heading arrow -->
-    <polygon points="20,5 24,14 20,11 16,14" fill="#3b82f6" opacity="0.9"/>
-  </svg>`;
-  return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
-}
-
-export default function MapExplorer() {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<number, google.maps.Marker>>(new Map());
-  const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY!;
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<FilterType>("All");
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  // use redux state for manage glob ally
-  const [defaultLat, defaultLng] = [37.7749, -122.4194];
-
-  const filtered = CARDS.filter(
-    (c) => activeFilter === "All" || c.category === activeFilter,
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const load = () => initMap();
-    if ((window as any).google?.maps) {
-      load();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}`;
-    script.async = true;
-    script.onload = load;
-    document.head.appendChild(script);
-  }, []);
-
-  const initMap = useCallback(() => {
-    if (!mapRef.current) return;
-    const map = new google.maps.Map(mapRef.current, {
-      center: { lat: defaultLat!, lng: defaultLng! },
-      zoom: 14,
-      disableDefaultUI: true,
-      zoomControl: true,
-      zoomControlOptions: { position: google.maps.ControlPosition.LEFT_BOTTOM },
-      styles: MAP_STYLES,
-      gestureHandling: "greedy",
-    });
-    mapInstance.current = map;
-
-    // User location marker
-    new google.maps.Marker({
-      position: { lat: defaultLat!, lng: defaultLng! },
-      map,
-      title: "You are here",
-      icon: {
-        url: buildUserDot(),
-        scaledSize: new google.maps.Size(40, 40),
-        anchor: new google.maps.Point(20, 20),
-      },
-      zIndex: 1000,
-    });
-
-    placeMarkers(map, CARDS, null);
-  }, [defaultLat, defaultLng]);
-
-  const placeMarkers = (
-    map: google.maps.Map,
-    cards: CardItem[],
-    sel: number | null,
-  ) => {
-    markersRef.current.forEach((m) => m.setMap(null));
-    markersRef.current.clear();
-    cards.forEach((card) => {
-      const isSel = card.id === sel;
-      const color = MARKER_COLORS[card.category] ?? "#16a34a";
-      const url = buildMarkerSvg(card.shopIcon, color, isSel);
-      const W = isSel ? 52 : 44;
-      const H = isSel ? 62 : 52;
-      const marker = new google.maps.Marker({
-        position: { lat: card.lat, lng: card.lng },
-        map,
-        title: card.title,
-        icon: {
-          url,
-          scaledSize: new google.maps.Size(W, H),
-          anchor: new google.maps.Point(W / 2, H),
-        },
-        zIndex: isSel ? 100 : 1,
-      });
-      marker.addListener("click", () => {
-        handleSelect(card.id, map);
-        setPanelOpen(true);
-      });
-      markersRef.current.set(card.id, marker);
-    });
-  };
-
-  const handleSelect = (id: number, map?: google.maps.Map) => {
-    const m = map ?? mapInstance.current;
-    setSelectedId(id);
-    const vis =
-      activeFilter === "All"
-        ? CARDS
-        : CARDS.filter((c) => c.category === activeFilter);
-    if (m) {
-      const card = CARDS.find((c) => c.id === id);
-      if (card) {
-        m.panTo({ lat: card.lat, lng: card.lng });
-        m.setZoom(15);
+  if (!mapsScriptPromise) {
+    mapsScriptPromise = new Promise((resolve, reject) => {
+      if (document.getElementById("google-maps-script")) {
+        const interval = setInterval(() => {
+          if (window.google?.maps) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 100);
+        return;
       }
-      placeMarkers(m, vis, id);
-    }
-    setTimeout(() => {
-      cardRefs.current
-        .get(id)
-        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 120);
-  };
-
-  // Re-render markers on filter change
-  useEffect(() => {
-    if (!mapInstance.current) return;
-    placeMarkers(mapInstance.current, filtered, selectedId);
-  }, [activeFilter]);
-
-  return (
-    <div
-      className='relative w-full h-screen overflow-hidden'
-      style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}
-    >
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');`}</style>
-
-      {/* Map fills the screen */}
-      <div ref={mapRef} className='absolute inset-0 w-full h-full' />
-
-      {/* Top center label */}
-      <div className='absolute top-4 left-4 right-16 z-20 flex items-center gap-2 bg-white/95 backdrop-blur-md shadow-lg rounded-2xl px-4 py-2.5 border border-white/60 max-w-xs'>
-        <span className='text-blue-500 text-base'>📍</span>
-        <div>
-          <p className='text-sm font-bold text-gray-900 leading-tight'>
-            Rego Park, Queens
-          </p>
-          <p className='text-[10px] text-gray-400 font-medium'>
-            {filtered.length} places nearby
-          </p>
-        </div>
-      </div>
-
-      {/* Toggle (hamburger / X) */}
-      <button
-        onClick={() => setPanelOpen((p) => !p)}
-        className='absolute top-4 right-4 z-30 w-11 h-11 flex items-center justify-center bg-white shadow-xl rounded-2xl border border-gray-100 hover:bg-gray-50 active:scale-95 transition-all duration-200'
-        aria-label='Toggle panel'
-      >
-        <HamburgerX open={panelOpen} />
-      </button>
-
-      {/* ── Side Panel ── */}
-      <div
-        className={`absolute top-0 right-0 h-full z-20 flex flex-col transition-transform duration-500 ease-[cubic-bezier(.77,0,.18,1)]
-          ${panelOpen ? "translate-x-0" : "translate-x-full"}
-          w-[360px] sm:w-[390px]`}
-        style={{
-          background: "rgba(255,255,255,0.98)",
-          backdropFilter: "blur(24px)",
-          borderLeft: "1px solid rgba(0,0,0,0.07)",
-          boxShadow: "-8px 0 40px rgba(0,0,0,0.12)",
-        }}
-      >
-        {/* Header */}
-        <div className='px-5 pt-6 pb-3'>
-          <div className='flex items-center justify-between mb-1'>
-            <div>
-              <h2 className='text-[18px] font-bold text-gray-900 tracking-tight'>
-                Explore Nearby
-              </h2>
-              <p className='text-[11px] text-gray-400 font-medium mt-0.5'>
-                {filtered.length} result{filtered.length !== 1 ? "s" : ""} · tap
-                a pin to explore
-              </p>
-            </div>
-            <button
-              onClick={() => setPanelOpen(false)}
-              className='w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-all'
-            >
-              <CloseX />
-            </button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className='px-5 pb-3'>
-          <div
-            className='flex gap-2 overflow-x-auto'
-            style={{ scrollbarWidth: "none" }}
-          >
-            {FILTERS.map(({ label, icon }) => {
-              const active = activeFilter === label;
-              return (
-                <button
-                  key={label}
-                  onClick={() => {
-                    setActiveFilter(label);
-                    setSelectedId(null);
-                  }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-95
-                    ${
-                      active
-                        ? "bg-gray-900 text-white shadow-md"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-800"
-                    }`}
-                >
-                  <span className='w-3.5 h-3.5 flex-shrink-0'>{icon}</span>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className='h-px bg-gray-100 mx-5 mb-1' />
-
-        {/* Scrollable cards */}
-        <div
-          className='flex-1 overflow-y-auto px-4 py-3 space-y-3'
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "#e5e7eb transparent",
-          }}
-        >
-          {filtered.length === 0 && (
-            <div className='flex flex-col items-center justify-center py-20'>
-              <span className='text-5xl mb-3'>🗺</span>
-              <p className='text-sm text-gray-400 font-medium'>
-                No results for this filter
-              </p>
-            </div>
-          )}
-
-          {filtered.map((card, i) => {
-            const isSel = selectedId === card.id;
-            return (
-              <div
-                key={card.id}
-                ref={(el) => {
-                  if (el) cardRefs.current.set(card.id, el);
-                }}
-                onClick={() => handleSelect(card.id)}
-                style={{ animationFillMode: "both" }}
-                className={`rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300
-                  ${
-                    isSel
-                      ? "ring-2 ring-gray-900 shadow-xl scale-[1.01]"
-                      : "border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200"
-                  }`}
-              >
-                {/* Image row */}
-                <div className='relative h-[160px] overflow-hidden bg-gray-100'>
-                  <img
-                    src={card.image}
-                    alt={card.title}
-                    className='w-full h-full object-cover transition-transform duration-700 group-hover:scale-105'
-                  />
-                  <div className='absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent' />
-
-                  {/* Tag badge */}
-                  <span
-                    className={`absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm ${TAG_STYLES[card.tag] ?? ""}`}
-                    style={{ background: "rgba(255,255,255,0.88)" }}
-                  >
-                    {card.tag}
-                  </span>
-
-                  {/* Shop icon bubble */}
-                  <div className='absolute bottom-3 right-3 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-xl shadow-md border border-white/50'>
-                    {card.shopIcon}
-                  </div>
-
-                  {/* Arrow indicator linking to map */}
-                  {isSel && (
-                    <div className='absolute top-3 right-3 flex items-center gap-1 bg-gray-900/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-sm'>
-                      <MapArrow /> On map
-                    </div>
-                  )}
-                </div>
-
-                {/* Body */}
-                <div className='p-4 bg-white'>
-                  <h3 className='font-bold text-gray-900 text-[15px] leading-tight mb-2'>
-                    {card.title}
-                  </h3>
-
-                  <div className='flex items-center gap-3 text-[11px] text-gray-400 font-semibold mb-2.5'>
-                    <span className='flex items-center gap-1 text-emerald-600'>
-                      <PinArrow /> {card.distance}
-                    </span>
-                    {card.rating > 0 && (
-                      <span className='flex items-center gap-1'>
-                        <span className='text-amber-400 text-xs'>★</span>
-                        <span className='text-gray-700'>{card.rating}</span>
-                      </span>
-                    )}
-                  </div>
-
-                  <p className='text-[12px] text-gray-500 leading-relaxed line-clamp-2 mb-3.5'>
-                    {card.description}
-                  </p>
-
-                  <div className='flex gap-2'>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert(`Quote requested: ${card.title}`);
-                      }}
-                      className='flex-1 bg-gray-900 hover:bg-gray-700 text-white text-[12px] font-bold py-2.5 rounded-xl transition-all active:scale-[0.97]'
-                    >
-                      Request Quote
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert(`Saved: ${card.title}`);
-                      }}
-                      className='w-10 flex items-center justify-center border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all active:scale-95'
-                    >
-                      <BookmarkSvg />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
+      const script = document.createElement("script");
+      script.id = "google-maps-script";
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Google Maps failed to load"));
+      document.head.appendChild(script);
+    });
+  }
+  return mapsScriptPromise;
 }
 
-const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#eeebe4" }] },
-  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#5c5a54" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#f5f1ea" }] },
-  {
-    featureType: "administrative.locality",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#3a3830" }],
-  },
+// ✅ FIX: Use `Record<string, unknown>[]` — NOT `google.maps.MapTypeStyle[]`
+const MAP_STYLES: Record<string, unknown>[] = [
+  { elementType: "geometry", stylers: [{ color: "#f8f9fa" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#444444" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }] },
   {
     featureType: "road",
     elementType: "geometry",
     stylers: [{ color: "#ffffff" }],
   },
   {
-    featureType: "road.arterial",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#767066" }],
+    featureType: "road",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#e0e0e0" }],
   },
   {
     featureType: "road.highway",
     elementType: "geometry",
-    stylers: [{ color: "#e0d9cc" }],
+    stylers: [{ color: "#fdd835" }],
   },
   {
     featureType: "road.highway",
     elementType: "geometry.stroke",
-    stylers: [{ color: "#cfc8bb" }],
+    stylers: [{ color: "#f9a825" }],
   },
   {
-    featureType: "road.local",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#a09890" }],
-  },
-  {
-    featureType: "transit.line",
+    featureType: "landscape",
     elementType: "geometry",
-    stylers: [{ color: "#ddd6c8" }],
-  },
-  {
-    featureType: "transit.station",
-    elementType: "geometry",
-    stylers: [{ color: "#e8e4dc" }],
+    stylers: [{ color: "#f1f3f4" }],
   },
   {
     featureType: "water",
     elementType: "geometry",
-    stylers: [{ color: "#b3cde8" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#5a84a8" }],
+    stylers: [{ color: "#b3d1e8" }],
   },
   {
     featureType: "poi.park",
     elementType: "geometry",
-    stylers: [{ color: "#cde8b8" }],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#5a9040" }],
+    stylers: [{ color: "#d8ead3" }],
   },
   {
     featureType: "poi",
-    elementType: "geometry",
-    stylers: [{ color: "#e4dfda" }],
+    elementType: "labels",
+    stylers: [{ visibility: "off" }],
   },
+  { featureType: "poi.business", stylers: [{ visibility: "off" }] },
   {
-    featureType: "poi",
-    elementType: "labels.text",
+    featureType: "transit",
+    elementType: "labels",
     stylers: [{ visibility: "off" }],
   },
 ];
 
-function HamburgerX({ open }: { open: boolean }) {
+interface MiniMapProps {
+  lat: number;
+  lng: number;
+  label?: string;
+  width?: number | string;
+  height?: number;
+  zoom?: number;
+  className?: string;
+}
+
+/**
+ * MiniMap
+ * Small, single-pin Google Map. Loads the Maps JS API the same way
+ * LiveMap does (dynamic <script> tag + window.google), but only
+ * renders one marker at a fixed location.
+ */
+export default function MiniMap({
+  lat = 23.8103,
+  lng = 90.4125,
+  label = "Location",
+  width = "100%",
+  height = 820,
+  zoom = 15,
+  className = "",
+}: MiniMapProps) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<GMMap>(null);
+  const markerRef = useRef<GMMarker>(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
+
+  const GOOGLE_MAPS_API_KEY =
+    process.env.NEXT_PUBLIC_GOOGLE_PLACES_AUTO_SUGGESTION ?? "";
+
+  const initializeMap = useCallback(async () => {
+    if (!mapRef.current || !GOOGLE_MAPS_API_KEY) {
+      setMapError("Google Maps API key is missing.");
+      setIsLoading(false);
+      return;
+    }
+    try {
+      await loadGoogleMapsScript(GOOGLE_MAPS_API_KEY);
+
+      const center = { lat, lng };
+
+      const map = new window.google.maps.Map(mapRef.current, {
+        center,
+        zoom,
+        styles: MAP_STYLES,
+        mapTypeId: "roadmap",
+        backgroundColor: "#f8f9fa",
+        disableDefaultUI: true,
+        zoomControl: true,
+        gestureHandling: "cooperative",
+      });
+
+      const marker = new window.google.maps.Marker({
+        position: center,
+        map,
+        title: label,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: "#1565C0",
+          fillOpacity: 1,
+          strokeColor: "#fff",
+          strokeWeight: 3,
+        },
+        zIndex: 10,
+      });
+
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: `<div style="font-family:'Segoe UI',sans-serif;font-size:12px;font-weight:600;color:#1565C0;padding:2px 4px;">${label}</div>`,
+      });
+      marker.addListener("click", () => infoWindow.open(map, marker));
+
+      mapInstanceRef.current = map;
+      markerRef.current = marker;
+      setIsLoading(false);
+    } catch {
+      setMapError("Failed to load Google Maps.");
+      setIsLoading(false);
+    }
+  }, [GOOGLE_MAPS_API_KEY, lat, lng, zoom, label]);
+
+  // Init once on mount
+  useEffect(() => {
+    initializeMap();
+    return () => {
+      if (markerRef.current) markerRef.current.setMap(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep map/marker in sync if lat/lng change after mount
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const marker = markerRef.current;
+    if (!map || !marker || !window.google?.maps) return;
+    const position = { lat, lng };
+    marker.setPosition(position);
+    map.panTo(position);
+  }, [lat, lng]);
+
   return (
-    <div className='w-5 h-[18px] flex flex-col justify-between'>
-      <span
-        className={`block h-0.5 rounded-full bg-gray-700 origin-left transition-all duration-300 ${open ? "rotate-[42deg] translate-y-[2px]" : ""}`}
-      />
-      <span
-        className={`block h-0.5 rounded-full bg-gray-700 transition-all duration-300 ${open ? "opacity-0 scale-x-0" : ""}`}
-      />
-      <span
-        className={`block h-0.5 rounded-full bg-gray-700 origin-left transition-all duration-300 ${open ? "-rotate-[42deg] -translate-y-[2px]" : ""}`}
-      />
+    <div
+      className={`relative rounded-2xl overflow-hidden ${className}`}
+      style={{
+        background: "#f8f9fa",
+        border: "1px solid #e0e0e0",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+        width,
+        height,
+      }}
+    >
+      <div ref={mapRef} className='w-full h-full' />
+
+      {isLoading && (
+        <div
+          className='absolute inset-0 flex flex-col items-center justify-center'
+          style={{ background: "#f8f9facc" }}
+        >
+          <Loader2 className='animate-spin mb-2 text-blue-600' size={24} />
+          <p className='text-xs text-gray-500'>Loading map…</p>
+        </div>
+      )}
+
+      {mapError && (
+        <div
+          className='absolute inset-0 flex flex-col items-center justify-center px-4 text-center'
+          style={{ background: "#f8f9facc" }}
+        >
+          <MapPin size={24} className='mb-2 text-red-500' />
+          <p className='text-xs text-red-500 font-semibold'>{mapError}</p>
+          <p className='text-[10px] text-gray-400 mt-1'>
+            Check your NEXT_PUBLIC_GOOGLE_API_KEY
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-function CloseX() {
-  return (
-    <svg
-      className='w-4 h-4'
-      fill='none'
-      viewBox='0 0 24 24'
-      stroke='currentColor'
-      strokeWidth={2.5}
-    >
-      <path
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        d='M6 18L18 6M6 6l12 12'
-      />
-    </svg>
-  );
-}
+// /* eslint-disable @typescript-eslint/no-explicit-any */
+// "use client";
 
-function AllIcon() {
-  return (
-    <svg
-      fill='none'
-      viewBox='0 0 24 24'
-      stroke='currentColor'
-      strokeWidth={2.5}
-      className='w-full h-full'
-    >
-      <circle cx='12' cy='12' r='9' />
-      <circle cx='12' cy='12' r='3' fill='currentColor' />
-    </svg>
-  );
-}
+// import { useEffect, useRef, useState, useCallback, JSX } from "react";
 
-function CalIcon() {
-  return (
-    <svg
-      fill='none'
-      viewBox='0 0 24 24'
-      stroke='currentColor'
-      strokeWidth={2}
-      className='w-full h-full'
-    >
-      <rect x='3' y='4' width='18' height='18' rx='3' />
-      <path d='M16 2v4M8 2v4M3 10h18' />
-    </svg>
-  );
-}
+// type FilterType = "All" | "Events" | "Deals" | "Services" | "Alerts";
 
-function TagIcon() {
-  return (
-    <svg
-      fill='none'
-      viewBox='0 0 24 24'
-      stroke='currentColor'
-      strokeWidth={2}
-      className='w-full h-full'
-    >
-      <path d='M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z' />
-      <circle cx='7' cy='7' r='1.5' fill='currentColor' />
-    </svg>
-  );
-}
+// interface CardItem {
+//   id: number;
+//   title: string;
+//   category: FilterType;
+//   image: string;
+//   distance: string;
+//   rating: number;
+//   tag: string;
+//   description: string;
+//   lat: number;
+//   lng: number;
+//   shopIcon: string;
+// }
 
-function WrenchIcon() {
-  return (
-    <svg
-      fill='none'
-      viewBox='0 0 24 24'
-      stroke='currentColor'
-      strokeWidth={2}
-      className='w-full h-full'
-    >
-      <path d='M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z' />
-    </svg>
-  );
-}
+// const CARDS: CardItem[] = [
+//   {
+//     id: 1,
+//     title: "Cozy Coffee Spot",
+//     category: "Deals",
+//     image:
+//       "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&q=80",
+//     distance: "2.3 mi",
+//     rating: 4.9,
+//     tag: "Deals",
+//     description:
+//       "Artisan espresso crafted from single-origin beans. Signature cinnamon latte in a warm, sunlit corner surrounded by good books.",
+//     lat: 40.7282,
+//     lng: -73.8803,
+//     shopIcon: "☕",
+//   },
+//   {
+//     id: 2,
+//     title: "Live Jazz Night",
+//     category: "Events",
+//     image:
+//       "https://images.unsplash.com/photo-1501386761578-eaa54b4e9d57?w=600&q=80",
+//     distance: "1.1 mi",
+//     rating: 4.7,
+//     tag: "Events",
+//     description:
+//       "Saturday nights come alive with live jazz, craft cocktails, and a crowd that knows how to move. Doors open at 8 PM.",
+//     lat: 40.7328,
+//     lng: -73.8753,
+//     shopIcon: "🎷",
+//   },
+//   {
+//     id: 3,
+//     title: "Quick Bike Repair",
+//     category: "Services",
+//     image:
+//       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
+//     distance: "0.8 mi",
+//     rating: 4.8,
+//     tag: "Services",
+//     description:
+//       "Flat tire? Chain slipped? Our certified mechanics get you back on the road in under 30 minutes — most repairs under $20.",
+//     lat: 40.7255,
+//     lng: -73.8833,
+//     shopIcon: "🔧",
+//   },
+//   {
+//     id: 4,
+//     title: "Flash Sale: 50% Off",
+//     category: "Deals",
+//     image:
+//       "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600&q=80",
+//     distance: "3.0 mi",
+//     rating: 4.5,
+//     tag: "Deals",
+//     description:
+//       "Today only — half price on all outerwear. Dozens of styles, all sizes in stock at the Atlas Street location.",
+//     lat: 40.731,
+//     lng: -73.878,
+//     shopIcon: "🛍",
+//   },
+//   {
+//     id: 5,
+//     title: "Road Closure Alert",
+//     category: "Alerts",
+//     image:
+//       "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80",
+//     distance: "0.5 mi",
+//     rating: 0,
+//     tag: "Alerts",
+//     description:
+//       "Queens Blvd between 63rd Dr and Woodhaven is closed until 6 PM for utility work. Expect detours via Junction Blvd.",
+//     lat: 40.727,
+//     lng: -73.877,
+//     shopIcon: "⚠️",
+//   },
+//   {
+//     id: 6,
+//     title: "Yoga in the Park",
+//     category: "Events",
+//     image:
+//       "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?w=600&q=80",
+//     distance: "1.6 mi",
+//     rating: 4.6,
+//     tag: "Events",
+//     description:
+//       "Free Sunday morning yoga at Juniper Valley Park. All levels welcome — bring your mat, we supply the good vibes.",
+//     lat: 40.73,
+//     lng: -73.882,
+//     shopIcon: "🧘",
+//   },
+// ];
 
-function BellIcon() {
-  return (
-    <svg
-      fill='none'
-      viewBox='0 0 24 24'
-      stroke='currentColor'
-      strokeWidth={2}
-      className='w-full h-full'
-    >
-      <path d='M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0' />
-    </svg>
-  );
-}
+// const FILTERS: { label: FilterType; icon: JSX.Element }[] = [
+//   { label: "All", icon: <AllIcon /> },
+//   { label: "Events", icon: <CalIcon /> },
+//   { label: "Deals", icon: <TagIcon /> },
+//   { label: "Services", icon: <WrenchIcon /> },
+//   { label: "Alerts", icon: <BellIcon /> },
+// ];
 
-function PinArrow() {
-  return (
-    <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 24 24'>
-      <path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z' />
-    </svg>
-  );
-}
+// const TAG_STYLES: Record<string, string> = {
+//   Deals: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+//   Events: "bg-violet-50 text-violet-700 border border-violet-200",
+//   Services: "bg-sky-50 text-sky-700 border border-sky-200",
+//   Alerts: "bg-rose-50 text-rose-700 border border-rose-200",
+// };
 
-function MapArrow() {
-  return (
-    <svg
-      className='w-3 h-3'
-      fill='none'
-      viewBox='0 0 24 24'
-      stroke='currentColor'
-      strokeWidth={2.5}
-    >
-      <path
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        d='M17 8l4 4m0 0l-4 4m4-4H3'
-      />
-    </svg>
-  );
-}
+// const MARKER_COLORS: Record<string, string> = {
+//   Deals: "#059669",
+//   Events: "#7c3aed",
+//   Services: "#0284c7",
+//   Alerts: "#dc2626",
+//   All: "#16a34a",
+// };
 
-function BookmarkSvg() {
-  return (
-    <svg
-      className='w-4 h-4'
-      fill='none'
-      viewBox='0 0 24 24'
-      stroke='currentColor'
-      strokeWidth={2}
-    >
-      <path
-        strokeLinecap='round'
-        strokeLinejoin='round'
-        d='M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z'
-      />
-    </svg>
-  );
-}
+// function buildMarkerSvg(
+//   emoji: string,
+//   color: string,
+//   selected: boolean,
+// ): string {
+//   const W = selected ? 52 : 44;
+//   const H = selected ? 62 : 52;
+//   const cx = W / 2;
+//   const r = W * 0.36;
+//   const cy = r + 4;
+//   const tipY = H - 2;
+
+//   // Teardrop / map-pin path
+//   const d = [
+//     `M ${cx} ${tipY}`,
+//     `C ${cx - 4} ${tipY - 10}, ${cx - r - 4} ${cy + r * 0.6}, ${cx - r} ${cy}`,
+//     `A ${r} ${r} 0 1 1 ${cx + r} ${cy}`,
+//     `C ${cx + r + 4} ${cy + r * 0.6}, ${cx + 4} ${tipY - 10}, ${cx} ${tipY}`,
+//     `Z`,
+//   ].join(" ");
+
+//   const ringR = r + (selected ? 9 : 6);
+//   const pulse = selected
+//     ? `<circle cx="${cx}" cy="${cy}" r="${ringR}" fill="${color}" opacity="0.15"><animate attributeName="r" values="${ringR - 2};${ringR + 8};${ringR - 2}" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.2;0;0.2" dur="1.8s" repeatCount="indefinite"/></circle>`
+//     : "";
+
+//   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+//     ${pulse}
+//     <path d="${d}" fill="${color}" stroke="${selected ? "#fff" : "rgba(255,255,255,0.85)"}" stroke-width="${selected ? 2.5 : 2}" filter="drop-shadow(0 3px 8px rgba(0,0,0,${selected ? "0.45" : "0.28"}))"/>
+//     <text x="${cx}" y="${cy + 1.5}" font-size="${r * 0.98}" text-anchor="middle" dominant-baseline="central">${emoji}</text>
+//   </svg>`;
+
+//   return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+// }
+
+// function buildUserDot(): string {
+//   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+//     <circle cx="20" cy="20" r="16" fill="#3b82f6" opacity="0.15">
+//       <animate attributeName="r" values="10;18;10" dur="2.2s" repeatCount="indefinite"/>
+//       <animate attributeName="opacity" values="0.2;0;0.2" dur="2.2s" repeatCount="indefinite"/>
+//     </circle>
+//     <circle cx="20" cy="20" r="10" fill="#3b82f6" stroke="#ffffff" stroke-width="3" filter="drop-shadow(0 2px 6px rgba(59,130,246,0.6))"/>
+//     <circle cx="20" cy="20" r="4" fill="#ffffff"/>
+//     <!-- heading arrow -->
+//     <polygon points="20,5 24,14 20,11 16,14" fill="#3b82f6" opacity="0.9"/>
+//   </svg>`;
+//   return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+// }
+
+// export default function MapExplorer() {
+//   const mapRef = useRef<HTMLDivElement>(null);
+//   const mapInstance = useRef<google.maps.Map | null>(null);
+//   const markersRef = useRef<Map<number, google.maps.Marker>>(new Map());
+//   const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY!;
+//   const [panelOpen, setPanelOpen] = useState(true);
+//   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
+//   const [selectedId, setSelectedId] = useState<number | null>(null);
+//   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+//   // use redux state for manage glob ally
+//   const [defaultLat, defaultLng] = [37.7749, -122.4194];
+
+//   const filtered = CARDS.filter(
+//     (c) => activeFilter === "All" || c.category === activeFilter,
+//   );
+
+//   useEffect(() => {
+//     if (typeof window === "undefined") return;
+//     const load = () => initMap();
+//     if ((window as any).google?.maps) {
+//       load();
+//       return;
+//     }
+//     const script = document.createElement("script");
+//     script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}`;
+//     script.async = true;
+//     script.onload = load;
+//     document.head.appendChild(script);
+//   }, []);
+
+//   const initMap = useCallback(() => {
+//     if (!mapRef.current) return;
+//     const map = new google.maps.Map(mapRef.current, {
+//       center: { lat: defaultLat!, lng: defaultLng! },
+//       zoom: 14,
+//       disableDefaultUI: true,
+//       zoomControl: true,
+//       zoomControlOptions: { position: google.maps.ControlPosition.LEFT_BOTTOM },
+//       styles: MAP_STYLES,
+//       gestureHandling: "greedy",
+//     });
+//     mapInstance.current = map;
+
+//     // User location marker
+//     new google.maps.Marker({
+//       position: { lat: defaultLat!, lng: defaultLng! },
+//       map,
+//       title: "You are here",
+//       icon: {
+//         url: buildUserDot(),
+//         scaledSize: new google.maps.Size(40, 40),
+//         anchor: new google.maps.Point(20, 20),
+//       },
+//       zIndex: 1000,
+//     });
+
+//     placeMarkers(map, CARDS, null);
+//   }, [defaultLat, defaultLng]);
+
+//   const placeMarkers = (
+//     map: google.maps.Map,
+//     cards: CardItem[],
+//     sel: number | null,
+//   ) => {
+//     markersRef.current.forEach((m) => m.setMap(null));
+//     markersRef.current.clear();
+//     cards.forEach((card) => {
+//       const isSel = card.id === sel;
+//       const color = MARKER_COLORS[card.category] ?? "#16a34a";
+//       const url = buildMarkerSvg(card.shopIcon, color, isSel);
+//       const W = isSel ? 52 : 44;
+//       const H = isSel ? 62 : 52;
+//       const marker = new google.maps.Marker({
+//         position: { lat: card.lat, lng: card.lng },
+//         map,
+//         title: card.title,
+//         icon: {
+//           url,
+//           scaledSize: new google.maps.Size(W, H),
+//           anchor: new google.maps.Point(W / 2, H),
+//         },
+//         zIndex: isSel ? 100 : 1,
+//       });
+//       marker.addListener("click", () => {
+//         handleSelect(card.id, map);
+//         setPanelOpen(true);
+//       });
+//       markersRef.current.set(card.id, marker);
+//     });
+//   };
+
+//   const handleSelect = (id: number, map?: google.maps.Map) => {
+//     const m = map ?? mapInstance.current;
+//     setSelectedId(id);
+//     const vis =
+//       activeFilter === "All"
+//         ? CARDS
+//         : CARDS.filter((c) => c.category === activeFilter);
+//     if (m) {
+//       const card = CARDS.find((c) => c.id === id);
+//       if (card) {
+//         m.panTo({ lat: card.lat, lng: card.lng });
+//         m.setZoom(15);
+//       }
+//       placeMarkers(m, vis, id);
+//     }
+//     setTimeout(() => {
+//       cardRefs.current
+//         .get(id)
+//         ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+//     }, 120);
+//   };
+
+//   // Re-render markers on filter change
+//   useEffect(() => {
+//     if (!mapInstance.current) return;
+//     placeMarkers(mapInstance.current, filtered, selectedId);
+//   }, [activeFilter]);
+
+//   return (
+//     <div
+//       className='relative w-full h-screen overflow-hidden'
+//       style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}
+//     >
+//       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');`}</style>
+
+//       {/* Map fills the screen */}
+//       <div ref={mapRef} className='absolute inset-0 w-full h-full' />
+
+//       {/* Top center label */}
+//       <div className='absolute top-4 left-4 right-16 z-20 flex items-center gap-2 bg-white/95 backdrop-blur-md shadow-lg rounded-2xl px-4 py-2.5 border border-white/60 max-w-xs'>
+//         <span className='text-blue-500 text-base'>📍</span>
+//         <div>
+//           <p className='text-sm font-bold text-gray-900 leading-tight'>
+//             Rego Park, Queens
+//           </p>
+//           <p className='text-[10px] text-gray-400 font-medium'>
+//             {filtered.length} places nearby
+//           </p>
+//         </div>
+//       </div>
+
+//       {/* Toggle (hamburger / X) */}
+//       <button
+//         onClick={() => setPanelOpen((p) => !p)}
+//         className='absolute top-4 right-4 z-30 w-11 h-11 flex items-center justify-center bg-white shadow-xl rounded-2xl border border-gray-100 hover:bg-gray-50 active:scale-95 transition-all duration-200'
+//         aria-label='Toggle panel'
+//       >
+//         <HamburgerX open={panelOpen} />
+//       </button>
+
+//       {/* ── Side Panel ── */}
+//       <div
+//         className={`absolute top-0 right-0 h-full z-20 flex flex-col transition-transform duration-500 ease-[cubic-bezier(.77,0,.18,1)]
+//           ${panelOpen ? "translate-x-0" : "translate-x-full"}
+//           w-[360px] sm:w-[390px]`}
+//         style={{
+//           background: "rgba(255,255,255,0.98)",
+//           backdropFilter: "blur(24px)",
+//           borderLeft: "1px solid rgba(0,0,0,0.07)",
+//           boxShadow: "-8px 0 40px rgba(0,0,0,0.12)",
+//         }}
+//       >
+//         {/* Header */}
+//         <div className='px-5 pt-6 pb-3'>
+//           <div className='flex items-center justify-between mb-1'>
+//             <div>
+//               <h2 className='text-[18px] font-bold text-gray-900 tracking-tight'>
+//                 Explore Nearby
+//               </h2>
+//               <p className='text-[11px] text-gray-400 font-medium mt-0.5'>
+//                 {filtered.length} result{filtered.length !== 1 ? "s" : ""} · tap
+//                 a pin to explore
+//               </p>
+//             </div>
+//             <button
+//               onClick={() => setPanelOpen(false)}
+//               className='w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-all'
+//             >
+//               <CloseX />
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Filters */}
+//         <div className='px-5 pb-3'>
+//           <div
+//             className='flex gap-2 overflow-x-auto'
+//             style={{ scrollbarWidth: "none" }}
+//           >
+//             {FILTERS.map(({ label, icon }) => {
+//               const active = activeFilter === label;
+//               return (
+//                 <button
+//                   key={label}
+//                   onClick={() => {
+//                     setActiveFilter(label);
+//                     setSelectedId(null);
+//                   }}
+//                   className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-95
+//                     ${
+//                       active
+//                         ? "bg-gray-900 text-white shadow-md"
+//                         : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-800"
+//                     }`}
+//                 >
+//                   <span className='w-3.5 h-3.5 flex-shrink-0'>{icon}</span>
+//                   {label}
+//                 </button>
+//               );
+//             })}
+//           </div>
+//         </div>
+
+//         {/* Divider */}
+//         <div className='h-px bg-gray-100 mx-5 mb-1' />
+
+//         {/* Scrollable cards */}
+//         <div
+//           className='flex-1 overflow-y-auto px-4 py-3 space-y-3'
+//           style={{
+//             scrollbarWidth: "thin",
+//             scrollbarColor: "#e5e7eb transparent",
+//           }}
+//         >
+//           {filtered.length === 0 && (
+//             <div className='flex flex-col items-center justify-center py-20'>
+//               <span className='text-5xl mb-3'>🗺</span>
+//               <p className='text-sm text-gray-400 font-medium'>
+//                 No results for this filter
+//               </p>
+//             </div>
+//           )}
+
+//           {filtered.map((card, i) => {
+//             const isSel = selectedId === card.id;
+//             return (
+//               <div
+//                 key={card.id}
+//                 ref={(el) => {
+//                   if (el) cardRefs.current.set(card.id, el);
+//                 }}
+//                 onClick={() => handleSelect(card.id)}
+//                 style={{ animationFillMode: "both" }}
+//                 className={`rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300
+//                   ${
+//                     isSel
+//                       ? "ring-2 ring-gray-900 shadow-xl scale-[1.01]"
+//                       : "border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200"
+//                   }`}
+//               >
+//                 {/* Image row */}
+//                 <div className='relative h-[160px] overflow-hidden bg-gray-100'>
+//                   <img
+//                     src={card.image}
+//                     alt={card.title}
+//                     className='w-full h-full object-cover transition-transform duration-700 group-hover:scale-105'
+//                   />
+//                   <div className='absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent' />
+
+//                   {/* Tag badge */}
+//                   <span
+//                     className={`absolute top-3 left-3 text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm ${TAG_STYLES[card.tag] ?? ""}`}
+//                     style={{ background: "rgba(255,255,255,0.88)" }}
+//                   >
+//                     {card.tag}
+//                   </span>
+
+//                   {/* Shop icon bubble */}
+//                   <div className='absolute bottom-3 right-3 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-xl shadow-md border border-white/50'>
+//                     {card.shopIcon}
+//                   </div>
+
+//                   {/* Arrow indicator linking to map */}
+//                   {isSel && (
+//                     <div className='absolute top-3 right-3 flex items-center gap-1 bg-gray-900/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-sm'>
+//                       <MapArrow /> On map
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 {/* Body */}
+//                 <div className='p-4 bg-white'>
+//                   <h3 className='font-bold text-gray-900 text-[15px] leading-tight mb-2'>
+//                     {card.title}
+//                   </h3>
+
+//                   <div className='flex items-center gap-3 text-[11px] text-gray-400 font-semibold mb-2.5'>
+//                     <span className='flex items-center gap-1 text-emerald-600'>
+//                       <PinArrow /> {card.distance}
+//                     </span>
+//                     {card.rating > 0 && (
+//                       <span className='flex items-center gap-1'>
+//                         <span className='text-amber-400 text-xs'>★</span>
+//                         <span className='text-gray-700'>{card.rating}</span>
+//                       </span>
+//                     )}
+//                   </div>
+
+//                   <p className='text-[12px] text-gray-500 leading-relaxed line-clamp-2 mb-3.5'>
+//                     {card.description}
+//                   </p>
+
+//                   <div className='flex gap-2'>
+//                     <button
+//                       onClick={(e) => {
+//                         e.stopPropagation();
+//                         alert(`Quote requested: ${card.title}`);
+//                       }}
+//                       className='flex-1 bg-gray-900 hover:bg-gray-700 text-white text-[12px] font-bold py-2.5 rounded-xl transition-all active:scale-[0.97]'
+//                     >
+//                       Request Quote
+//                     </button>
+//                     <button
+//                       onClick={(e) => {
+//                         e.stopPropagation();
+//                         alert(`Saved: ${card.title}`);
+//                       }}
+//                       className='w-10 flex items-center justify-center border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-500 hover:text-gray-800 transition-all active:scale-95'
+//                     >
+//                       <BookmarkSvg />
+//                     </button>
+//                   </div>
+//                 </div>
+//               </div>
+//             );
+//           })}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// const MAP_STYLES: google.maps.MapTypeStyle[] = [
+//   { elementType: "geometry", stylers: [{ color: "#eeebe4" }] },
+//   { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+//   { elementType: "labels.text.fill", stylers: [{ color: "#5c5a54" }] },
+//   { elementType: "labels.text.stroke", stylers: [{ color: "#f5f1ea" }] },
+//   {
+//     featureType: "administrative.locality",
+//     elementType: "labels.text.fill",
+//     stylers: [{ color: "#3a3830" }],
+//   },
+//   {
+//     featureType: "road",
+//     elementType: "geometry",
+//     stylers: [{ color: "#ffffff" }],
+//   },
+//   {
+//     featureType: "road.arterial",
+//     elementType: "labels.text.fill",
+//     stylers: [{ color: "#767066" }],
+//   },
+//   {
+//     featureType: "road.highway",
+//     elementType: "geometry",
+//     stylers: [{ color: "#e0d9cc" }],
+//   },
+//   {
+//     featureType: "road.highway",
+//     elementType: "geometry.stroke",
+//     stylers: [{ color: "#cfc8bb" }],
+//   },
+//   {
+//     featureType: "road.local",
+//     elementType: "labels.text.fill",
+//     stylers: [{ color: "#a09890" }],
+//   },
+//   {
+//     featureType: "transit.line",
+//     elementType: "geometry",
+//     stylers: [{ color: "#ddd6c8" }],
+//   },
+//   {
+//     featureType: "transit.station",
+//     elementType: "geometry",
+//     stylers: [{ color: "#e8e4dc" }],
+//   },
+//   {
+//     featureType: "water",
+//     elementType: "geometry",
+//     stylers: [{ color: "#b3cde8" }],
+//   },
+//   {
+//     featureType: "water",
+//     elementType: "labels.text.fill",
+//     stylers: [{ color: "#5a84a8" }],
+//   },
+//   {
+//     featureType: "poi.park",
+//     elementType: "geometry",
+//     stylers: [{ color: "#cde8b8" }],
+//   },
+//   {
+//     featureType: "poi.park",
+//     elementType: "labels.text.fill",
+//     stylers: [{ color: "#5a9040" }],
+//   },
+//   {
+//     featureType: "poi",
+//     elementType: "geometry",
+//     stylers: [{ color: "#e4dfda" }],
+//   },
+//   {
+//     featureType: "poi",
+//     elementType: "labels.text",
+//     stylers: [{ visibility: "off" }],
+//   },
+// ];
+
+// function HamburgerX({ open }: { open: boolean }) {
+//   return (
+//     <div className='w-5 h-[18px] flex flex-col justify-between'>
+//       <span
+//         className={`block h-0.5 rounded-full bg-gray-700 origin-left transition-all duration-300 ${open ? "rotate-[42deg] translate-y-[2px]" : ""}`}
+//       />
+//       <span
+//         className={`block h-0.5 rounded-full bg-gray-700 transition-all duration-300 ${open ? "opacity-0 scale-x-0" : ""}`}
+//       />
+//       <span
+//         className={`block h-0.5 rounded-full bg-gray-700 origin-left transition-all duration-300 ${open ? "-rotate-[42deg] -translate-y-[2px]" : ""}`}
+//       />
+//     </div>
+//   );
+// }
+
+// function CloseX() {
+//   return (
+//     <svg
+//       className='w-4 h-4'
+//       fill='none'
+//       viewBox='0 0 24 24'
+//       stroke='currentColor'
+//       strokeWidth={2.5}
+//     >
+//       <path
+//         strokeLinecap='round'
+//         strokeLinejoin='round'
+//         d='M6 18L18 6M6 6l12 12'
+//       />
+//     </svg>
+//   );
+// }
+
+// function AllIcon() {
+//   return (
+//     <svg
+//       fill='none'
+//       viewBox='0 0 24 24'
+//       stroke='currentColor'
+//       strokeWidth={2.5}
+//       className='w-full h-full'
+//     >
+//       <circle cx='12' cy='12' r='9' />
+//       <circle cx='12' cy='12' r='3' fill='currentColor' />
+//     </svg>
+//   );
+// }
+
+// function CalIcon() {
+//   return (
+//     <svg
+//       fill='none'
+//       viewBox='0 0 24 24'
+//       stroke='currentColor'
+//       strokeWidth={2}
+//       className='w-full h-full'
+//     >
+//       <rect x='3' y='4' width='18' height='18' rx='3' />
+//       <path d='M16 2v4M8 2v4M3 10h18' />
+//     </svg>
+//   );
+// }
+
+// function TagIcon() {
+//   return (
+//     <svg
+//       fill='none'
+//       viewBox='0 0 24 24'
+//       stroke='currentColor'
+//       strokeWidth={2}
+//       className='w-full h-full'
+//     >
+//       <path d='M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z' />
+//       <circle cx='7' cy='7' r='1.5' fill='currentColor' />
+//     </svg>
+//   );
+// }
+
+// function WrenchIcon() {
+//   return (
+//     <svg
+//       fill='none'
+//       viewBox='0 0 24 24'
+//       stroke='currentColor'
+//       strokeWidth={2}
+//       className='w-full h-full'
+//     >
+//       <path d='M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z' />
+//     </svg>
+//   );
+// }
+
+// function BellIcon() {
+//   return (
+//     <svg
+//       fill='none'
+//       viewBox='0 0 24 24'
+//       stroke='currentColor'
+//       strokeWidth={2}
+//       className='w-full h-full'
+//     >
+//       <path d='M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0' />
+//     </svg>
+//   );
+// }
+
+// function PinArrow() {
+//   return (
+//     <svg className='w-3 h-3' fill='currentColor' viewBox='0 0 24 24'>
+//       <path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z' />
+//     </svg>
+//   );
+// }
+
+// function MapArrow() {
+//   return (
+//     <svg
+//       className='w-3 h-3'
+//       fill='none'
+//       viewBox='0 0 24 24'
+//       stroke='currentColor'
+//       strokeWidth={2.5}
+//     >
+//       <path
+//         strokeLinecap='round'
+//         strokeLinejoin='round'
+//         d='M17 8l4 4m0 0l-4 4m4-4H3'
+//       />
+//     </svg>
+//   );
+// }
+
+// function BookmarkSvg() {
+//   return (
+//     <svg
+//       className='w-4 h-4'
+//       fill='none'
+//       viewBox='0 0 24 24'
+//       stroke='currentColor'
+//       strokeWidth={2}
+//     >
+//       <path
+//         strokeLinecap='round'
+//         strokeLinejoin='round'
+//         d='M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z'
+//       />
+//     </svg>
+//   );
+// }

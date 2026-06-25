@@ -10,7 +10,6 @@ import ReviewSection from "@/components/event/ReviewSection";
 import UnlockNextJurnee from "@/components/event/UnlockNextJurnee";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import ReportModal from "@/components/modal/ReportModal";
-import AddressDisplay from "@/components/share/AddressDisplay";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { useNewChatMutation } from "@/redux/features/chat/chatAPI";
 import {
@@ -58,6 +57,7 @@ import {
 } from "@/components/ui/dialog";
 import RedeemCode from "@/components/event/RedeemCode";
 import { SocketProvider, useSocket } from "@/provider/SocketProvider";
+import MiniMap from "@/components/home/MiniMap";
 
 function EventDetailPageInner() {
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -96,6 +96,10 @@ function EventDetailPageInner() {
 
   const postDetail = data?.data?.detail;
   const relevantPosts = data?.data?.relevantPosts;
+
+  const lat = data?.detail?.location?.coordinates?.[1];
+  const lng = data?.detail?.location?.coordinates?.[0];
+  const address = data?.detail?.address;
 
   const { socket } = useSocket();
 
@@ -731,14 +735,16 @@ function EventDetailPageInner() {
 
           {/* Right Sidebar */}
           <div className='lg:col-span-3 space-y-4'>
-            <LocationCard
-              address={postDetail?.address}
-              lat={90.39064309999999}
-              lng={23.7511665}
-              haveServiceAreas={false}
-              className='justify-end'
-              width='max-w-[68%]'
-            />
+            <div className='flex flex-col items-end justify-end'>
+              <MiniMap
+                lat={lat}
+                lng={lng}
+                label={address ?? ""}
+                width={"70%"}
+                height={350}
+                className=''
+              />
+            </div>
 
             <RelatedCard
               userLng={userLng}

@@ -469,17 +469,6 @@ export default function PostEventModal({
             </div>
           </div>
 
-          <div className='grid grid-cols-2 gap-3'>
-            <div>
-              <label className='text-sm font-bold mb-2 block'>Latitude</label>
-              <Input value={lat ?? ""} readOnly className='bg-gray-100' />
-            </div>
-            <div>
-              <label className='text-sm font-bold mb-2 block'>Longitude</label>
-              <Input value={lng ?? ""} readOnly className='bg-gray-100' />
-            </div>
-          </div>
-
           <div>
             <label className='text-sm font-bold mb-2 block'>
               Hashtags{" "}

@@ -12,7 +12,7 @@ import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import { useCreateBoostPaymentIntentMutation } from "@/redux/features/boost/boostAPI";
 import getDistanceMiles from "@/utils/getDistanceMiles";
 import { useAuth } from "@/hooks/useAuth.ts";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 
 export default function BoostPostPage() {
   const id = useParams().id as string;

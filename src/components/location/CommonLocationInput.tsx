@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 
 interface LocationResult {
   address: string;

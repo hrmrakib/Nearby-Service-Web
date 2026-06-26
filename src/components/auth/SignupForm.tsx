@@ -6,7 +6,7 @@ import type React from "react";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useCreateAccountMutation } from "@/redux/features/auth/authAPI";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import CommonLocationInput from "../location/CommonLocationInput";

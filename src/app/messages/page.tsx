@@ -40,7 +40,7 @@ import {
   useGetInboxChatsQuery,
   useGetMessagesQuery,
 } from "@/redux/features/chat/chatAPI";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { SocketProvider, useSocket } from "@/provider/SocketProvider";
 import { useMyProvidedServicesQuery } from "@/redux/features/post/postAPI";
 import {

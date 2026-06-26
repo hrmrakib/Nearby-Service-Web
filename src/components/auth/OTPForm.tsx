@@ -8,7 +8,7 @@ import {
   useResendOtpMutation,
   useVerifyOtpMutation,
 } from "@/redux/features/auth/authAPI";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 
 export function OTPForm() {
   const [otp, setOtp] = useState<string[]>(["", "", "", ""]); // 4 digits
@@ -59,7 +59,7 @@ export function OTPForm() {
   // Handle backspace navigation
   const handleKeyDown = (
     index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
+    e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();

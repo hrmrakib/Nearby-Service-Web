@@ -7,7 +7,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useForgotPasswordMutation } from "@/redux/features/auth/authAPI";
 

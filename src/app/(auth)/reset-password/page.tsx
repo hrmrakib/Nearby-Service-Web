@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useResetPasswordMutation } from "@/redux/features/auth/authAPI";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 
 export default function ResetPassword() {
   const router = useRouter();

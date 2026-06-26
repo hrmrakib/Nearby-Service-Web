@@ -47,7 +47,7 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import {
   Dialog,
   DialogClose,

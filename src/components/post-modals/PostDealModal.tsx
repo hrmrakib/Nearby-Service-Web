@@ -19,7 +19,7 @@ import {
   useCreateDealPostMutation,
   useUpdatePostMutation,
 } from "@/redux/features/post/postAPI";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import CommonLocationInput from "../location/CommonLocationInput";
 import { useSelector } from "react-redux";
 

@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { saveTokens } from "@/service/authService";
 import { setUser, userTrack } from "@/redux/features/auth/authSlice";
 import { useDispatch } from "react-redux";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { useGoogleLogin } from "@react-oauth/google";
 import AppleLogin from "react-apple-login";
 
@@ -376,7 +376,7 @@ export default function LoginForm() {
 // import { saveTokens } from "@/service/authService";
 // import { setUser, userTrack } from "@/redux/features/auth/authSlice";
 // import { useDispatch } from "react-redux";
-// import { toast } from "sonner";
+// import toast from 'react-hot-toast';
 // import { useGoogleLogin } from "@react-oauth/google";
 
 // export default function LoginForm() {

@@ -15,7 +15,7 @@ import {
   useGetAllPostQuery,
 } from "@/redux/features/post/postAPI";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { useToggleSaveMutation } from "@/redux/features/save/saveAPI";
 import CalendarDatePicker from "@/components/others/CalenderDatePicker";
 import MinStarRating from "@/components/home/Minstarrating";

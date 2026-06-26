@@ -20,7 +20,7 @@ import {
   useCreateAlertPostMutation,
   useUpdatePostMutation,
 } from "@/redux/features/post/postAPI";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import {
   Select,
   SelectContent,

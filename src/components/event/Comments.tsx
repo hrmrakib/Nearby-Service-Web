@@ -8,7 +8,7 @@ import {
   useLikeCommentMutation,
 } from "@/redux/features/comment/commentAPI";
 import React, { useState, useRef } from "react";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 
 interface ApiUser {
   _id: string;
@@ -623,7 +623,7 @@ export default function CommentSection({ id, postId }: CommentSectionProps) {
 //   useLikeCommentMutation,
 // } from "@/redux/features/comment/commentAPI";
 // import React, { useState, useRef } from "react";
-// import { toast } from "sonner";
+// import toast from 'react-hot-toast';
 
 // // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1243,7 +1243,7 @@ export default function CommentSection({ id, postId }: CommentSectionProps) {
 //   useLikeReplyMutation,
 // } from "@/redux/features/comment/commentAPI";
 // import React, { useState, useRef } from "react";
-// import { toast } from "sonner";
+// import toast from 'react-hot-toast';
 
 // interface ApiUser {
 //   _id: string;

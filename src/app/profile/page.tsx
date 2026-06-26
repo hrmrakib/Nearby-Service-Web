@@ -22,7 +22,7 @@ import {
   useGetProfileQuery,
   useUpdateProfileMutation,
 } from "@/redux/features/profile/profileAPI";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import AttendingEvents from "@/components/profile/AttendingEvents";
 import SavedPost from "@/components/profile/SavedPost";
 import MyPost from "@/components/profile/MyPost";

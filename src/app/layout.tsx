@@ -4,9 +4,9 @@ import { Geist, Geist_Mono, Lato } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar/Navbar";
 import Providers from "@/redux/features/Providers";
-import { Toaster } from "sonner";
 import AppInitializer from "@/components/AppInitializer/AppInitializer";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

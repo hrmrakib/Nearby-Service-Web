@@ -10,7 +10,7 @@ function formatDate(isoString: string) {
   const ampm = hours >= 12 ? "PM" : "AM";
   const h = hours % 12 || 12;
 
-  return `${dd}/${mm}/${yy} || ${h}:${minutes} ${ampm}`;
+  return `${mm}/${dd}/${yy} || ${h}:${minutes} ${ampm}`;
 }
 
 export default formatDate;

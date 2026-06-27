@@ -741,7 +741,7 @@ function EventDetailPageInner() {
                 pathname: "/map",
                 query: { lat: 23.4578, lng: 90.3563, address },
               }}
-              className='flex flex-col items-end justify-end'
+              className='flex flex-col items-end justify-end pl-3'
             >
               <MiniMap
                 lat={lat}

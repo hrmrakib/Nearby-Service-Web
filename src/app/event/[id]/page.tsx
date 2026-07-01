@@ -67,6 +67,7 @@ function EventDetailPageInner() {
 
   const id = useParams().id as string;
   const [imagePreview, setImagePreview] = useState("");
+  const [allImageCollection, setAllImageCollection] = useState<string[]>([]);
 
   const [attended, setAttended] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -104,12 +105,24 @@ function EventDetailPageInner() {
 
   const { socket } = useSocket();
 
-  const allImages: string[] = [
+  const allImages2: string[] = [
     ...(postDetail?.image ? [postDetail.image] : []),
     ...(postDetail?.media?.filter((m: string) =>
       /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
     ) ?? []),
   ];
+
+  const allImages: string[] = [
+    ...(postDetail?.media?.filter((m: string) =>
+      /\.(jpg|jpeg|png|webp)(\?.*)?$/i?.test(m),
+    ) ?? []),
+  ];
+
+  useEffect(() => {
+    if (allImages2.length > 0) {
+      setAllImageCollection(allImages2);
+    }
+  }, [allImages2]);
 
   useEffect(() => {
     if (allImages.length > 0) {
@@ -251,7 +264,7 @@ function EventDetailPageInner() {
           onClick={handleHeroClick}
         >
           <Image
-            src={imagePreview}
+            src={imagePreview || allImageCollection[0] || allImages[0]}
             alt='Night at Casa Verde'
             fill
             className='object-cover'
@@ -318,7 +331,7 @@ function EventDetailPageInner() {
 
         {/* Thumbnail strip */}
         <div className='absolute -bottom-4 md:-bottom-8 right-6 flex gap-5 z-[500]'>
-          {allImages.map((thumb: string, idx: number) => (
+          {allImageCollection.map((thumb: string, idx: number) => (
             <div
               key={idx}
               className={`w-12 lg:w-24 h-12 lg:h-24 rounded-lg overflow-hidden shadow-lg cursor-pointer ring-2 transition-all ${
